@@ -1,15 +1,28 @@
 import { DeepChat } from "deep-chat-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import axios from "axios";
 import "./style.css";
+import { colorPalette, lightTheme, darkTheme } from "./interfaces/temas/temas.tsx";
+import { getDeepChatStyles } from "./interfaces/deepchat/estilos.tsx";
 
 export const App = () => {
   const chatRef = useRef(null);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const [theme, setTheme] = useState(colorPalette);
+  
+  // Obtener los estilos del DeepChat basados en el tema actual
+  const deepChatStyles = getDeepChatStyles(theme);
+
+  // Función para cambiar el tema
+  const toggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+    setTheme(isDarkTheme ? lightTheme : darkTheme);
+  };
 
   // Función reutilizable para hacer solicitudes a la API de Groq usando axios
   const fetchGroqResponse = async (prompt: string) => {
     try {
-      //console.log("Enviando solicitud a Groq con prompt:", prompt);
+      const prompting = prompt + ". Contesta siempre en español";
       const response = await axios.post(
         "https://api.groq.com/openai/v1/chat/completions",
         {
@@ -17,7 +30,7 @@ export const App = () => {
           messages: [
             {
               role: "user",
-              content: prompt,
+              content: prompting,
             },
           ],
         },
@@ -37,89 +50,37 @@ export const App = () => {
   };
 
   return (
-    <div className="App">
-      <h1 className="text-6xl font-bold underline pb-4">WEB-CHAT</h1>
+    <div className="App" style={{ backgroundColor: theme.background }}>
+      <div className="flex justify-between items-center pb-4">
+        <h1 className="text-6xl font-bold text-center" style={{ color: theme.title.color }}>
+          PROMPTING
+        </h1>
+        <button 
+          onClick={toggleTheme}
+          className="p-2 rounded-full transition-all duration-300 ease-in-out"
+          style={{ 
+            backgroundColor: theme.secondary,
+            boxShadow: `0 0 10px ${theme.accent}`
+          }}
+        >
+          {isDarkTheme ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          )}
+        </button>
+      </div>
       <DeepChat
         ref={chatRef}
-        style={{
-          borderRadius: "10px",
-          border: "unset",
-          backgroundColor: "#292929",
-          width: "600px",
-          height: "500px",
-        }}
-        messageStyles={{
-          default: {
-            ai: {
-              bubble: {
-                backgroundColor: "#4a4e59",
-                color: "white",
-              },
-            },
-            user: {
-              bubble: {
-                background:
-                  "linear-gradient(180deg, rgba(255,166,0,1) 0%, rgba(225,71,71,1) 100%)",
-                color: "white",
-              },
-            },
-          },
-          loading: {
-            message: {
-              styles: {
-                bubble: {
-                  backgroundColor: "#4a4e59",
-                  color: "white",
-                },
-              },
-            },
-          },
-        }}
-        textInput={{
-          styles: {
-            container: {
-              backgroundColor: "#666666",
-              border: "unset",
-              color: "#e8e8e8",
-            },
-          },
-          placeholder: {
-            text: "Prompt:",
-            style: {
-              color: "#bcbcbc",
-            },
-          },
-        }}
-        submitButtonStyles={{
-          submit: {
-            container: {
-              default: {
-                bottom: "0.7rem",
-              },
-            },
-            svg: {
-              styles: {
-                default: {
-                  filter:
-                    "brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(577%) hue-rotate(343deg) brightness(100%) contrast(103%)",
-                },
-              },
-            },
-          },
-        }}
-        auxiliaryStyle={`
-          ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background-color: grey;
-            border-radius: 5px;
-          }
-          ::-webkit-scrollbar-track {
-            background-color: unset;
-          }
-        `}
+        style={deepChatStyles.container}
+        messageStyles={deepChatStyles.messageStyles}
+        textInput={deepChatStyles.textInput}
+        submitButtonStyles={deepChatStyles.submitButtonStyles}
+        auxiliaryStyle={deepChatStyles.auxiliaryStyle}
         connect={{
           handler: async (body: { messages: any[] }, signals: any) => {
             try {
@@ -131,8 +92,8 @@ export const App = () => {
 
               if (!lastUserMessage || !lastUserMessage.text) {
                 console.error("No se encontró un mensaje de usuario válido");
-                signals.onResponse({ 
-                  text: "No se pudo procesar tu mensaje. Por favor, intenta de nuevo." 
+                signals.onResponse({
+                  text: "No se pudo procesar tu mensaje. Por favor, intenta de nuevo.",
                 });
                 return;
               }
@@ -145,13 +106,13 @@ export const App = () => {
               );
 
               console.log("Respuesta recibida:", responseText);
-              
+
               // Usar signals.onResponse para enviar la respuesta a DeepChat
               signals.onResponse({ text: responseText });
             } catch (error) {
               console.error("Error en el handler de connect:", error);
-              signals.onResponse({ 
-                text: "Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo." 
+              signals.onResponse({
+                text: "Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.",
               });
             }
           },

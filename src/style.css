@@ -69,9 +69,28 @@ button:focus-visible {
 
 @import "tailwindcss";
 
+/* Estilos para asegurar que el body y html ocupen todo el espacio disponible */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #1a1372;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
 .App {
   font-family: sans-serif;
   text-align: center;
-  justify-content: center;
-  display: grid;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px; /* p-4 en Tailwind */
+  display: flex;
+  flex-direction: column;
 }
