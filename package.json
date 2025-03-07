@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview --host",
-    "deploy": "surge dist --domain web-chat.surge.sh"
+    "deploy": "surge dist --domain deepchat.surge.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.11",
