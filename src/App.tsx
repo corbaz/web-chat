@@ -4,11 +4,14 @@ import axios from "axios";
 import "./style.css";
 import { colorPalette, lightTheme, darkTheme } from "./interfaces/temas/temas.tsx";
 import { getDeepChatStyles } from "./interfaces/deepchat/estilos.tsx";
+import ModelSelector, { groqModels } from "./components/ModelSelector";
 
 export const App = () => {
-  const chatRef = useRef(null);
+  const chatRef = useRef<any>(null);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const [theme, setTheme] = useState(colorPalette);
+  const [key, setKey] = useState(0); // Agregar un estado para el key
+  const [selectedModel, setSelectedModel] = useState(groqModels[0].id); // Modelo seleccionado por defecto
   
   // Obtener los estilos del DeepChat basados en el tema actual
   const deepChatStyles = getDeepChatStyles(theme);
@@ -17,34 +20,55 @@ export const App = () => {
   const toggleTheme = () => {
     setIsDarkTheme(!isDarkTheme);
     setTheme(isDarkTheme ? lightTheme : darkTheme);
+    setKey(key + 1); // Actualizar el key al cambiar el tema
   };
 
   // Función reutilizable para hacer solicitudes a la API de Groq usando axios
   const fetchGroqResponse = async (prompt: string) => {
     try {
       const prompting = prompt + ". Contesta siempre en español";
+      console.log("Enviando solicitud a Groq API con modelo:...", selectedModel);
+      
       const response = await axios.post(
         "https://api.groq.com/openai/v1/chat/completions",
         {
-          model: "llama-3.3-70b-versatile",
+          model: selectedModel, // Usar el modelo seleccionado
           messages: [
             {
               role: "user",
               content: prompting,
             },
           ],
+          temperature: 0.7, // Valor entre 0 y 2, menor valor = respuestas más deterministas
+          max_completion_tokens: 2048, // Limitar la longitud de la respuesta
+          presence_penalty: 0.1, // Penalizar ligeramente la repetición de temas
         },
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization:
-              "Bearer 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",
+            Authorization: "Bearer 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",
           },
         }
       );
+      
+      console.log("Respuesta recibida de Groq API");
       return response.data.choices[0].message.content;
     } catch (error) {
       console.error("Error fetching response from Groq:", error);
+      
+      // Manejo de errores más detallado
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // El servidor respondió con un código de estado diferente de 2xx
+          console.error("Error de API:", error.response.status, error.response.data);
+          return `Error del servidor (${error.response.status}): ${error.response.data.error?.message || "Error desconocido"}`;
+        } else if (error.request) {
+          // La solicitud se realizó pero no se recibió respuesta
+          console.error("No se recibió respuesta del servidor");
+          return "Error de conexión: No se recibió respuesta del servidor. Verifica tu conexión a internet.";
+        }
+      }
+      
       return "Error al obtener respuesta. Por favor, intenta de nuevo.";
     }
   };
@@ -55,7 +79,15 @@ export const App = () => {
         <h1 className="text-6xl font-bold text-center mb-4" style={{ color: theme.title.color }}>
           PROMPTING
         </h1>
-        <div className="absolute right-0 top-0">
+        <div className="absolute right-0 top-0 flex items-center">
+          {/* Selector de modelos */}
+          <ModelSelector 
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            theme={theme}
+            isDarkTheme={isDarkTheme}
+          />
+          
           <label className="switch">
             <input type="checkbox" checked={isDarkTheme} onChange={toggleTheme} />
             <span className="slider round" style={{ 
@@ -76,6 +108,7 @@ export const App = () => {
         </div>
       </div>
       <DeepChat
+        key={key} // Forzar re-renderizado al cambiar el tema
         ref={chatRef}
         style={deepChatStyles.container}
         messageStyles={deepChatStyles.messageStyles}
