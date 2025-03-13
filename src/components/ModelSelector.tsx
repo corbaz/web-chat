@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+
 import { ColorPalette } from "../interfaces/temas/temas";
 
 // Definición de los modelos de Groq
@@ -165,11 +166,19 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   // Obtener los desarrolladores únicos de modelos
   const modelDevelopers = [...new Set(groqModels.map((model) => model.developer))];
+  
+  // Log when selectedModel changes to help debug
+  useEffect(() => {
+    console.log("ModelSelector - Current selected model:", selectedModel);
+  }, [selectedModel]);
 
   return (
     <select
       value={selectedModel}
-      onChange={(e) => onModelChange(e.target.value)}
+      onChange={(e) => {
+        console.log("Model changed to:", e.target.value);
+        onModelChange(e.target.value);
+      }}
       style={{
         padding: "6px 10px",
         borderRadius: "4px",
