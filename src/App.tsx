@@ -1,6 +1,7 @@
 import "./style.css";
 
-import ModelSelector, { groqModels } from "./components/ModelSelector";
+import ModelSelector from "./components/ModelSelector";
+import { groqModels } from "./components/models/groqModels";
 import {
     colorPalette,
     darkTheme,
@@ -12,8 +13,22 @@ import { DeepChat } from "deep-chat-react";
 import axios from "axios";
 import { getDeepChatStyles } from "./interfaces/deepchat/estilos.tsx";
 
+// Definimos un tipo para el ref del componente DeepChat
+// Usamos una interfaz más completa basada en la documentación de DeepChat
+interface DeepChatInstance {
+    getMessages: () => unknown;
+    submitUserMessage: (message: string) => void;
+    addMessage: (message: unknown) => void;
+    updateMessage: (message: unknown) => void;
+    // Añadimos más métodos que podría tener el componente DeepChat
+    clearMessages: () => void;
+    setInputValue: (value: string) => void;
+    [key: string]: unknown; // Para permitir otros métodos o propiedades que no conocemos
+}
+
 export const App = () => {
-    const chatRef = useRef<any>(null);
+    // Usamos un tipo más específico para el ref de DeepChat
+    const chatRef = useRef<DeepChatInstance | null>(null);
     const [isDarkTheme, setIsDarkTheme] = useState(false);
     const [theme, setTheme] = useState(colorPalette);
     const [key, setKey] = useState(0); // Agregar un estado para el key
@@ -158,62 +173,69 @@ export const App = () => {
                 />
             </div>
             
-            <DeepChat
-                key={`${key}-${selectedModel}`}
-                ref={chatRef}
-                style={deepChatStyles.container}
-                messageStyles={deepChatStyles.messageStyles}
-                textInput={deepChatStyles.textInput}
-                submitButtonStyles={deepChatStyles.submitButtonStyles}
-                auxiliaryStyle={deepChatStyles.auxiliaryStyle}
-                connect={{
-                    handler: async (
-                        body: { messages: any[] },
-                        signals: any
-                    ) => {
-                        try {
-                            // Obtener el último mensaje del usuario
-                            const lastUserMessage = body.messages
-                                .slice()
-                                .reverse()
-                                .find((msg) => msg.role === "user");
+            <div className="chat-container">
+                <DeepChat
+                    key={`${key}-${selectedModel}`}
+                    // Usamos una función de casting para el ref
+                    ref={(el) => {
+                        // Asignamos el elemento al ref
+                        chatRef.current = el as unknown as DeepChatInstance;
+                    }}
+                    style={deepChatStyles.container}
+                    messageStyles={deepChatStyles.messageStyles}
+                    textInput={deepChatStyles.textInput}
+                    submitButtonStyles={deepChatStyles.submitButtonStyles}
+                    auxiliaryStyle={deepChatStyles.auxiliaryStyle}
+                    connect={{
+                        handler: async (
+                            body: unknown,
+                            signals: unknown
+                        ) => {
+                            try {
+                                // Obtener el último mensaje del usuario
+                                const lastUserMessage = (body as { messages: Array<{ role: string; text?: string }> })
+                                    .messages
+                                    .slice()
+                                    .reverse()
+                                    .find((msg) => msg.role === "user");
 
-                            if (!lastUserMessage || !lastUserMessage.text) {
-                                console.error(
-                                    "No se encontró un mensaje de usuario válido"
+                                if (!lastUserMessage || !lastUserMessage.text) {
+                                    console.error(
+                                        "No se encontró un mensaje de usuario válido"
+                                    );
+                                    (signals as { onResponse: (response: { text: string }) => void }).onResponse({
+                                        text: "No se pudo procesar tu mensaje. Por favor, intenta de nuevo.",
+                                    });
+                                    return;
+                                }
+
+                                console.log(
+                                    "Mensaje del usuario:",
+                                    lastUserMessage.text
                                 );
-                                signals.onResponse({
-                                    text: "No se pudo procesar tu mensaje. Por favor, intenta de nuevo.",
+
+                                // Usar la función reutilizable para obtener la respuesta
+                                const responseText = await fetchGroqResponse(
+                                    lastUserMessage.text
+                                );
+
+                                console.log("Respuesta recibida:", responseText);
+
+                                // Usar signals.onResponse para enviar la respuesta a DeepChat
+                                (signals as { onResponse: (response: { text: string }) => void }).onResponse({ text: responseText });
+                            } catch (error) {
+                                console.error(
+                                    "Error en el handler de connect:",
+                                    error
+                                );
+                                (signals as { onResponse: (response: { text: string }) => void }).onResponse({
+                                    text: "Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.",
                                 });
-                                return;
                             }
-
-                            console.log(
-                                "Mensaje del usuario:",
-                                lastUserMessage.text
-                            );
-
-                            // Usar la función reutilizable para obtener la respuesta
-                            const responseText = await fetchGroqResponse(
-                                lastUserMessage.text
-                            );
-
-                            console.log("Respuesta recibida:", responseText);
-
-                            // Usar signals.onResponse para enviar la respuesta a DeepChat
-                            signals.onResponse({ text: responseText });
-                        } catch (error) {
-                            console.error(
-                                "Error en el handler de connect:",
-                                error
-                            );
-                            signals.onResponse({
-                                text: "Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.",
-                            });
-                        }
-                    },
-                }}
-            />
+                        },
+                    }}
+                />
+            </div>
         </div>
     );
 };

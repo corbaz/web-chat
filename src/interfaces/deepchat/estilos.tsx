@@ -4,9 +4,9 @@ import { ColorPalette } from "../temas/temas";
 // Interfaz para los estilos del componente DeepChat
 export interface DeepChatStyles {
   container: React.CSSProperties;
-  messageStyles: any;
-  textInput: any;
-  submitButtonStyles: any;
+  messageStyles: Record<string, unknown>;
+  textInput: Record<string, unknown>;
+  submitButtonStyles: Record<string, unknown>;
   auxiliaryStyle: string;
 }
 
@@ -78,7 +78,7 @@ export const getDeepChatStyles = (theme: ColorPalette): DeepChatStyles => {
         container: {
           default: {
             bottom: "-5px",
-            right: "50px",
+            right: "65px",
             width: "100%",
             height: "100%",
           },
@@ -106,4 +106,4 @@ export const getDeepChatStyles = (theme: ColorPalette): DeepChatStyles => {
       }
     `,
   };
-};
+}
