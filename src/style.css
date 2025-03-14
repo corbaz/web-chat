@@ -190,19 +190,3 @@ input:checked + .slider:before {
   overflow-y: auto;
   padding-bottom: 70px; /* Espacio para el input */
 }
-
-/* Estilos para el botón de envío */
-.dc-submit-button {
-  position: absolute !important;
-  right: 32px !important;
-  bottom: 26px !important;
-}
-
-/* Estilos para el contenedor del input */
-.dc-input-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px;
-}
