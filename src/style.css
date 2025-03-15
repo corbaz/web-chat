@@ -76,7 +76,7 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #1a1372;
+  background-color: black;
 }
 
 #root {
@@ -152,15 +152,19 @@ input:checked + .slider:before {
   width: 16px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 0;
+  z-index: 2;
+  color: white; /* Asegurar que los íconos sean visibles */
+  stroke-width: 2px; /* Hacer los íconos más gruesos */
 }
 
 .switch .moon-icon {
   left: 7px;
+  color: #f1c40f; /* Color amarillo para la luna */
 }
 
 .switch .sun-icon {
   right: 7px;
+  color: #f39c12; /* Color naranja para el sol */
 }
 
 /* Estilos para el contenedor del chat */
