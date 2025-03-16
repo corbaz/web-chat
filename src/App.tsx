@@ -3,11 +3,12 @@ import "./style.css";
 import ModelSelector from "./components/ModelSelector";
 import { groqModels } from "./components/models/groqModels";
 import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 import { DeepChat } from "deep-chat-react";
 import axios from "axios";
-import { getDeepChatStyles } from "./interfaces/deepchat/estilos.tsx";
+import { getDeepChatStyles } from "./interfaces/deepchat/estilos";
+import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 
 // Definimos un tipo para el ref del componente DeepChat
 // Usamos una interfaz más completa basada en la documentación de DeepChat
@@ -97,6 +98,61 @@ export const App = () => {
     }
   };
 
+  // Función para cerrar el teclado en dispositivos móviles
+  const closeKeyboard = () => {
+    // Desenfocar cualquier elemento activo para cerrar el teclado
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    
+    // Solución específica para iOS
+    const tempInput = document.createElement('input');
+    tempInput.style.position = 'absolute';
+    tempInput.style.opacity = '0';
+    tempInput.style.height = '0';
+    tempInput.style.fontSize = '16px';
+    tempInput.style.webkitAppearance = 'none';
+    document.body.appendChild(tempInput);
+    tempInput.focus();
+    tempInput.blur();
+    document.body.removeChild(tempInput);
+    
+    // Solución específica para Android
+    if (navigator.userAgent.match(/Android/i)) {
+      document.documentElement.style.height = '100%';
+      setTimeout(() => {
+        document.documentElement.style.height = '';
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    // Configurar el manejador del teclado para dispositivos móviles
+    setupMobileKeyboardHandler();
+    
+    // Inicializar el tema
+    setTheme(isDarkTheme ? darkTheme : lightTheme);
+    
+    // Añadir un event listener global para cerrar el teclado cuando se presiona Enter
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey && document.activeElement instanceof HTMLInputElement) {
+        // Desenfocar el input después de un pequeño retraso para permitir que el mensaje se envíe
+        setTimeout(() => {
+          const activeElement = document.activeElement as HTMLElement;
+          if (activeElement && activeElement.blur) {
+            activeElement.blur();
+          }
+        }, 100);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDarkTheme]);
+
   return (
     <div className="App" style={{ backgroundColor: theme.background }}>
       <div className="flex flex-col items-center pb-4 relative">
@@ -180,6 +236,9 @@ export const App = () => {
           connect={{
             handler: async (body: unknown, signals: unknown) => {
               try {
+                // Cerrar el teclado en dispositivos móviles
+                closeKeyboard();
+                
                 // Obtener el último mensaje del usuario
                 const lastUserMessage = (
                   body as { messages: Array<{ role: string; text?: string }> }
@@ -226,6 +285,10 @@ export const App = () => {
                 });
               }
             },
+          }}
+          inputMode="text"
+          introMessage={{
+            text: "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
           }}
         />
       </div>
