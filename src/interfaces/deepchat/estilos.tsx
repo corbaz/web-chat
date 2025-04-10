@@ -17,7 +17,7 @@ export const getDeepChatStyles = (theme: ColorPalette): DeepChatStyles => {
         container: {
             borderRadius: "10px",
             border: theme.chat.border,
-            backgroundColor: "green",
+            backgroundColor: theme.chat.background,
             width: "100%",
             height: "100%",
             overflow: "hidden",
