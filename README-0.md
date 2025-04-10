@@ -1,6 +1,12 @@
-bun create vite@latest web-chat
+# Instalación y configuración de Web-Chat
+
 ```cmd
-package.json
+bun create vite@latest web-chat
+```
+
+## Configuración del package.json
+
+```json
 {
   "name": "web-chat",
   "private": true,
@@ -34,23 +40,22 @@ package.json
 }
 ```
 
-bun install tailwindcss @tailwindcss/vite
-
-
 ## Instalar Tailwind CSS
- como un complemento de Vite es la forma más sencilla de integrarlo con marcos como Laravel, SvelteKit, React Router, Nuxt y SolidJS.
 
-* 01
-Instalar Tailwind CSS
+Como un complemento de Vite es la forma más sencilla de integrarlo con marcos como Laravel, SvelteKit, React Router, Nuxt y SolidJS.
+
+### 01 Instalar Tailwind CSS
+
 ```cmd
 bun install tailwindcss @tailwindcss/vite
 ```
 
-* 02
-Configurar el complemento Vite
+### 02 Configurar el complemento Vite
+
 Añade el @tailwindcss/vite plugin tu configuración de Vite.
-```cmd
-vite.config.ts
+
+```ts
+// vite.config.ts
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
@@ -60,29 +65,28 @@ export default defineConfig({
 })
 ```
 
-* 03
-Importar CSS de Tailwind
-Agregue un @importa su archivo CSS que importe Tailwind CSS.
+### 03 Importar CSS de Tailwind
 
-```cmd 
-src/index.css
+Agregue un @import a su archivo CSS que importe Tailwind CSS.
 
+```css
+/* src/index.css */
 @import "tailwindcss";
 ```
 
-* 04
-Comience su proceso de construcción
-Ejecute su proceso de compilación con bun run dev cualquier comando que esté configurado en su archivo. package.json
+### 04 Comience su proceso de construcción
+
+Ejecute su proceso de compilación con bun run dev cualquier comando que esté configurado en su archivo package.json
+
 ```cmd
 bun run dev
 ```
 
-* 05
-Comience a utilizar Tailwind en su HTML
-Asegúrate de que tu CSS compilado esté incluido en el <head> (tu marco podría encargarse de esto por ti) , luego comienza a usar las clases de utilidad de Tailwind para darle estilo a tu contenido.
+### 05 Comience a utilizar Tailwind en su HTML
 
-```cmd
-HTML
+Asegúrese de que su CSS compilado esté incluido en el elemento head (su marco podría encargarse de esto por ti), luego comience a usar las clases de utilidad de Tailwind para darle estilo a su contenido.
+
+```html
 <!doctype html>
 <html>
 <head>
@@ -99,8 +103,10 @@ HTML
 ```
 
 ## Instalar deep-chat-react
-* Web [https://deepchat.dev/]  
-* GITHUB [https://github.com/OvidijusParsiunas/deep-chat] 
+
+* Web [https://deepchat.dev/]
+* GITHUB [https://github.com/OvidijusParsiunas/deep-chat]
+
 ```cmd
 bun install deep-chat-react
 ```
