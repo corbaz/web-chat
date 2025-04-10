@@ -1,4 +1,5 @@
-bun create vite@latest web-chat
+# bun create vite@latest web-chat
+
 ```cmd
 package.json
 {
@@ -36,12 +37,13 @@ package.json
 
 bun install tailwindcss @tailwindcss/vite
 
-
 ## Instalar Tailwind CSS
+
  como un complemento de Vite es la forma más sencilla de integrarlo con marcos como Laravel, SvelteKit, React Router, Nuxt y SolidJS.
 
 * 01
 Instalar Tailwind CSS
+
 ```cmd
 bun install tailwindcss @tailwindcss/vite
 ```
@@ -49,6 +51,7 @@ bun install tailwindcss @tailwindcss/vite
 * 02
 Configurar el complemento Vite
 Añade el @tailwindcss/vite plugin tu configuración de Vite.
+
 ```cmd
 vite.config.ts
 import { defineConfig } from 'vite'
@@ -64,7 +67,7 @@ export default defineConfig({
 Importar CSS de Tailwind
 Agregue un @importa su archivo CSS que importe Tailwind CSS.
 
-```cmd 
+```cmd
 src/index.css
 
 @import "tailwindcss";
@@ -73,13 +76,14 @@ src/index.css
 * 04
 Comience su proceso de construcción
 Ejecute su proceso de compilación con bun run dev cualquier comando que esté configurado en su archivo. package.json
+
 ```cmd
 bun run dev
 ```
 
 * 05
 Comience a utilizar Tailwind en su HTML
-Asegúrate de que tu CSS compilado esté incluido en el <head> (tu marco podría encargarse de esto por ti) , luego comienza a usar las clases de utilidad de Tailwind para darle estilo a tu contenido.
+Asegúrate de que tu CSS compilado esté incluido en el "head" (tu marco podría encargarse de esto por ti) , luego comienza a usar las clases de utilidad de Tailwind para darle estilo a tu contenido.
 
 ```cmd
 HTML
@@ -99,8 +103,10 @@ HTML
 ```
 
 ## Instalar deep-chat-react
+
 * Web [https://deepchat.dev/]  
-* GITHUB [https://github.com/OvidijusParsiunas/deep-chat] 
+* GITHUB [https://github.com/OvidijusParsiunas/deep-chat]
+
 ```cmd
 bun install deep-chat-react
 ```
