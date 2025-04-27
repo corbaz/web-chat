@@ -35,15 +35,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             }}
             style={{
                 padding: "6px 10px",
-                borderRadius: "4px",
-                border: `1px solid ${isDarkTheme ? theme.input.text : theme.input.background}`,
+                borderRadius: "6px",
+                border: `3px solid ${theme.messages.ai.background}`,
                 backgroundColor: isDarkTheme
                     ? theme.input.background
                     : theme.input.text,
-                color: isDarkTheme ? theme.input.text : theme.input.background,
+                color: theme.messages.ai.background,
                 fontWeight: "bold",
                 fontSize: "14px",
-                marginRight: "15px",
                 cursor: "pointer",
             }}
             title="Seleccionar modelo de IA"
@@ -52,7 +51,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                 <optgroup
                     key={developer}
                     label={developer.toUpperCase()}
-                    style={{ color: "red" }}
+                    style={{ color: theme.messages.ai.background }}
                 >
                     {groqModels
                         .filter(
@@ -62,7 +61,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                             <option
                                 key={model.id}
                                 value={model.id}
-                                style={{ color: "blue" }}
+                                style={{
+                                    color: isDarkTheme
+                                        ? theme.input.text
+                                        : theme.input.background,
+                                }}
                             >
                                 {model.name}
                             </option>

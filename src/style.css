@@ -3,195 +3,192 @@
 /* Estilos para asegurar que el body y html ocupen todo el espacio disponible */
 html,
 body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: black;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: black;
 }
 
 #root {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 .App {
-  font-family: sans-serif;
-  text-align: center;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 16px;
-  /* p-4 en Tailwind */
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+    font-family: sans-serif;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    /* p-4 en Tailwind */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Estilos para el switch de tema */
 .switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 30px;
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
 }
 
 .switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  transition: .4s;
-  display: flex;
-  align-items: center;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: 0.4s;
+    display: flex;
+    align-items: center;
 }
 
 .slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  left: 4px;
-  bottom: 4px;
-  background-color: black;
-  transition: .4s;
-  z-index: 1;
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: black;
+    transition: 0.4s;
+    z-index: 1;
 }
 
-input:checked+.slider:before {
-  transform: translateX(30px);
+input:checked + .slider:before {
+    transform: translateX(30px);
 }
 
 .slider.round {
-  border-radius: 34px;
+    border-radius: 34px;
 }
 
 .slider.round:before {
-  border-radius: 50%;
+    border-radius: 50%;
 }
 
 /* Estilos para los iconos del switch */
 .switch svg {
-  position: absolute;
-  height: 16px;
-  width: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  color: white;
-  /* Asegurar que los íconos sean visibles */
-  stroke-width: 2px;
-  /* Hacer los íconos más gruesos */
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    color: white;
+    /* Asegurar que los íconos sean visibles */
+    stroke-width: 2px;
+    /* Hacer los íconos más gruesos */
 }
 
 .switch .moon-icon {
-  left: 7px;
-  color: yellow;
-  /* Color amarillo para la luna */
+    left: 7px;
+    color: yellow;
+    /* Color amarillo para la luna */
 }
 
 .switch .sun-icon {
-  right: 7px;
-  color: yellow;
-  /* Color naranja para el sol */
+    right: 7px;
+    color: yellow;
+    /* Color naranja para el sol */
 }
 
 /* Estilos para el contenedor del chat */
 .chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  /*height: calc(100% - 80px);  Restar el espacio del header 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    /*height: calc(100% - 80px);  Restar el espacio del header 
   position: relative;*/
-  overflow: hidden;
-  margin-top: 1px;
-  margin-bottom: 70px;
+    overflow: hidden;
+    margin-top: 1px;
+    margin-bottom: 70px;
 }
 
 /* Asegurar que DeepChat ocupe todo el espacio disponible */
-.chat-container>div {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
+.chat-container > div {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Estilos para el área de mensajes */
 .dc-messages-container {
-  flex: 1;
-  overflow-y: auto;
-  /* padding-bottom: 70px;
+    flex: 1;
+    overflow-y: auto;
+    /* padding-bottom: 70px;
   Espacio para el input */
 }
 
 /* Mejoras para dispositivos móviles */
 @media (max-width: 768px) {
+    /* Prevenir el zoom al tocar elementos interactivos */
+    input,
+    textarea,
+    button,
+    select {
+        font-size: 16px !important;
+        touch-action: manipulation;
+    }
 
-  /* Prevenir el zoom al tocar elementos interactivos */
-  input,
-  textarea,
-  button,
-  select {
-    font-size: 16px !important;
-    touch-action: manipulation;
-  }
+    /* Mejorar la experiencia de teclado en iOS */
+    input,
+    textarea {
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 0;
+    }
 
-  /* Mejorar la experiencia de teclado en iOS */
-  input,
-  textarea {
-    -webkit-appearance: none;
-    appearance: none;
-    border-radius: 0;
-  }
+    /* Asegurar que los botones sean suficientemente grandes para tocar */
+    button {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px;
+    }
 
-  /* Asegurar que los botones sean suficientemente grandes para tocar */
-  button {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 10px;
-  }
+    /* Ajustar el layout para dispositivos móviles */
+    .App {
+        height: calc(100vh - env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
 
-  /* Ajustar el layout para dispositivos móviles */
-  .App {
-    height: calc(100vh - env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+    /* Prevenir el comportamiento de scroll indeseado */
+    html,
+    body {
+        overscroll-behavior: none;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
 
-  /* Prevenir el comportamiento de scroll indeseado */
-  html,
-  body {
-    overscroll-behavior: none;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-  }
-
-
-  /* Ajustes para el selector de modelos en móviles */
-  .model-selector {
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+    /* Ajustes para el selector de modelos en móviles */
+    .model-selector {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 /* Clase para aplicar cuando se necesita cerrar el teclado */
 .hide-keyboard {
-  position: fixed;
-  width: 0;
-  height: 0;
-  opacity: 0;
+    position: fixed;
+    width: 0;
+    height: 0;
+    opacity: 0;
 }
