@@ -45,93 +45,93 @@ export interface ColorPalette {
 
 // Tema claro con colores pastel
 export const lightTheme: ColorPalette = {
-    // Colores principales
-    primary: "#f0c5e8", // Rosa pastel
-    secondary: "#b8e1ff", // Azul pastel
-    accent: "#ffd6a5", // Naranja pastel
-    background: "#f9f9f9", // Fondo claro
-    text: "#4a4a4a", // Texto oscuro
+    // Colores principales de la nueva paleta pastel
+    primary: "#5885a2", // Azul grisáceo
+    secondary: "#b8a0c9", // Lila/púrpura claro
+    accent: "#94cfd5", // Turquesa/azul claro
+    background: "#f1e5ea", // Rosa muy pálido
+    text: "#5b4d6b", // Púrpura grisáceo
 
     // Colores específicos para componentes
     title: {
-        color: "#ffb6c1", // Rosa pastel para el título
+        color: "#b8a0c9", // Lila/púrpura claro para el título
     },
     chat: {
-        background: "#f0f0f0", // Fondo gris claro para el chat
-        border: "unset",
+        background: "#f1e5ea", // Fondo rosa muy pálido
+        border: "1px solid #e7d9e3", // Borde sutil en tono rosa
     },
     messages: {
         ai: {
-            background: "#d0f0c0", // Verde pastel para mensajes AI
-            text: "#4a4a4a", // Texto oscuro
+            background: "#5885a2", // Azul grisáceo para mensajes AI
+            text: "#ffffff", // Texto blanco para contraste
         },
         user: {
-            background: "#ffcccb", // Rojo pastel para mensajes usuario
-            text: "#4a4a4a", // Texto oscuro
+            background: "#b8a0c9", // Lila/púrpura claro para mensajes usuario
+            text: "#ffffff", // Texto blanco para contraste
         },
         loading: {
-            background: "#fffacd", // Amarillo pastel para carga
-            text: "#4a4a4a", // Texto oscuro
+            background: "#94cfd5", // Turquesa/azul claro para carga
+            text: "#5b4d6b", // Texto púrpura grisáceo
         },
     },
     input: {
-        background: "#e0f7fa", // Cian pastel para el input
-        text: "#4a4a4a", // Texto oscuro
-        placeholder: "#757575", // Gris para placeholder
+        background: "#f9f3f7", // Fondo rosa muy pálido
+        text: "#5b4d6b", // Texto púrpura grisáceo
+        placeholder: "#a390b4", // Púrpura claro para placeholder
     },
     scrollbar: {
-        thumb: "#c9c9c9", // Gris claro para scrollbar
-        track: "transparent", // Transparente para track
+        thumb: "#b8a0c9", // Lila/púrpura claro para scrollbar
+        track: "#f1e5ea", // Rosa muy pálido para track
     },
     button: {
-        filter: "brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(577%) hue-rotate(343deg) brightness(100%) contrast(103%)",
+        filter: "invert(55%) sepia(9%) saturate(1083%) hue-rotate(222deg) brightness(88%) contrast(87%)", // Filtro para botones en tono púrpura
     },
 };
 
-// Tema oscuro futurista
+// Tema oscuro con paleta púrpura
 export const darkTheme: ColorPalette = {
-    // Colores principales
-    primary: "#6e00ff", // Púrpura neón
-    secondary: "#00b8ff", // Azul neón
-    accent: "#ff5722", // Naranja futurista
-    background: "#121212", // Fondo muy oscuro
-    text: "#e0e0e0", // Texto claro
+    // Colores principales de la paleta púrpura
+    primary: "#b365d3", // Púrpura brillante
+    secondary: "#5885a2", // Azul grisáceo
+    accent: "#8060a9", // Púrpura medio
+    background: "#2c1b47", // Azul marino oscuro
+    text: "#ffffff", // Texto blanco
 
     // Colores específicos para componentes
     title: {
-        color: "#ff00ff", // Magenta neón para el título
+        color: "#b365d3", // Púrpura brillante para el título
     },
     chat: {
-        background: "#1e1e1e", // Fondo oscuro para el chat
-        border: "unset",
+        background: "#2c1b47", // Púrpura muy oscuro para el fondo del chat
+        border: "1px solid #3d2963", // Borde sutil en tono púrpura
     },
     messages: {
         ai: {
-            background: "yellow", // Verde oscuro para mensajes AI
-            text: "black", // Texto claro
+            background: "#5885a2", // Azul grisáceo para mensajes AI
+            text: "#ffffff", // Texto blanco
         },
         user: {
-            background: "#4a148c", // Púrpura oscuro para mensajes usuario
-            text: "#e0e0e0", // Texto claro
+            background: "#8060a9", // Púrpura medio para mensajes usuario
+            text: "#ffffff", // Texto blanco
         },
         loading: {
-            background: "#ff6f00", // Ámbar para carga
-            text: "#121212", // Texto oscuro
+            background: "#493173", // Púrpura oscuro para la carga
+            text: "#ffffff", // Texto blanco
         },
     },
     input: {
-        background: "#263238", // Azul grisáceo oscuro para el input
-        text: "white", // Texto claro
-        placeholder: "yellow", // Gris para placeholder
+        background: "#2c1b47", // Púrpura muy oscuro para el input
+        text: "#ffffff", // Texto blanco
+        placeholder: "#9a85bb", // Púrpura claro para placeholder
     },
     scrollbar: {
-        thumb: "#424242", // Gris oscuro para scrollbar
-        track: "transparent", // Transparente para track
+        thumb: "#8060a9", // Púrpura medio para scrollbar
+        track: "#2c1b47", // Púrpura muy oscuro para track
     },
     button: {
-        filter: "brightness(0) saturate(100%) invert(80%) sepia(54%) saturate(5127%) hue-rotate(242deg) brightness(101%) contrast(101%)",
+        filter: "invert(67%) sepia(29%) saturate(721%) hue-rotate(242deg) brightness(88%) contrast(85%)", // Filtro para botones en tono púrpura
     },
 };
 
-// Exportar el tema claro como predeterminado
-export const colorPalette = lightTheme;
+// Exportar el tema oscuro como predeterminado
+export const colorPalette = darkTheme;

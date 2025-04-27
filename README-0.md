@@ -9,35 +9,41 @@ bun create vite@latest web-chat
 ```json
 # package.json
 {
-  "name": "web-chat",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite --host",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview --host"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.0.9",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.9"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.21.0",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.21.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^15.15.0",
-    "typescript": "~5.7.3",
-    "typescript-eslint": "^8.26.0",
-    "vite": "^6.2.0"
-  }
+    "name": "web-chat",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "bun-install": "bun install",
+        "bun-upgrade": "bun upgrade",
+        "ncu": "npx -y npm-check-updates -u && bun update",
+        "dev": "vite --host",
+        "build": "tsc -b && vite build",
+        "lint": "eslint .",
+        "preview": "vite preview --host",
+        "deploy": "surge dist --domain deepchat.surge.sh"
+    },
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.4",
+        "axios": "^1.9.0",
+        "deep-chat-react": "^2.1.1",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "tailwindcss": "^4.1.4"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.25.1",
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "@vitejs/plugin-react": "^4.4.1",
+        "eslint": "^9.25.1",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-react-refresh": "^0.4.20",
+        "globals": "^16.0.0",
+        "typescript": "~5.8.3",
+        "typescript-eslint": "^8.31.0",
+        "vite": "^6.3.3"
+    }
 }
 ```
 

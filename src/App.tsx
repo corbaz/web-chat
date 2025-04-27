@@ -161,14 +161,14 @@ export const App = () => {
 
     return (
         <div className="App" style={{ backgroundColor: theme.background }}>
-            <div className="flex flex-col items-center pb-4 relative">
+            <div className="flex flex-col items-center pt-10">
                 <h1
-                    className="text-6xl font-bold text-center mb-4"
+                    className="text-6xl font-bold text-center"
                     style={{ color: theme.title.color }}
                 >
                     PROMPTING
                 </h1>
-                <div className="absolute right-0 top-0 flex items-center">
+                <div className="absolute right-5 top-5 flex items-center">
                     <label className="switch">
                         <input
                             type="checkbox"
@@ -219,7 +219,7 @@ export const App = () => {
             </div>
 
             {/* Model selector positioned above the chat */}
-            <div className="w-full flex justify-center mb-4">
+            <div className="w-full flex justify-center mb-2">
                 <ModelSelector
                     selectedModel={selectedModel}
                     onModelChange={setSelectedModel}
