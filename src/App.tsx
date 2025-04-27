@@ -3,6 +3,9 @@ import "./style.css";
 import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useRef, useState } from "react";
 
+// Constante de versión para mostrar junto al título
+const APP_VERSION = "v.1.00";
+
 import { DeepChat } from "deep-chat-react";
 import ModelSelector from "./components/ModelSelector";
 import axios from "axios";
@@ -162,12 +165,20 @@ export const App = () => {
     return (
         <div className="App" style={{ backgroundColor: theme.background }}>
             <div className="flex flex-col items-center pt-10">
-                <h1
-                    className="text-6xl font-bold text-center"
-                    style={{ color: theme.title.color }}
-                >
-                    PROMPTING
-                </h1>
+                <div className="flex items-end">
+                    <h1
+                        className="text-6xl font-bold text-center"
+                        style={{ color: theme.title.color }}
+                    >
+                        PROMPTING
+                    </h1>
+                    <span
+                        className="text-sm ml-2 mb-3"
+                        style={{ color: theme.title.color }}
+                    >
+                        {APP_VERSION}
+                    </span>
+                </div>
                 <div className="absolute right-5 top-5 flex items-center">
                     <label className="switch">
                         <input
