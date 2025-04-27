@@ -4,7 +4,7 @@ import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useRef, useState } from "react";
 
 // Constante de versión para mostrar junto al título
-const APP_VERSION = "v.1.01";
+const APP_VERSION = "v.1.02";
 
 import { DeepChat } from "deep-chat-react";
 import ModelSelector from "./components/ModelSelector";
@@ -75,7 +75,7 @@ export const App = () => {
                             content: prompting,
                         },
                     ],
-                    temperature: 0.7, // Valor entre 0 y 2, menor valor = respuestas más deterministas
+                    temperature: 0.75, // Valor entre 0 y 2, menor valor = respuestas más deterministas
                     max_completion_tokens: 2048, // Limitar la longitud de la respuesta
                     presence_penalty: 0.1, // Penalizar ligeramente la repetición de temas
                 },
