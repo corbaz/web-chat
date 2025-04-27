@@ -4,7 +4,7 @@ import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useRef, useState } from "react";
 
 // Constante de versión para mostrar junto al título
-const APP_VERSION = "v.1.00";
+const APP_VERSION = "v.1.01";
 
 import { DeepChat } from "deep-chat-react";
 import ModelSelector from "./components/ModelSelector";
@@ -26,6 +26,16 @@ interface DeepChatInstance {
     [key: string]: unknown; // Para permitir otros métodos o propiedades que no conocemos
 }
 
+// Función para formatear el tiempo de respuesta
+const formatResponseTime = (milliseconds: number): string => {
+    if (milliseconds < 1000) {
+        return `${milliseconds}ms`;
+    } else {
+        const seconds = (milliseconds / 1000).toFixed(2);
+        return `${seconds}s`;
+    }
+};
+
 export const App = () => {
     // Usamos un tipo más específico para el ref de DeepChat
     const chatRef = useRef<DeepChatInstance | null>(null);
@@ -33,6 +43,8 @@ export const App = () => {
     const [theme, setTheme] = useState(darkTheme);
     const [key, setKey] = useState(0); // Agregar un estado para el key
     const [selectedModel, setSelectedModel] = useState(groqModels[0].id); // Modelo seleccionado por defecto
+    // Referencia para almacenar los tiempos de inicio de las consultas
+    const requestStartTimeRef = useRef<Record<string, number>>({});
 
     // Obtener los estilos del DeepChat basados en el tema actual
     const deepChatStyles = getDeepChatStyles(theme);
@@ -45,7 +57,7 @@ export const App = () => {
     };
 
     // Función reutilizable para hacer solicitudes a la API de Groq usando axios
-    const fetchGroqResponse = async (prompt: string) => {
+    const fetchGroqResponse = async (prompt: string, requestId: string) => {
         try {
             const prompting = prompt + ". Contesta siempre en español";
             console.log(
@@ -77,7 +89,16 @@ export const App = () => {
             );
 
             console.log("Respuesta recibida de Groq API");
-            return response.data.choices[0].message.content;
+
+            // Calcular el tiempo de respuesta
+            const endTime = Date.now();
+            const responseTime =
+                endTime - (requestStartTimeRef.current[requestId] || endTime);
+
+            // Formatear la respuesta con el tiempo
+            const formattedTime = formatResponseTime(responseTime);
+            const responseContent = response.data.choices[0].message.content;
+            return `⏱️ Respuesta generada en ${formattedTime}\n\n${responseContent}`;
         } catch (error) {
             console.error("Error fetching response from Groq:", error);
 
@@ -264,6 +285,7 @@ export const App = () => {
                                         messages: Array<{
                                             role: string;
                                             text?: string;
+                                            id?: string;
                                         }>;
                                     }
                                 ).messages
@@ -292,8 +314,18 @@ export const App = () => {
                                     lastUserMessage.text
                                 );
 
+                                // Generar un ID único para esta solicitud y registrar el tiempo de inicio
+                                const requestId = `req_${Date.now()}_${Math.random()
+                                    .toString(36)
+                                    .substr(2, 9)}`;
+                                requestStartTimeRef.current[requestId] =
+                                    Date.now();
+
                                 // Usar la función reutilizable para obtener la respuesta
-                                fetchGroqResponse(lastUserMessage.text)
+                                fetchGroqResponse(
+                                    lastUserMessage.text,
+                                    requestId
+                                )
                                     .then((responseText) => {
                                         console.log(
                                             "Respuesta recibida:",
@@ -308,6 +340,11 @@ export const App = () => {
                                                 }) => void;
                                             }
                                         ).onResponse({ text: responseText });
+
+                                        // Limpiar el registro del tiempo para este requestId
+                                        delete requestStartTimeRef.current[
+                                            requestId
+                                        ];
                                     })
                                     .catch((error) => {
                                         console.error(
@@ -323,6 +360,11 @@ export const App = () => {
                                         ).onResponse({
                                             text: "Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.",
                                         });
+
+                                        // Limpiar el registro del tiempo para este requestId
+                                        delete requestStartTimeRef.current[
+                                            requestId
+                                        ];
                                     });
                             } catch (error) {
                                 console.error(
