@@ -1,7 +1,7 @@
 {
     "name": "web-chat",
     "private": true,
-    "version": "v.1.30",
+    "version": "v.1.05",
     "type": "module",
     "scripts": {
         "bun-install": "bun install",
@@ -11,7 +11,7 @@
         "build": "tsc -b && vite build --outDir ./docs",
         "lint": "eslint .",
         "preview": "vite preview --host",
-        "deploy": "surge dist --domain deepchat.surge.sh"
+        "deploy": "surge docs --domain deepchat.surge.sh"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.1.4",

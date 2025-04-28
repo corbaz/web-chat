@@ -4,7 +4,7 @@ import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useRef, useState } from "react";
 
 // Constante de versión para mostrar junto al título
-const APP_VERSION = "v.1.03";
+const APP_VERSION = "v.1.05";
 
 import { DeepChat } from "deep-chat-react";
 import ModelSelector from "./components/ModelSelector";
