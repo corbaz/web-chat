@@ -18,7 +18,7 @@ bun create vite@latest web-chat
         "bun-upgrade": "bun upgrade",
         "ncu": "npx -y npm-check-updates -u && bun update",
         "dev": "vite --host",
-        "build": "tsc -b && vite build",
+        "build": "tsc -b && vite build ./docs",
         "lint": "eslint .",
         "preview": "vite preview --host",
         "deploy": "surge dist --domain deepchat.surge.sh"
@@ -128,4 +128,11 @@ curl -X GET "https://api.groq.com/openai/v1/models" \
      -H "Content-Type: application/json"
 ```
 
-### fin
+---
+
+### Repositorio en GitHub
+Repositorio: [https://github.com/corbaz/
+
+### Deploy en Surge
+Deploy [https://deepchat.surge.sh/]
+
