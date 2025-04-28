@@ -131,8 +131,10 @@ curl -X GET "https://api.groq.com/openai/v1/models" \
 ---
 
 ### Repositorio en GitHub
-Repositorio: [https://github.com/corbaz/
+Repositorio: [https://github.com/corbaz/web-chat]
 
-### Deploy en Surge
-Deploy [https://deepchat.surge.sh/]
+### Deploy
+Deploy en surge: [https://deepchat.surge.sh/]
+
+Deploy en github pages: [https://corbaz.github.io/web-chat/]
 
