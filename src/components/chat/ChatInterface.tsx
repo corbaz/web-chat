@@ -46,10 +46,11 @@ interface ChatInterfaceProps {
     theme: ColorPalette;
     isDarkTheme: boolean;
     selectedModel: string;
+    toggleTheme: () => void;
 }
 
 const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
-    ({ theme, isDarkTheme, selectedModel }, ref) => {
+    ({ theme, isDarkTheme, selectedModel, toggleTheme }, ref) => {
         // Estado para almacenar los mensajes del chat
         const [messages, setMessages] = useState<ChatMessageType[]>([]);
         const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -317,13 +318,14 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
 
         return (
             <div
-                className="flex flex-col w-full max-w-4xl h-[calc(100vh-180px)] bg-opacity-70 rounded-lg overflow-hidden"
+                className="flex flex-col w-full max-w-full md:max-w-5xl lg:max-w-6xl xl:max-w-7xl h-[calc(100vh-180px)] bg-opacity-70 rounded-lg overflow-hidden"
                 style={{
                     backgroundColor: isDarkTheme
                         ? theme.input.background
                         : theme.input.text,
                     border: `1px solid ${theme.accent}`,
                     boxShadow: `0px 0px 10px ${theme.accent}`,
+                    maxWidth: "calc(100vw - 32px)", // Asegurar que no exceda el ancho visible menos el padding
                 }}
             >
                 {/* Área de mensajes */}
@@ -366,6 +368,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
                 <MessageInput
                     ref={inputRef}
                     onSendMessage={sendMessage}
+                    toggleTheme={toggleTheme}
                     theme={theme}
                     isDarkTheme={isDarkTheme}
                     isLoading={isLoading}

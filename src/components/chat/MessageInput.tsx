@@ -14,13 +14,14 @@ export interface MessageInputRef {
 
 interface MessageInputProps {
     onSendMessage: (message: string) => void;
+    toggleTheme: () => void;
     theme: ColorPalette;
     isDarkTheme: boolean;
     isLoading: boolean;
 }
 
 const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
-    ({ onSendMessage, theme, isDarkTheme, isLoading }, ref) => {
+    ({ onSendMessage, toggleTheme, theme, isDarkTheme, isLoading }, ref) => {
         const [message, setMessage] = useState("");
         const textareaRef = useRef<HTMLTextAreaElement>(null);
         const mobileDevice = typeof window !== "undefined" && isMobile();
@@ -161,56 +162,107 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                     </button>
                 </div>
 
-                {/* Barra de herramientas */}
+                {/* Barra de herramientas - Convertida a grid */}
                 <div
-                    className="flex items-center justify-between mt-3 rounded-lg"
+                    className="grid grid-cols-3 items-center mt-3 mb-3 rounded-lg"
                     style={{
                         backgroundColor: isDarkTheme
                             ? "rgba(255, 255, 255, 0.05)"
                             : "rgba(0, 0, 0, 0.03)",
                         border: `1px solid ${theme.accent}`,
                         minHeight: "36px",
-                        padding: "0 8px",
+                        padding: "4px 8px",
                     }}
                 >
-                    {/* Botón de limpieza en la barra de herramientas */}
-                    <button
-                        onClick={handleClearText}
-                        className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
-                            message.length > 0
-                                ? "opacity-100"
-                                : "opacity-50 cursor-not-allowed"
-                        }`}
-                        style={{
-                            backgroundColor:
+                    {/* Botón de limpieza - Columna izquierda */}
+                    <div className="justify-self-start">
+                        <button
+                            onClick={handleClearText}
+                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
                                 message.length > 0
-                                    ? theme.button.background
-                                    : isDarkTheme
-                                    ? "rgba(255, 255, 255, 0.1)"
-                                    : "rgba(0, 0, 0, 0.08)",
-                            color: theme.button.text,
-                        }}
-                        disabled={message.length === 0}
-                        title="Borrar Mensaje"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            className="w-4 h-4 md:w-5 md:h-5"
+                                    ? "opacity-100"
+                                    : "opacity-50 cursor-not-allowed"
+                            }`}
+                            style={{
+                                backgroundColor:
+                                    message.length > 0
+                                        ? theme.button.background
+                                        : isDarkTheme
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
+                                color: theme.button.text,
+                            }}
+                            disabled={message.length === 0}
+                            title="Borrar Mensaje"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                        </svg>
-                    </button>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                className="w-4 h-4 md:w-5 md:h-5"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                            </svg>
+                        </button>
+                    </div>
 
-                    {/* Espacio para futuros botones de herramientas */}
-                    <div className="flex-grow"></div>
+                    {/* Espacio para futuros botones - Columna central */}
+                    <div className="justify-self-center"></div>
+
+                    {/* Switch de tema - Columna derecha */}
+                    <div className="justify-self-end">
+                        <label className="switch" title="Cambiar tema">
+                            <input
+                                type="checkbox"
+                                checked={!isDarkTheme}
+                                onChange={toggleTheme}
+                            />
+                            <span
+                                className="slider round"
+                                style={{
+                                    backgroundColor: isDarkTheme
+                                        ? theme.accent
+                                        : theme.secondary,
+                                    boxShadow: `0 0 5px ${theme.accent}`,
+                                }}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="sun-icon"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                                    />
+                                </svg>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="moon-icon"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0012 21a9.003 9.003 0 008.354-5.646z"
+                                    />
+                                </svg>
+                            </span>
+                        </label>
+                    </div>
                 </div>
             </div>
         );
