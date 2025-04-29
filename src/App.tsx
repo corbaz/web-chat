@@ -4,7 +4,7 @@ import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useState, useRef } from "react";
 
 // Constante de versión para mostrar junto al título
-const APP_VERSION = "v.2.05";
+const APP_VERSION = "v.2.06";
 
 import ModelSelector from "./components/ModelSelector";
 import { groqModels } from "./components/models/groqModels";
@@ -45,6 +45,16 @@ export const App = () => {
         // Inicializar el tema
         setTheme(isDarkTheme ? darkTheme : lightTheme);
     }, [isDarkTheme]);
+
+    // Nuevo efecto para enfocar el textarea al cargar la app
+    useEffect(() => {
+        // Pequeño timeout para asegurar que los componentes estén completamente cargados
+        const timer = setTimeout(() => {
+            chatInterfaceRef.current?.focusTextarea();
+        }, 300);
+        
+        return () => clearTimeout(timer);
+    }, []); // Se ejecuta solo una vez al montar el componente
 
     return (
         <div className="App" style={{ backgroundColor: theme.background }}>

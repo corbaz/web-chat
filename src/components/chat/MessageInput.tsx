@@ -100,15 +100,18 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         : theme.input.text,
                 }}
             >
-                {/* Textarea para el mensaje */}
-                <div className="relative flex-grow">
+                {/* Área de entrada de texto */}
+                <div
+                    className="flex items-center rounded-lg border"
+                    style={{ border: `1px solid ${theme.accent}` }}
+                >
                     <textarea
                         ref={textareaRef}
                         value={message}
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
                         placeholder="Escribe un mensaje..."
-                        className="w-full p-3 rounded-lg resize-none overflow-hidden min-h-[40px] max-h-[150px] flex items-center"
+                        className="flex-grow p-2 md:p-3 resize-none overflow-hidden min-h-[40px] max-h-[150px] bg-transparent rounded-l-lg"
                         style={{
                             backgroundColor: isDarkTheme
                                 ? "rgba(255, 255, 255, 0.1)"
@@ -116,19 +119,19 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             color: isDarkTheme
                                 ? theme.input.text
                                 : theme.input.background,
-                            border: `1px solid ${theme.accent}`,
-                            lineHeight: "20px", // Asegura que el texto esté centrado verticalmente
-                            paddingTop: "10px", // Ajusta el padding superior para centrar mejor
-                            paddingBottom: "10px", // Ajusta el padding inferior
-                            paddingLeft: "12px", // Ya no necesitamos el padding extra a la izquierda
-                            paddingRight: "40px", // Ajusta el padding derecho para el botón de enviar
+                            lineHeight: "20px",
+                            paddingTop: "10px",
+                            paddingBottom: "10px",
+                            border: "none",
+                            outline: "none",
                         }}
                         disabled={isLoading}
                     />
+
                     <button
                         onClick={handleSendMessage}
                         title="Enviar Pregunta"
-                        className={`absolute p-2 rounded-full flex items-center justify-center ${
+                        className={`p-2 rounded-r-lg flex items-center justify-center h-full ${
                             message.trim() && !isLoading
                                 ? "opacity-100"
                                 : "opacity-50 cursor-not-allowed"
@@ -136,9 +139,8 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         style={{
                             backgroundColor: theme.button.background,
                             color: theme.button.text,
-                            right: "8px", // Ajuste horizontal
-                            top: "50%", // Posicionar en el centro vertical
-                            transform: "translateY(-50%)", // Centrar perfectamente
+                            minWidth: "40px",
+                            borderLeft: `1px solid ${theme.accent}`,
                         }}
                         disabled={!message.trim() || isLoading}
                     >
@@ -161,13 +163,14 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
 
                 {/* Barra de herramientas */}
                 <div
-                    className="flex items-center mt-3 p-3 rounded-lg"
+                    className="flex items-center justify-between mt-3 rounded-lg"
                     style={{
                         backgroundColor: isDarkTheme
                             ? "rgba(255, 255, 255, 0.05)"
                             : "rgba(0, 0, 0, 0.03)",
-                        border: `1px solid ${theme.accent}`, // Mismo borde que el textarea
-                        height: "36px",
+                        border: `1px solid ${theme.accent}`,
+                        minHeight: "36px",
+                        padding: "0 8px",
                     }}
                 >
                     {/* Botón de limpieza en la barra de herramientas */}
@@ -183,19 +186,19 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                 message.length > 0
                                     ? theme.button.background
                                     : isDarkTheme
-                                    ? "rgba(255, 255, 255, 0.3)"
-                                    : "rgba(0, 0, 0, 0.3)",
+                                    ? "rgba(255, 255, 255, 0.1)"
+                                    : "rgba(0, 0, 0, 0.08)",
                             color: theme.button.text,
                         }}
                         disabled={message.length === 0}
-                        title="Borrar mensaje"
+                        title="Borrar Mensaje"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
-                            className="w-5 h-5"
+                            className="w-4 h-4 md:w-5 md:h-5"
                         >
                             <path
                                 strokeLinecap="round"
@@ -205,6 +208,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             />
                         </svg>
                     </button>
+
                     {/* Espacio para futuros botones de herramientas */}
                     <div className="flex-grow"></div>
                 </div>
