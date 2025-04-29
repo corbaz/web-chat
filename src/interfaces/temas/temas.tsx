@@ -40,6 +40,8 @@ export interface ColorPalette {
     };
     button: {
         filter: string;
+        background: string;
+        text: string;
     };
 }
 
@@ -85,6 +87,8 @@ export const lightTheme: ColorPalette = {
     },
     button: {
         filter: "invert(55%) sepia(9%) saturate(1083%) hue-rotate(222deg) brightness(88%) contrast(87%)", // Filtro para botones en tono púrpura
+        background: "#b8a0c9", // Lila/púrpura claro para botones
+        text: "#ffffff", // Texto blanco para contraste
     },
 };
 
@@ -130,6 +134,8 @@ export const darkTheme: ColorPalette = {
     },
     button: {
         filter: "invert(67%) sepia(29%) saturate(721%) hue-rotate(242deg) brightness(88%) contrast(85%)", // Filtro para botones en tono púrpura
+        background: "#8060a9", // Púrpura medio para botones
+        text: "#ffffff", // Texto blanco para botones
     },
 };
 
