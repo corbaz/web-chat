@@ -46,9 +46,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     {message.content}
                 </div>
 
-                {!isUser && message.responseTime && (
-                    <div className="text-xs opacity-70 mt-2 text-right">
-                        ⏱️ Respuesta generada en {message.responseTime}
+                {!isUser && (
+                    <div className="flex flex-col space-y-1 mt-2">
+                        {message.responseTime && (
+                            <div className="text-xs opacity-70 text-right">
+                                ⏱️ Respuesta generada en {message.responseTime}
+                            </div>
+                        )}
+
+                        {message.tokensUsed !== undefined &&
+                            message.tokenLimit !== undefined && (
+                                <div className="text-xs opacity-70 text-right">
+                                    📊 Tokens enviados: {message.tokensUsed} /{" "}
+                                    {message.tokenLimit}
+                                </div>
+                            )}
                     </div>
                 )}
             </div>

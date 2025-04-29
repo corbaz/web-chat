@@ -18,6 +18,8 @@ export interface ChatMessageType {
     content: string;
     timestamp: number;
     responseTime?: string; // Tiempo que tardó en generarse la respuesta (solo para mensajes del asistente)
+    tokensUsed?: number; // Número de tokens utilizados en la petición
+    tokenLimit?: number; // Límite de tokens del modelo seleccionado
 }
 
 // Interfaz para el mensaje que se envía a la API de Groq
@@ -205,7 +207,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 selectedModel
             );
 
+            // Obtener información de tokens para mostrarlos en la interfaz
+            const totalTokensUsed = estimateMessagesTokens(apiMessages);
+            const modelTokenLimit = getModelTokenLimit(selectedModel);
+
             console.log("Enviando mensajes a Groq API:", apiMessages);
+            console.log(
+                `Tokens estimados: ${totalTokensUsed} / ${modelTokenLimit}`
+            );
 
             const response = await axios.post(
                 "https://api.groq.com/openai/v1/chat/completions",
@@ -231,7 +240,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 endTime - (requestStartTimeRef.current[requestId] || endTime);
             const formattedTime = formatResponseTime(responseTime);
 
-            // Añadir respuesta del asistente
+            // Añadir respuesta del asistente con información de tokens
             const assistantMessage: ChatMessageType = {
                 id: `assistant_${Date.now()}_${Math.random()
                     .toString(36)
@@ -240,6 +249,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 content: response.data.choices[0].message.content,
                 timestamp: Date.now(),
                 responseTime: formattedTime,
+                tokensUsed: totalTokensUsed,
+                tokenLimit: modelTokenLimit,
             };
 
             setMessages((prev) => [...prev, assistantMessage]);
