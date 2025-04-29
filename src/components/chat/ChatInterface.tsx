@@ -318,23 +318,21 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
 
         return (
             <div
-                className="flex flex-col w-full max-w-full md:max-w-5xl lg:max-w-6xl xl:max-w-7xl h-[calc(100vh-180px)] bg-opacity-70 rounded-lg overflow-hidden"
+                className="flex flex-col relative w-full max-w-full md:max-w-5xl lg:max-w-6xl xl:max-w-7xl h-[calc(100vh-160px)]"
                 style={{
-                    backgroundColor: isDarkTheme
-                        ? theme.input.background
-                        : theme.input.text,
-                    border: `1px solid ${theme.accent}`,
-                    boxShadow: `0px 0px 10px ${theme.accent}`,
                     maxWidth: "calc(100vw - 32px)", // Asegurar que no exceda el ancho visible menos el padding
                 }}
             >
-                {/* Área de mensajes */}
+                {/* Área de mensajes con scroll */}
                 <div
-                    className="flex-grow overflow-y-auto p-4 space-y-4"
+                    className="flex-grow overflow-y-auto p-4 space-y-4 rounded-t-lg"
                     style={{
                         backgroundColor: isDarkTheme
                             ? theme.background
                             : theme.secondary,
+                        border: `1px solid ${theme.accent}`,
+                        borderBottom: "none",
+                        height: "calc(100% - 120px)",
                     }}
                 >
                     {messages.map((message) => (
@@ -364,15 +362,33 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Área de input */}
-                <MessageInput
-                    ref={inputRef}
-                    onSendMessage={sendMessage}
-                    toggleTheme={toggleTheme}
-                    theme={theme}
-                    isDarkTheme={isDarkTheme}
-                    isLoading={isLoading}
-                />
+                {/* Área de input fija en la parte inferior */}
+                <div
+                    className="fixed bottom-0 left-0 right-0 px-4 py-2 z-10"
+                    style={{
+                        backgroundColor: theme.background,
+                        maxWidth: "100%",
+                        margin: "0 auto",
+                        display: "flex",
+                        justifyContent: "center",
+                    }}
+                >
+                    <div
+                        className="w-full max-w-full md:max-w-5xl lg:max-w-6xl xl:max-w-7xl"
+                        style={{
+                            maxWidth: "calc(100vw - 32px)",
+                        }}
+                    >
+                        <MessageInput
+                            ref={inputRef}
+                            onSendMessage={sendMessage}
+                            toggleTheme={toggleTheme}
+                            theme={theme}
+                            isDarkTheme={isDarkTheme}
+                            isLoading={isLoading}
+                        />
+                    </div>
+                </div>
             </div>
         );
     }

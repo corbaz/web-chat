@@ -103,7 +103,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             >
                 {/* Área de entrada de texto */}
                 <div
-                    className="flex items-center rounded-lg border"
+                    className="flex items-stretch rounded-lg border"
                     style={{ border: `1px solid ${theme.accent}` }}
                 >
                     <textarea
@@ -132,16 +132,16 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                     <button
                         onClick={handleSendMessage}
                         title="Enviar Pregunta"
-                        className={`p-2 rounded-r-lg flex items-center justify-center h-full ${
-                            message.trim() && !isLoading
+                        className={`rounded-r-lg flex items-center justify-center ${message.trim() && !isLoading
                                 ? "opacity-100"
                                 : "opacity-50 cursor-not-allowed"
-                        }`}
+                            }`}
                         style={{
                             backgroundColor: theme.button.background,
                             color: theme.button.text,
-                            minWidth: "40px",
+                            minWidth: "45px",
                             borderLeft: `1px solid ${theme.accent}`,
+                            height: "auto", // Asegura que el botón tome la altura completa del contenedor
                         }}
                         disabled={!message.trim() || isLoading}
                     >
@@ -178,18 +178,17 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                     <div className="justify-self-start">
                         <button
                             onClick={handleClearText}
-                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
-                                message.length > 0
+                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${message.length > 0
                                     ? "opacity-100"
                                     : "opacity-50 cursor-not-allowed"
-                            }`}
+                                }`}
                             style={{
                                 backgroundColor:
                                     message.length > 0
                                         ? theme.button.background
                                         : isDarkTheme
-                                        ? "rgba(255, 255, 255, 0.1)"
-                                        : "rgba(0, 0, 0, 0.08)",
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.08)",
                                 color: theme.button.text,
                             }}
                             disabled={message.length === 0}

@@ -4,7 +4,7 @@ import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useState, useRef } from "react";
 
 // Constante de versión para mostrar junto al título
-const APP_VERSION = "v.2.06";
+const APP_VERSION = "v.2.07";
 
 import ModelSelector from "./components/ModelSelector";
 import { groqModels } from "./components/models/groqModels";
@@ -58,41 +58,49 @@ export const App = () => {
 
     return (
         <div
-            className="App"
+            className="App flex flex-col h-screen w-full overflow-hidden"
             style={{
                 backgroundColor: theme.background,
-                overflowX: "hidden",
                 maxWidth: "100vw",
             }}
         >
-            <div className="flex flex-col items-center pt-4 md:pt-10">
-                <div className="flex items-end">
-                    <h1
-                        className="text-4xl md:text-6xl font-bold text-center"
-                        style={{ color: theme.title.color }}
-                    >
-                        PROMPTING
-                    </h1>
-                    <span
-                        className="text-sm ml-2 mb-1 md:mb-3"
-                        style={{ color: theme.title.color }}
-                    >
-                        {APP_VERSION}
-                    </span>
+            {/* Cabecera fija */}
+            <header
+                className="fixed top-0 left-0 right-0 z-10 px-4 py-3 shadow-md"
+                style={{
+                    backgroundColor: theme.background,
+                }}
+            >
+                <div className="flex flex-col items-center">
+                    <div className="flex items-end mb-2">
+                        <h1
+                            className="text-3xl md:text-5xl font-bold text-center"
+                            style={{ color: theme.title.color }}
+                        >
+                            PROMPTING
+                        </h1>
+                        <span
+                            className="text-sm ml-2 mb-1"
+                            style={{ color: theme.title.color }}
+                        >
+                            {APP_VERSION}
+                        </span>
+                    </div>
+
+                    {/* Selector de modelo */}
+                    <div className="w-full flex justify-center">
+                        <ModelSelector
+                            selectedModel={selectedModel}
+                            onModelChange={handleModelChange}
+                            theme={theme}
+                            isDarkTheme={isDarkTheme}
+                        />
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Model selector positioned above the chat */}
-            <div className="w-full flex justify-center mb-4">
-                <ModelSelector
-                    selectedModel={selectedModel}
-                    onModelChange={handleModelChange}
-                    theme={theme}
-                    isDarkTheme={isDarkTheme}
-                />
-            </div>
-
-            <div className="flex justify-center px-2 md:px-4 lg:px-8 pb-6 w-full">
+            {/* Contenido principal (mensajes) con scroll */}
+            <main className="flex-grow overflow-hidden pt-32 pb-40">
                 <ChatInterface
                     ref={chatInterfaceRef}
                     theme={theme}
@@ -100,7 +108,7 @@ export const App = () => {
                     selectedModel={selectedModel}
                     toggleTheme={toggleTheme}
                 />
-            </div>
+            </main>
         </div>
     );
 };
