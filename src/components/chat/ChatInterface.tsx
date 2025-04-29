@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ColorPalette } from "../../interfaces/temas/temas";
 import ChatMessage from "./ChatMessage.tsx";
-import MessageInput from "./MessageInput.tsx";
+import MessageInput, { MessageInputRef } from "./MessageInput.tsx";
 import { formatResponseTime } from "../../utils/timeUtils.ts";
 import {
     estimateMessagesTokens,
@@ -44,6 +44,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<MessageInputRef>(null);
     const requestStartTimeRef = useRef<Record<string, number>>({});
 
     // Cargar mensajes desde localStorage al iniciar
@@ -242,6 +243,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             };
 
             setMessages((prev) => [...prev, assistantMessage]);
+
+            // Enfocar el input después de un pequeño retraso para asegurar que la UI se ha actualizado
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
         } catch (error) {
             console.error("Error al obtener respuesta:", error);
 
@@ -267,6 +273,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             };
 
             setMessages((prev) => [...prev, errorResponseMessage]);
+
+            // Enfocar el input también después de un error
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
         } finally {
             setIsLoading(false);
             delete requestStartTimeRef.current[requestId];
@@ -322,6 +333,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             {/* Área de input */}
             <MessageInput
+                ref={inputRef}
                 onSendMessage={sendMessage}
                 theme={theme}
                 isDarkTheme={isDarkTheme}

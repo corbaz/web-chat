@@ -42,12 +42,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                         "0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)",
                 }}
             >
+                <div className="whitespace-pre-wrap text-left">
+                    {message.content}
+                </div>
+
                 {!isUser && message.responseTime && (
-                    <div className="text-xs opacity-70 mb-1">
+                    <div className="text-xs opacity-70 mt-2 text-right">
                         ⏱️ Respuesta generada en {message.responseTime}
                     </div>
                 )}
-                <div className="whitespace-pre-wrap">{message.content}</div>
             </div>
         </div>
     );
