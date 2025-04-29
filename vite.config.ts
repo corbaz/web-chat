@@ -16,8 +16,6 @@ export default defineConfig({
                 manualChunks: {
                     // Chunk para React y React DOM
                     vendor: ["react", "react-dom"],
-                    // Chunk para la librería de chat
-                    chat: ["deep-chat-react"],
                     // Chunk para utilidades como axios
                     utils: ["axios"],
                 },

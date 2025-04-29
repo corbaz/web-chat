@@ -1,10 +1,10 @@
-import "./style.css";
+//import "./style.css";
 
 import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { useEffect, useState } from "react";
 
 // Constante de versión para mostrar junto al título
-const APP_VERSION = "v.2.00";
+const APP_VERSION = "v.2.01";
 
 import ModelSelector from "./components/ModelSelector";
 import { groqModels } from "./components/models/groqModels";
