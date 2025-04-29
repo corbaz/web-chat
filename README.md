@@ -162,7 +162,74 @@ Como complemento de Vite es la forma más sencilla de integrarlo con marcos como
     <h1 class="text-3xl font-bold underline">
       Hello world!
     </h1>
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path></svg>
+    {/* Botón de limpieza en la barra de herramientas */}
+    <button
+        onClick={handleClearText}
+        className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
+            message.length > 0
+                ? "opacity-100"
+                : "opacity-50 cursor-not-allowed"
+        }`}
+        style={{
+            backgroundColor:
+                message.length > 0
+                    ? theme.button.background
+                    : isDarkTheme
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "rgba(0, 0, 0, 0.08)",
+            color: theme.button.text,
+        }}
+        disabled={message.length === 0}
+        title="Borrar mensaje"
+    >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            className="w-5 h-5"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+        </svg>
+    </button>
+    {/* Botón de enviar mensaje */}
+    <button
+          onClick={handleSendMessage}
+          title="Enviar Pregunta"
+          className={`absolute p-2 rounded-full flex items-center justify-center ${
+              message.trim() && !isLoading
+                  ? "opacity-100"
+                  : "opacity-50 cursor-not-allowed"
+          }`}
+          style={{
+              backgroundColor: theme.button.background,
+              color: theme.button.text,
+              right: "8px", // Ajuste horizontal
+              top: "50%", // Posicionar en el centro vertical
+              transform: "translateY(-50%)", // Centrar perfectamente
+          }}
+          disabled={!message.trim() || isLoading}
+      >
+          <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              className="w-5 h-5"
+          >
+              <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+              ></path>
+          </svg>
+    </button>
   </body>
   </html>
   ```

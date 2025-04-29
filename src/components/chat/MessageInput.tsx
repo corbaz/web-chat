@@ -92,7 +92,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
 
         return (
             <div
-                className="border-t p-3 flex items-end bg-opacity-80"
+                className="border-t p-3 flex flex-col bg-opacity-80"
                 style={{
                     borderColor: theme.accent,
                     backgroundColor: isDarkTheme
@@ -100,38 +100,8 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         : theme.input.text,
                 }}
             >
+                {/* Textarea para el mensaje */}
                 <div className="relative flex-grow">
-                    {/* Botón de limpieza en el lado izquierdo */}
-                    {message.length > 0 && (
-                        <button
-                            onClick={handleClearText}
-                            className="absolute p-2 rounded-full flex items-center justify-center opacity-100"
-                            style={{
-                                backgroundColor: theme.button.background,
-                                color: theme.button.text,
-                                left: "8px", // Ajuste horizontal izquierdo
-                                top: "50%", // Posicionar en el centro vertical
-                                transform: "translateY(-50%)", // Centrar perfectamente
-                                zIndex: 10, // Asegurar que esté por encima del textarea
-                            }}
-                            title="Limpiar texto"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                className="w-5 h-5"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                    )}
                     <textarea
                         ref={textareaRef}
                         value={message}
@@ -150,13 +120,14 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             lineHeight: "20px", // Asegura que el texto esté centrado verticalmente
                             paddingTop: "10px", // Ajusta el padding superior para centrar mejor
                             paddingBottom: "10px", // Ajusta el padding inferior
-                            paddingLeft: message.length > 0 ? "48px" : "12px", // Aumentado de 40px a 48px para dar más espacio
+                            paddingLeft: "12px", // Ya no necesitamos el padding extra a la izquierda
                             paddingRight: "40px", // Ajusta el padding derecho para el botón de enviar
                         }}
                         disabled={isLoading}
                     />
                     <button
                         onClick={handleSendMessage}
+                        title="Enviar Pregunta"
                         className={`absolute p-2 rounded-full flex items-center justify-center ${
                             message.trim() && !isLoading
                                 ? "opacity-100"
@@ -175,17 +146,67 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
-                            strokeWidth="1.5"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Barra de herramientas */}
+                <div
+                    className="flex items-center mt-3 p-3 rounded-lg"
+                    style={{
+                        backgroundColor: isDarkTheme
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(0, 0, 0, 0.03)",
+                        border: `1px solid ${theme.accent}`, // Mismo borde que el textarea
+                        height: "36px",
+                    }}
+                >
+                    {/* Botón de limpieza en la barra de herramientas */}
+                    <button
+                        onClick={handleClearText}
+                        className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
+                            message.length > 0
+                                ? "opacity-100"
+                                : "opacity-50 cursor-not-allowed"
+                        }`}
+                        style={{
+                            backgroundColor:
+                                message.length > 0
+                                    ? theme.button.background
+                                    : isDarkTheme
+                                    ? "rgba(255, 255, 255, 0.3)"
+                                    : "rgba(0, 0, 0, 0.3)",
+                            color: theme.button.text,
+                        }}
+                        disabled={message.length === 0}
+                        title="Borrar mensaje"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
                             stroke="currentColor"
                             className="w-5 h-5"
                         >
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-                            ></path>
+                                strokeWidth="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                         </svg>
                     </button>
+                    {/* Espacio para futuros botones de herramientas */}
+                    <div className="flex-grow"></div>
                 </div>
             </div>
         );
