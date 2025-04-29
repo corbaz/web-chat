@@ -52,7 +52,7 @@ export const App = () => {
         const timer = setTimeout(() => {
             chatInterfaceRef.current?.focusTextarea();
         }, 300);
-        
+
         return () => clearTimeout(timer);
     }, []); // Se ejecuta solo una vez al montar el componente
 
