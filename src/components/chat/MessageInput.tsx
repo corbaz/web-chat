@@ -81,6 +81,15 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             }
         };
 
+        // Función para limpiar el texto del textarea
+        const handleClearText = () => {
+            setMessage("");
+            if (textareaRef.current) {
+                textareaRef.current.style.height = "auto";
+                textareaRef.current.focus();
+            }
+        };
+
         return (
             <div
                 className="border-t p-3 flex items-end bg-opacity-80"
@@ -92,13 +101,44 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                 }}
             >
                 <div className="relative flex-grow">
+                    {/* Botón de limpieza en el lado izquierdo */}
+                    {message.length > 0 && (
+                        <button
+                            onClick={handleClearText}
+                            className="absolute p-2 rounded-full flex items-center justify-center opacity-100"
+                            style={{
+                                backgroundColor: theme.button.background,
+                                color: theme.button.text,
+                                left: "8px", // Ajuste horizontal izquierdo
+                                top: "50%", // Posicionar en el centro vertical
+                                transform: "translateY(-50%)", // Centrar perfectamente
+                                zIndex: 10, // Asegurar que esté por encima del textarea
+                            }}
+                            title="Limpiar texto"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                className="w-5 h-5"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+                    )}
                     <textarea
                         ref={textareaRef}
                         value={message}
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
                         placeholder="Escribe un mensaje..."
-                        className="w-full p-3 pr-12 rounded-lg resize-none overflow-hidden min-h-[40px] max-h-[150px] flex items-center"
+                        className="w-full p-3 rounded-lg resize-none overflow-hidden min-h-[40px] max-h-[150px] flex items-center"
                         style={{
                             backgroundColor: isDarkTheme
                                 ? "rgba(255, 255, 255, 0.1)"
@@ -110,6 +150,8 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             lineHeight: "20px", // Asegura que el texto esté centrado verticalmente
                             paddingTop: "10px", // Ajusta el padding superior para centrar mejor
                             paddingBottom: "10px", // Ajusta el padding inferior
+                            paddingLeft: message.length > 0 ? "48px" : "12px", // Aumentado de 40px a 48px para dar más espacio
+                            paddingRight: "40px", // Ajusta el padding derecho para el botón de enviar
                         }}
                         disabled={isLoading}
                     />
@@ -133,13 +175,13 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
-                            stroke-width="1.5"
+                            strokeWidth="1.5"
                             stroke="currentColor"
                             className="w-5 h-5"
                         >
                             <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                                 d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
                             ></path>
                         </svg>
