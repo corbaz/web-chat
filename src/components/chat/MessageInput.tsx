@@ -15,13 +15,26 @@ export interface MessageInputRef {
 interface MessageInputProps {
     onSendMessage: (message: string) => void;
     toggleTheme: () => void;
+    clearContext?: () => void; // Función para borrar el historial completo (opcional)
+    hasContext?: boolean; // Indica si hay mensajes en el historial para borrar
     theme: ColorPalette;
     isDarkTheme: boolean;
     isLoading: boolean;
 }
 
 const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
-    ({ onSendMessage, toggleTheme, theme, isDarkTheme, isLoading }, ref) => {
+    (
+        {
+            onSendMessage,
+            toggleTheme,
+            clearContext,
+            hasContext = false,
+            theme,
+            isDarkTheme,
+            isLoading,
+        },
+        ref
+    ) => {
         const [message, setMessage] = useState("");
         const textareaRef = useRef<HTMLTextAreaElement>(null);
         const mobileDevice = typeof window !== "undefined" && isMobile();
@@ -132,10 +145,11 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                     <button
                         onClick={handleSendMessage}
                         title="Enviar Pregunta"
-                        className={`rounded-r-lg flex items-center justify-center ${message.trim() && !isLoading
+                        className={`rounded-r-lg flex items-center justify-center ${
+                            message.trim() && !isLoading
                                 ? "opacity-100"
                                 : "opacity-50 cursor-not-allowed"
-                            }`}
+                        }`}
                         style={{
                             backgroundColor: theme.button.background,
                             color: theme.button.text,
@@ -149,13 +163,13 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
-                            stroke-width="1.5"
+                            strokeWidth="1.5"
                             stroke="currentColor"
                             className="w-5 h-5"
                         >
                             <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                                 d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
                             ></path>
                         </svg>
@@ -174,21 +188,23 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         padding: "4px 8px",
                     }}
                 >
-                    {/* Botón de limpieza - Columna izquierda */}
-                    <div className="justify-self-start">
+                    {/* Botones de limpieza - Columna izquierda */}
+                    <div className="justify-self-start flex items-center space-x-2">
+                        {/* Botón de papelera para limpiar el mensaje actual */}
                         <button
                             onClick={handleClearText}
-                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${message.length > 0
+                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
+                                message.length > 0
                                     ? "opacity-100"
                                     : "opacity-50 cursor-not-allowed"
-                                }`}
+                            }`}
                             style={{
                                 backgroundColor:
                                     message.length > 0
                                         ? theme.button.background
                                         : isDarkTheme
-                                            ? "rgba(255, 255, 255, 0.1)"
-                                            : "rgba(0, 0, 0, 0.08)",
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
                                 color: theme.button.text,
                             }}
                             disabled={message.length === 0}
@@ -209,6 +225,49 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                 />
                             </svg>
                         </button>
+
+                        {/* Botón de escoba para borrar el contexto */}
+                        {clearContext && (
+                            <button
+                                onClick={clearContext}
+                                className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
+                                    hasContext
+                                        ? "opacity-100"
+                                        : "opacity-50 cursor-not-allowed"
+                                }`}
+                                style={{
+                                    backgroundColor: hasContext
+                                        ? theme.button.background
+                                        : isDarkTheme
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
+                                    color: theme.button.text,
+                                }}
+                                disabled={!hasContext}
+                                title="Borrar Contexto"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    className="w-4 h-4 md:w-5 md:h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M3 19l8-8m-1.5-2c0-1 2-1 2 0S12 16 7 16s-5-4.5-5-5c0-.5 3.5-1 3.5-1"
+                                    />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M5 8v.5a4 4 0 004 4h.5"
+                                    />
+                                </svg>
+                            </button>
+                        )}
                     </div>
 
                     {/* Espacio para futuros botones - Columna central */}

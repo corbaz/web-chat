@@ -68,21 +68,50 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
         // Cargar mensajes desde localStorage al iniciar
         useEffect(() => {
             try {
+                console.log("Intentando cargar mensajes desde localStorage...");
                 const storedMessages = localStorage.getItem(STORAGE_KEY);
+                console.log(
+                    "Datos recuperados del localStorage:",
+                    storedMessages ? "Datos encontrados" : "No hay datos"
+                );
+
                 if (storedMessages) {
-                    setMessages(JSON.parse(storedMessages));
-                } else {
-                    // Si no hay mensajes almacenados, establecer mensaje de bienvenida
-                    setMessages([
-                        {
-                            id: "intro-message",
-                            role: "assistant",
-                            content:
-                                "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                            timestamp: Date.now(),
-                        },
-                    ]);
+                    // Si hay mensajes almacenados, usarlos
+                    try {
+                        const parsedMessages = JSON.parse(storedMessages);
+
+                        // Verificar que realmente hay mensajes válidos
+                        if (
+                            parsedMessages &&
+                            Array.isArray(parsedMessages) &&
+                            parsedMessages.length > 0
+                        ) {
+                            console.log(
+                                `Cargados ${parsedMessages.length} mensajes desde localStorage`
+                            );
+                            setMessages(parsedMessages);
+                            return; // Salir del efecto si hay mensajes guardados
+                        } else {
+                            console.log(
+                                "Los mensajes recuperados no son válidos o están vacíos"
+                            );
+                        }
+                    } catch (parseError) {
+                        console.error("Error al parsear mensajes:", parseError);
+                    }
                 }
+
+                // Solo si no hay mensajes guardados o son inválidos, mostrar el mensaje de bienvenida
+                console.log("Mostrando mensaje de bienvenida por defecto");
+                setMessages([
+                    {
+                        id: "intro-message",
+                        role: "assistant",
+                        content:
+                            "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+                        timestamp: Date.now(),
+                    },
+                ]);
             } catch (error) {
                 console.error("Error al cargar mensajes:", error);
                 // Establecer mensaje de bienvenida en caso de error
@@ -96,15 +125,34 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
                     },
                 ]);
             }
-        }, []);
+        }, []); // Ejecutar solo una vez al montar el componente
 
         // Guardar mensajes en localStorage cada vez que cambien
         useEffect(() => {
             if (messages.length > 0) {
                 try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+                    console.log(
+                        `Guardando ${messages.length} mensajes en localStorage`
+                    );
+                    const jsonString = JSON.stringify(messages);
+                    localStorage.setItem(STORAGE_KEY, jsonString);
+
+                    // Verificar que se guardó correctamente
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        console.log(
+                            "Mensajes guardados correctamente en localStorage"
+                        );
+                    } else {
+                        console.error(
+                            "Error: localStorage está vacío después de guardar"
+                        );
+                    }
                 } catch (error) {
-                    console.error("Error al guardar mensajes:", error);
+                    console.error(
+                        "Error al guardar mensajes en localStorage:",
+                        error
+                    );
                 }
             }
         }, [messages]);
@@ -189,6 +237,25 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
 
             // Añadir mensaje de sistema al principio
             return [systemMessage, ...trimmedMessages];
+        };
+
+        // Función para borrar completamente el historial de conversación
+        const clearContext = () => {
+            // Mostrar mensaje de bienvenida después de borrar el historial
+            setMessages([
+                {
+                    id: "intro-message",
+                    role: "assistant",
+                    content:
+                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+                    timestamp: Date.now(),
+                },
+            ]);
+
+            // Enfocar el input después de limpiar el contexto
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
         };
 
         // Función para enviar un mensaje al API de Groq
@@ -325,13 +392,14 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
             >
                 {/* Área de mensajes con scroll */}
                 <div
-                    className="flex-grow overflow-y-auto p-4 space-y-4 rounded-t-lg"
+                    className="flex-grow overflow-y-auto px-4 py-12 space-y-4 rounded-t-lg"
                     style={{
                         backgroundColor: isDarkTheme
                             ? theme.background
                             : theme.secondary,
-                        border: `1px solid ${theme.accent}`,
-                        borderBottom: "none",
+                        borderTop: `1px solid ${theme.accent}`,
+                        borderLeft: `1px solid ${theme.accent}`,
+                        borderRight: `1px solid ${theme.accent}`,
                         height: "calc(100% - 120px)",
                     }}
                 >
@@ -383,6 +451,8 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
                             ref={inputRef}
                             onSendMessage={sendMessage}
                             toggleTheme={toggleTheme}
+                            clearContext={clearContext}
+                            hasContext={messages.length > 1} // Verificar si hay más mensajes aparte del de bienvenida
                             theme={theme}
                             isDarkTheme={isDarkTheme}
                             isLoading={isLoading}
