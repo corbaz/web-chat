@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { isMobile } from "../../utils/mobileUtils.ts";
+import LunaIcon from "../../assets/luna.svg"; // Importando el ícono de luna desde el archivo SVG
+import EscobaIcon from "../../assets/escoba.svg"; // Importando el ícono de escoba desde el archivo SVG
 
 export interface MessageInputRef {
     focus: () => void;
@@ -246,26 +248,16 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                 disabled={!hasContext}
                                 title="Borrar Contexto"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
+                                <img
+                                    src={EscobaIcon}
+                                    alt="Broom Icon"
                                     className="w-4 h-4 md:w-5 md:h-5"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M3 19l8-8m-1.5-2c0-1 2-1 2 0S12 16 7 16s-5-4.5-5-5c0-.5 3.5-1 3.5-1"
-                                    />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M5 8v.5a4 4 0 004 4h.5"
-                                    />
-                                </svg>
+                                    style={{
+                                        filter: "brightness(0) invert(1)", // Para que sea blanco como el otro icono
+                                        width: "100%",
+                                        height: "100%",
+                                    }}
+                                />
                             </button>
                         )}
                     </div>
@@ -304,20 +296,21 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
                                     />
                                 </svg>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
+                                <img
+                                    src={LunaIcon}
+                                    alt="Moon Icon"
                                     className="moon-icon"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0012 21a9.003 9.003 0 008.354-5.646z"
-                                    />
-                                </svg>
+                                    style={{
+                                        width: "16px",
+                                        height: "16px",
+                                        position: "absolute",
+                                        top: "50%",
+                                        left: "7px",
+                                        transform: "translateY(-50%)",
+                                        zIndex: 2,
+                                        color: "yellow",
+                                    }}
+                                />
                             </span>
                         </label>
                     </div>
