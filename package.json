@@ -1,7 +1,7 @@
 {
     "name": "web-chat",
     "private": true,
-    "version": "v.2.08",
+    "version": "v.2.09",
     "type": "module",
     "scripts": {
         "bun-install": "bun install",
@@ -14,11 +14,11 @@
         "deploy": "surge docs --domain deepchat.surge.sh"
     },
     "dependencies": {
-        "@tailwindcss/vite": "^4.1.4",
+        "@tailwindcss/vite": "^4.1.5",
         "axios": "^1.9.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "tailwindcss": "^4.1.4"
+        "tailwindcss": "^4.1.5"
     },
     "devDependencies": {
         "@eslint/js": "^9.25.1",

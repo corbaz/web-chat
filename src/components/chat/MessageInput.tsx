@@ -190,9 +190,8 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         padding: "4px 8px",
                     }}
                 >
-                    {/* Botones de limpieza - Columna izquierda */}
-                    <div className="justify-self-start flex items-center space-x-2">
-                        {/* Botón de papelera para limpiar el mensaje actual */}
+                    {/* Botón de papelera para limpiar el mensaje actual - Columna izquierda */}
+                    <div className="justify-self-start flex items-center">
                         <button
                             onClick={handleClearText}
                             className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
@@ -208,6 +207,8 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                         ? "rgba(255, 255, 255, 0.1)"
                                         : "rgba(0, 0, 0, 0.08)",
                                 color: theme.button.text,
+                                width: "32px", // Tamaño fijo para ambos botones
+                                height: "32px", // Tamaño fijo para ambos botones
                             }}
                             disabled={message.length === 0}
                             title="Borrar Mensaje"
@@ -227,7 +228,13 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                 />
                             </svg>
                         </button>
+                    </div>
 
+                    {/* Espacio para futuros botones - Columna central */}
+                    <div className="justify-self-center"></div>
+
+                    {/* Botón de contexto (escoba) y switch de tema - Columna derecha */}
+                    <div className="justify-self-end flex items-center space-x-2">
                         {/* Botón de escoba para borrar el contexto */}
                         {clearContext && (
                             <button
@@ -244,6 +251,8 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                         ? "rgba(255, 255, 255, 0.1)"
                                         : "rgba(0, 0, 0, 0.08)",
                                     color: theme.button.text,
+                                    width: "32px", // Tamaño fijo para ambos botones
+                                    height: "32px", // Tamaño fijo para ambos botones
                                 }}
                                 disabled={!hasContext}
                                 title="Borrar Contexto"
@@ -254,19 +263,14 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                     className="w-4 h-4 md:w-5 md:h-5"
                                     style={{
                                         filter: "brightness(0) invert(1)", // Para que sea blanco como el otro icono
-                                        width: "100%",
-                                        height: "100%",
+                                        width: "20px",
+                                        height: "20px",
                                     }}
                                 />
                             </button>
                         )}
-                    </div>
 
-                    {/* Espacio para futuros botones - Columna central */}
-                    <div className="justify-self-center"></div>
-
-                    {/* Switch de tema - Columna derecha */}
-                    <div className="justify-self-end">
+                        {/* Switch de tema */}
                         <label className="switch" title="Cambiar tema">
                             <input
                                 type="checkbox"
