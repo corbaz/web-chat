@@ -100,8 +100,8 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                 <span
                                     style={{
                                         color: isDarkTheme
-                                            ? theme.text.color
-                                            : theme.text.background,
+                                            ? theme.text
+                                            : theme.primary,
                                     }}
                                 >
                                     {isDarkTheme ? "Tema Oscuro" : "Tema Claro"}
@@ -178,14 +178,14 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                             htmlFor={`model-${model.id}`}
                                             style={{
                                                 color: isDarkTheme
-                                                    ? theme.text.color
-                                                    : theme.text.background,
+                                                    ? theme.text
+                                                    : theme.primary,
                                             }}
                                             className="flex-1"
                                         >
                                             {model.name}
                                             <div className="text-xs text-gray-400">
-                                                {model.description}
+                                                {model.developer}
                                             </div>
                                         </label>
                                     </div>

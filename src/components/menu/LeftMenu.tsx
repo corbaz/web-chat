@@ -134,8 +134,8 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                             : "rgba(0, 0, 0, 0.1)"
                                                         : "transparent",
                                                 color: isDarkTheme
-                                                    ? theme.text.color
-                                                    : theme.text.background,
+                                                    ? theme.text
+                                                    : theme.primary,
                                             }}
                                             onClick={() =>
                                                 onSelectChat(chat.id)
