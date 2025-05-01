@@ -24,44 +24,46 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }, [messages]);
 
     return (
-        <div
-            className="w-full h-full overflow-y-auto px-4 py-4 space-y-4"
-            style={{
-                backgroundColor: isDarkTheme
-                    ? "rgba(0, 0, 0, 0.2)"
-                    : "rgba(255, 255, 255, 0.8)",
-            }}
-            aria-live="polite"
-            aria-relevant="additions"
-        >
-            {messages.map((message) => (
-                <ChatMessage
-                    key={message.id}
-                    message={message}
-                    theme={theme}
-                    isDarkTheme={isDarkTheme}
-                />
-            ))}
+        <div className="flex justify-center w-full h-full">
+            <div
+                className="w-full h-full overflow-y-auto px-3 pt-5 pb-6 space-y-4 sm:pt-3 sm:pb-0 sm:px-5 md:px-8 lg:px-10 xl:px-12"
+                style={{
+                    backgroundColor: isDarkTheme
+                        ? "#1a1a2e" // Color oscuro sólido
+                        : "#f8f8fc", // Color claro sólido
+                }}
+                aria-live="polite"
+                aria-relevant="additions"
+            >
+                {messages.map((message) => (
+                    <ChatMessage
+                        key={message.id}
+                        message={message}
+                        theme={theme}
+                        isDarkTheme={isDarkTheme}
+                    />
+                ))}
 
-            {isLoading && (
-                <div
-                    className="flex justify-center items-center p-3 rounded-lg my-2"
-                    style={{
-                        backgroundColor: isDarkTheme
-                            ? "rgba(255, 255, 255, 0.1)"
-                            : "rgba(0, 0, 0, 0.05)",
-                    }}
-                >
-                    <div className="flex items-center gap-2 p-2">
-                        <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing"></span>
-                        <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing animation-delay-[200ms]"></span>
-                        <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing animation-delay-[400ms]"></span>
+                {isLoading && (
+                    <div
+                        className="flex justify-center items-center p-3 rounded-lg my-2"
+                        style={{
+                            backgroundColor: isDarkTheme
+                                ? "rgba(255, 255, 255, 0.1)"
+                                : "rgba(0, 0, 0, 0.05)",
+                        }}
+                    >
+                        <div className="flex items-center gap-2 p-2">
+                            <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing"></span>
+                            <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing animation-delay-[200ms]"></span>
+                            <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing animation-delay-[400ms]"></span>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Elemento vacío para hacer scroll automático */}
-            <div ref={messagesEndRef} />
+                {/* Elemento vacío para hacer scroll automático */}
+                <div ref={messagesEndRef} />
+            </div>
         </div>
     );
 };

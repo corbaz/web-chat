@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+/* Variables para alturas responsive */
+:root {
+    --header-height: 80px; /* Altura por defecto para móvil */
+    --footer-height: 120px; /* Altura por defecto para móvil */
+}
+
+/* En pantallas medianas y grandes (md y superiores) */
+@media (min-width: 768px) {
+    :root {
+        --header-height: 100px; /* Altura para escritorio */
+        --footer-height: 144px; /* Altura para escritorio */
+    }
+}

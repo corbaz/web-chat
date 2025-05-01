@@ -26,7 +26,11 @@ import {
 } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.13";
+const APP_VERSION = "v.2.14.1";
+
+// Constantes para alturas fijas de componentes (solo las versiones móviles que se usan como fallback)
+const HEADER_HEIGHT_MOBILE = "80px"; // Para dispositivos móviles
+const FOOTER_HEIGHT_MOBILE = "120px"; // Para dispositivos móviles
 
 export const App = () => {
     // Estados para la UI
@@ -457,7 +461,7 @@ export const App = () => {
                 backgroundColor: theme.background,
             }}
         >
-            {/* Header con título, versión y selector de modelos */}
+            {/* Header con título, versión y selector de modelos - Fijo con altura constante */}
             <Header
                 title="PROMPTING"
                 version={APP_VERSION}
@@ -475,12 +479,13 @@ export const App = () => {
                 }}
             />
 
-            {/* Contenido principal (chat) con scroll propio */}
-            <main
-                className="flex-grow w-full overflow-hidden"
+            {/* Contenido principal (chat) fijo en el centro con su propio scroll */}
+            <div
+                className="fixed inset-x-0 overflow-hidden"
                 style={{
-                    paddingTop: "132px", // Altura del header (ajustar según sea necesario)
-                    paddingBottom: "132px", // Altura del footer (ajustar según sea necesario)
+                    top: `var(--header-height, ${HEADER_HEIGHT_MOBILE})`,
+                    bottom: `var(--footer-height, ${FOOTER_HEIGHT_MOBILE})`,
+                    backgroundColor: isDarkTheme ? "#1a1a2e" : "#f8f8fc",
                 }}
             >
                 <ChatArea
@@ -489,9 +494,9 @@ export const App = () => {
                     theme={theme}
                     isDarkTheme={isDarkTheme}
                 />
-            </main>
+            </div>
 
-            {/* Footer con área de entrada y controles */}
+            {/* Footer con área de entrada y controles - Fijo con altura constante */}
             <Footer
                 ref={footerRef}
                 onSendMessage={sendMessage}
