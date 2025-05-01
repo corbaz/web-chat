@@ -57,10 +57,9 @@ export const closeKeyboard = (): void => {
     // Solución adicional para iOS
     // Crear un input temporal, enfocarlo y desenfocarlo inmediatamente
     const tempInput = document.createElement("input");
-    tempInput.style.position = "absolute";
-    tempInput.style.opacity = "0";
-    tempInput.style.height = "0";
-    tempInput.style.fontSize = "16px"; // iOS no hace zoom con 16px o más
+
+    // Aplicar clases de Tailwind como atributos en lugar de estilos inline
+    tempInput.className = "fixed w-0 h-0 opacity-0 text-base"; // Equivalente a hide-keyboard con font-size 16px
 
     document.body.appendChild(tempInput);
     tempInput.focus();

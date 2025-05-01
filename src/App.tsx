@@ -44,6 +44,28 @@ export const App = () => {
 
         // Inicializar el tema
         setTheme(isDarkTheme ? darkTheme : lightTheme);
+
+        // Aplicar clases Tailwind directamente al HTML y body
+        document.documentElement.classList.add(
+            "m-0",
+            "p-0",
+            "w-full",
+            "h-full",
+            "overflow-x-hidden",
+            "overflow-y-hidden",
+            "bg-black",
+            "max-w-screen"
+        );
+        document.body.classList.add(
+            "m-0",
+            "p-0",
+            "w-full",
+            "h-full",
+            "overflow-x-hidden",
+            "overflow-y-hidden",
+            "bg-black",
+            "max-w-screen"
+        );
     }, [isDarkTheme]);
 
     // Nuevo efecto para enfocar el textarea al cargar la app
@@ -58,10 +80,9 @@ export const App = () => {
 
     return (
         <div
-            className="App flex flex-col h-screen w-full overflow-hidden"
+            className="flex flex-col h-screen w-full overflow-hidden text-center font-sans box-border p-4 overflow-x-hidden overflow-y-auto touch-pan-y max-w-screen"
             style={{
                 backgroundColor: theme.background,
-                maxWidth: "100vw",
             }}
         >
             {/* Cabecera fija */}
@@ -100,7 +121,7 @@ export const App = () => {
             </header>
 
             {/* Contenido principal (mensajes) con scroll */}
-            <main className="flex-grow overflow-hidden pt-32 pb-40">
+            <main className="flex-grow overflow-hidden pt-36 pb-40">
                 <ChatInterface
                     ref={chatInterfaceRef}
                     theme={theme}

@@ -127,7 +127,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
                         placeholder="Escribe un mensaje..."
-                        className="flex-grow p-2 md:p-3 resize-none overflow-hidden min-h-[40px] max-h-[150px] bg-transparent rounded-l-lg"
+                        className="flex-grow p-2 md:p-3 resize-none overflow-hidden min-h-[40px] max-h-[150px] bg-transparent rounded-l-lg text-base md:text-base touch-manipulation appearance-none rounded-none"
                         style={{
                             backgroundColor: isDarkTheme
                                 ? "rgba(255, 255, 255, 0.1)"
@@ -147,7 +147,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                     <button
                         onClick={handleSendMessage}
                         title="Enviar Pregunta"
-                        className={`rounded-r-lg flex items-center justify-center ${
+                        className={`rounded-r-lg flex items-center justify-center text-base touch-manipulation min-w-[44px] min-h-[44px] p-2.5 ${
                             message.trim() && !isLoading
                                 ? "opacity-100"
                                 : "opacity-50 cursor-not-allowed"
@@ -155,7 +155,6 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         style={{
                             backgroundColor: theme.button.background,
                             color: theme.button.text,
-                            minWidth: "45px",
                             borderLeft: `1px solid ${theme.accent}`,
                             height: "auto", // Asegura que el botón tome la altura completa del contenedor
                         }}
@@ -194,7 +193,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                     <div className="justify-self-start flex items-center">
                         <button
                             onClick={handleClearText}
-                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
+                            className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 text-base touch-manipulation min-w-[44px] min-h-[44px] ${
                                 message.length > 0
                                     ? "opacity-100"
                                     : "opacity-50 cursor-not-allowed"
@@ -239,7 +238,7 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                         {clearContext && (
                             <button
                                 onClick={clearContext}
-                                className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 ${
+                                className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 text-base touch-manipulation min-w-[44px] min-h-[44px] ${
                                     hasContext
                                         ? "opacity-100"
                                         : "opacity-50 cursor-not-allowed"
@@ -270,15 +269,19 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                             </button>
                         )}
 
-                        {/* Switch de tema */}
-                        <label className="switch" title="Cambiar tema">
+                        {/* Switch de tema con clases Tailwind */}
+                        <div
+                            className="relative inline-block w-[60px] h-[30px]"
+                            title="Cambiar tema"
+                        >
                             <input
                                 type="checkbox"
+                                className="opacity-0 w-0 h-0"
                                 checked={!isDarkTheme}
                                 onChange={toggleTheme}
                             />
                             <span
-                                className="slider round"
+                                className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-[34px] flex items-center transition-all duration-400"
                                 style={{
                                     backgroundColor: isDarkTheme
                                         ? theme.accent
@@ -286,9 +289,19 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                     boxShadow: `0 0 5px ${theme.accent}`,
                                 }}
                             >
+                                {/* Círculo del switch */}
+                                <span
+                                    className={`absolute h-[22px] w-[22px] left-[4px] bottom-[4px] bg-black rounded-full z-10 transition-all duration-400 ${
+                                        !isDarkTheme
+                                            ? "transform translate-x-[30px]"
+                                            : ""
+                                    }`}
+                                ></span>
+
+                                {/* Icono de sol */}
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="sun-icon"
+                                    className="absolute h-4 w-4 top-1/2 right-[7px] transform -translate-y-1/2 text-yellow-400 z-[2]"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -300,23 +313,15 @@ const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
                                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
                                     />
                                 </svg>
+
+                                {/* Icono de luna */}
                                 <img
                                     src={LunaIcon}
                                     alt="Moon Icon"
-                                    className="moon-icon"
-                                    style={{
-                                        width: "16px",
-                                        height: "16px",
-                                        position: "absolute",
-                                        top: "50%",
-                                        left: "7px",
-                                        transform: "translateY(-50%)",
-                                        zIndex: 2,
-                                        color: "yellow",
-                                    }}
+                                    className="absolute h-4 w-4 top-1/2 left-[7px] transform -translate-y-1/2 z-[2] text-yellow-400"
                                 />
                             </span>
-                        </label>
+                        </div>
                     </div>
                 </div>
             </div>

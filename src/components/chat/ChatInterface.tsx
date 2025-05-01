@@ -420,10 +420,11 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
                                     : "rgba(0, 0, 0, 0.05)",
                             }}
                         >
-                            <div className="typing-indicator">
-                                <span></span>
-                                <span></span>
-                                <span></span>
+                            {/* Typing indicator con clases de Tailwind */}
+                            <div className="flex items-center gap-2 p-2">
+                                <span className="h-[10px] w-[10px] rounded-full bg-gray-600 inline-block opacity-40 animate-typing"></span>
+                                <span className="h-[10px] w-[10px] rounded-full bg-gray-600 inline-block opacity-40 animate-typing animation-delay-[200ms]"></span>
+                                <span className="h-[10px] w-[10px] rounded-full bg-gray-600 inline-block opacity-40 animate-typing animation-delay-[400ms]"></span>
                             </div>
                         </div>
                     )}
