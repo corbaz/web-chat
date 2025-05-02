@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 
-import { ColorPalette } from "../interfaces/temas/temas";
-import { groqModels, GroqModel } from "../components/models/groqModels";
+import { ColorPalette } from "../../interfaces/temas/temas";
+import { groqModels, GroqModel } from "./models/groqModels";
 
 interface ModelSelectorProps {
     selectedModel: string;

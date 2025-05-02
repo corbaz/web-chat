@@ -6,8 +6,8 @@ import {
     useImperativeHandle,
 } from "react";
 import { ColorPalette } from "../../interfaces/temas/temas";
-import ChatMessage from "./ChatMessage.tsx";
-import MessageInput, { MessageInputRef } from "./MessageInput.tsx";
+import ChatMessage from "../CHAT/ChatMessage.tsx";
+import MessageInput, { MessageInputRef } from "../CHAT/MessageInput.tsx";
 import { formatResponseTime } from "../../utils/timeUtils.ts";
 import {
     estimateMessagesTokens,

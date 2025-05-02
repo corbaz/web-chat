@@ -252,6 +252,65 @@ Deploy en surge: https://deepchat.surge.sh/ [![Surge](https://img.shields.io/bad
 Deploy en github pages: https://corbaz.github.io/web-chat/ [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deploy-blue?style=flat&logo=github)](https://corbaz.github.io/web-chat/)
   
 ---
+mkdir -p src/components/HEADER src/components/CHAT src/components/FOOTER
 
 
+```markdown
+# Installation
 
+Getting started with Desktop Commander MCP is quick and easy.
+
+There are multiple options for installing Desktop Commander MCP:
+
+## NPX Install
+
+Install using `npx` directly:
+
+```bash
+npx @wonderwhy-er/desktop-commander@latest setup
+```
+
+## Bash Install (macOS)
+
+For macOS users, you can also use this bash script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wonderwhy-er/DesktopCommanderMCP/refs/heads/main/install.sh | bash
+```
+
+## Smithery Install
+
+*(Details for Smithery Install can be added here if available)*
+
+## Manual Configuration
+
+*(Details for Manual Configuration can be added here if available)*
+
+## Local Installation
+
+*(Details for Local Installation can be added here if available)*
+
+---
+
+To install Desktop Commander MCP you need to have **Node.js v18.18.0+** and **Claude Desktop** installed on your system:
+
+- Download Node.js: [https://nodejs.org/en/download](https://nodejs.org/en/download)
+- Download Claude Desktop: [https://claude.ai/download](https://claude.ai/download)
+
+**Remember to restart Claude after installation.**
+
+---
+
+## Trusted by Developers
+
+Join thousands of developers who have transformed their Claude experience with Desktop Commander.
+
+| Metric           | Value |
+| ---------------- | ----- |
+| Weekly Downloads | 26K+  |
+| User Rating      | 9/10  |
+| GitHub Stars     | 1800+ |
+
+---
+
+## Install

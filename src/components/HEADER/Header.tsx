@@ -1,6 +1,6 @@
 import React from "react";
-import ModelSelector from "./HEADER/ModelSelector";
-import { ColorPalette } from "../interfaces/temas/temas";
+import ModelSelector from "./ModelSelector";
+import { ColorPalette } from "../../interfaces/temas/temas";
 
 interface HeaderProps {
     title: string;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
-import { groqModels } from "./components/models/groqModels";
+import { groqModels } from "./components/HEADER/models/groqModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 import { formatResponseTime } from "./utils/timeUtils";
 import {
@@ -17,11 +17,11 @@ import {
 import axios from "axios";
 
 // Componentes
-import Header from "./components/Header";
-import Footer, { FooterRef } from "./components/Footer";
-import ChatArea from "./components/chat/ChatArea";
-import LeftMenu from "./components/menu/LeftMenu";
-import RightMenu from "./components/menu/RightMenu";
+import Header from "./components/HEADER/Header";
+import Footer, { FooterRef } from "./components/FOOTER/Footer";
+import ChatArea from "./components/CHAT/ChatArea";
+import LeftMenu from "./components/HEADER/menu/LeftMenu";
+import RightMenu from "./components/HEADER/menu/RightMenu";
 
 // Interfaces
 import {

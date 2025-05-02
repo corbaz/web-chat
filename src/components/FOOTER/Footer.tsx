@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ColorPalette } from "../interfaces/temas/temas";
-import { isMobile } from "../utils/mobileUtils";
-import LunaIcon from "/src/assets/luna.svg";
-import EscobaIcon from "/src/assets/escoba.svg";
+import { ColorPalette } from "../../interfaces/temas/temas";
+import { isMobile } from "../../utils/mobileUtils";
+import LunaIcon from "../../assets/luna.svg";
+import EscobaIcon from "../../assets/escoba.svg";
 
 interface FooterProps {
     onSendMessage: (message: string) => void;
