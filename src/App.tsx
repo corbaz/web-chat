@@ -9,6 +9,11 @@ import {
     MAX_RESPONSE_TOKENS,
     TOKEN_LIMIT_SAFETY_FACTOR,
 } from "./utils/tokenUtils";
+import {
+    HEADER_HEIGHT_MOBILE,
+    FOOTER_HEIGHT_MOBILE,
+    generateLayoutCSS,
+} from "./utils/layoutConstants";
 import axios from "axios";
 
 // Componentes
@@ -26,11 +31,7 @@ import {
 } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.14.1";
-
-// Constantes para alturas fijas de componentes (solo las versiones móviles que se usan como fallback)
-const HEADER_HEIGHT_MOBILE = "80px"; // Para dispositivos móviles
-const FOOTER_HEIGHT_MOBILE = "120px"; // Para dispositivos móviles
+const APP_VERSION = "v.2.15";
 
 export const App = () => {
     // Estados para la UI
@@ -57,6 +58,27 @@ export const App = () => {
 
     // Ref para almacenar tiempos de inicio de solicitudes
     const requestStartTimeRef = useRef<Record<string, number>>({});
+
+    // Inyectar las variables CSS de layout
+    useEffect(() => {
+        // Crear un elemento style
+        const styleElement = document.createElement("style");
+        styleElement.setAttribute("id", "layout-constants-css");
+        styleElement.textContent = generateLayoutCSS();
+
+        // Añadir al head
+        document.head.appendChild(styleElement);
+
+        // Limpiar al desmontar
+        return () => {
+            const existingStyle = document.getElementById(
+                "layout-constants-css"
+            );
+            if (existingStyle) {
+                document.head.removeChild(existingStyle);
+            }
+        };
+    }, []);
 
     // Función para cambiar el tema
     const toggleTheme = () => {
@@ -98,7 +120,7 @@ export const App = () => {
             "w-full",
             "h-full",
             "overflow-hidden",
-            "bg-black",
+            "bg-red-500",
             "max-w-screen"
         );
     }, [isDarkTheme]);
