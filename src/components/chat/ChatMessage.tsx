@@ -50,7 +50,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     <div className="flex flex-col space-y-1 mt-2">
                         {message.responseTime && (
                             <div className="text-xs opacity-70 text-right">
-                                ⏱️ Respuesta generada en {message.responseTime}
+                                ⏱️ Respuesta de {message.modelName || "modelo"} en{" "}
+                                {message.responseTime.replace("s", " s")}
                             </div>
                         )}
 

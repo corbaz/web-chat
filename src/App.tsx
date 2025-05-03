@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { groqModels } from "./components/HEADER/models/groqModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
@@ -6,7 +6,7 @@ import { generateLayoutCSS } from "./utils/layoutConstants";
 
 // Componentes principales
 import Header from "./components/HEADER/Header";
-import Footer from "./components/FOOTER/Footer";
+import Footer, { FooterRef } from "./components/FOOTER/Footer";
 // Importación utilizando el archivo índice
 import { ChatContainer } from "./components/CHAT";
 
@@ -35,6 +35,15 @@ export const App = () => {
     const [currentChatId, setCurrentChatId] = useState<string | undefined>(
         undefined
     );
+
+    const footerRef = useRef<FooterRef>(null);
+
+    // Función para enfocar el textarea desde cualquier parte
+    const focusInput = useCallback(() => {
+        setTimeout(() => {
+            footerRef.current?.focusTextarea();
+        }, 100);
+    }, []);
 
     // Inyectar las variables CSS de layout
     useEffect(() => {
@@ -99,16 +108,19 @@ export const App = () => {
     const handleToggleLeftMenu = () => {
         setLeftMenuOpen(!leftMenuOpen);
         if (rightMenuOpen) setRightMenuOpen(false);
+        focusInput();
     };
 
     const handleToggleRightMenu = () => {
         setRightMenuOpen(!rightMenuOpen);
         if (leftMenuOpen) setLeftMenuOpen(false);
+        focusInput();
     };
 
     // Manejador para cambiar el modelo
     const handleModelChange = (modelId: string) => {
         setSelectedModel(modelId);
+        focusInput();
     };
 
     // Manejador para crear una nueva conversación
@@ -155,7 +167,7 @@ export const App = () => {
                 JSON.stringify(conversations)
             );
 
-            // 2. Actualizar el historial de chats
+            // 2. Actualizar el historial de chats (NO borrar los anteriores)
             const newChatHistory = [
                 ...chatHistory,
                 {
@@ -192,12 +204,7 @@ export const App = () => {
         // Cerrar los menús laterales
         setLeftMenuOpen(false);
         setRightMenuOpen(false);
-    };
-
-    // Manejador para seleccionar un chat del historial
-    const handleSelectChat = (chatId: string) => {
-        setCurrentChatId(chatId);
-        setLeftMenuOpen(false);
+        focusInput();
     };
 
     // Modificar el tipo de handleUpdateChatHistory para que sea compatible con React.Dispatch<React.SetStateAction<...>>
@@ -242,6 +249,18 @@ export const App = () => {
         setIsLoading(loading);
     };
 
+    // Manejador para actualizar el título de un chat
+    const handleUpdateChatTitle = useCallback(
+        (chatId: string, newTitle: string) => {
+            setChatHistory((prev) =>
+                prev.map((chat) =>
+                    chat.id === chatId ? { ...chat, title: newTitle } : chat
+                )
+            );
+        },
+        []
+    );
+
     return (
         <div
             className="flex flex-col h-screen w-full overflow-hidden"
@@ -276,15 +295,27 @@ export const App = () => {
                 setChatHistory={handleUpdateChatHistory}
                 leftMenuOpen={leftMenuOpen}
                 rightMenuOpen={rightMenuOpen}
-                onCloseLeftMenu={() => setLeftMenuOpen(false)}
-                onCloseRightMenu={() => setRightMenuOpen(false)}
-                onSelectChat={handleSelectChat}
+                onCloseLeftMenu={() => {
+                    setLeftMenuOpen(false);
+                    focusInput();
+                }}
+                onCloseRightMenu={() => {
+                    setRightMenuOpen(false);
+                    focusInput();
+                }}
+                onSelectChat={(chatId) => {
+                    setCurrentChatId(chatId);
+                    focusInput();
+                }}
                 onNewChat={handleNewChat}
                 onModelChange={handleModelChange}
+                onFocusInput={focusInput}
+                onUpdateChatTitle={handleUpdateChatTitle}
             />
 
             {/* Footer con área de entrada y controles */}
             <Footer
+                ref={footerRef}
                 onSendMessage={(message) => {
                     // Delegamos la lógica de envío al componente ChatContainer
                     if (message.trim()) {
@@ -292,6 +323,7 @@ export const App = () => {
                             detail: { message },
                         });
                         document.dispatchEvent(event);
+                        focusInput();
                     }
                 }}
                 toggleTheme={toggleTheme}

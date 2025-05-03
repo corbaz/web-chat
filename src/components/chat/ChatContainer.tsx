@@ -43,6 +43,8 @@ interface ChatContainerProps {
     onSelectChat: (chatId: string) => void;
     onNewChat: () => void;
     onModelChange: (modelId: string) => void;
+    onFocusInput?: () => void;
+    onUpdateChatTitle?: (chatId: string, newTitle: string) => void; // Nueva prop para actualizar el título
 }
 
 const ChatContainer = ({
@@ -64,6 +66,8 @@ const ChatContainer = ({
     onSelectChat,
     onNewChat,
     onModelChange,
+    onFocusInput,
+    onUpdateChatTitle,
 }: ChatContainerProps) => {
     // Ref para almacenar tiempos de inicio de solicitudes
     const requestStartTimeRef = useRef<Record<string, number>>({});
@@ -80,19 +84,50 @@ const ChatContainer = ({
         // Función para cargar datos del localStorage
         const loadSavedData = () => {
             const storedData = localStorage.getItem(STORAGE_KEY);
+            // Intentar cargar el historial existente primero
+            const chatHistoryData = localStorage.getItem(CHAT_HISTORY_KEY);
+            let existingHistory = [];
 
+            if (chatHistoryData) {
+                try {
+                    existingHistory = JSON.parse(chatHistoryData);
+                    // Si ya tenemos historial, simplemente usamos ese
+                    if (existingHistory && existingHistory.length > 0) {
+                        // Si el componente recibe un chatHistory vacío, actualizamos con el existente
+                        if (chatHistory.length === 0) {
+                            setChatHistory(existingHistory);
+                        }
+
+                        // Si no hay chat actual seleccionado, seleccionamos el último
+                        if (!currentChatId && existingHistory.length > 0) {
+                            const lastChat =
+                                existingHistory[existingHistory.length - 1];
+                            setCurrentChatId(lastChat.id);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error al cargar historial de chats:", error);
+                }
+            }
+
+            // Después procesamos los mensajes
             if (storedData) {
                 try {
                     const parsedData = JSON.parse(storedData);
                     if (parsedData && typeof parsedData === "object") {
                         const chatIds = Object.keys(parsedData);
                         if (chatIds.length > 0) {
-                            const newChatHistory = chatIds.map((id) => ({
-                                id,
-                                title: `Chat ${id.substring(0, 8)}`,
-                                date: new Date(),
-                            }));
-                            setChatHistory(newChatHistory);
+                            // Si no hay historial en localStorage, pero sí hay mensajes,
+                            // creamos el historial a partir de los mensajes
+                            if (existingHistory.length === 0) {
+                                const newChatHistory = chatIds.map((id) => ({
+                                    id,
+                                    title: `Chat ${id.substring(0, 8)}`,
+                                    date: new Date(),
+                                }));
+                                setChatHistory(newChatHistory);
+                            }
+
                             if (!currentChatId) {
                                 const lastChatId = chatIds[chatIds.length - 1];
                                 setCurrentChatId(lastChatId);
@@ -119,32 +154,97 @@ const ChatContainer = ({
             ];
             setChatHistory(newHistory);
             setCurrentChatId(newChatId);
+            // Mensaje de bienvenida automático
+            const bienvenida = [
+                {
+                    id: "intro-message",
+                    role: "assistant" as const,
+                    content:
+                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+                    timestamp: Date.now(),
+                },
+            ];
+            setMessages(bienvenida);
+            // Guardar en localStorage para reflejarlo en la UI y persistencia
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify({ [newChatId]: bienvenida })
+            );
+            if (onFocusInput) onFocusInput();
         }
-    }, [setChatHistory, setCurrentChatId, currentChatId]);
+    }, [
+        setChatHistory,
+        setCurrentChatId,
+        currentChatId,
+        setMessages,
+        onFocusInput,
+    ]);
 
     // Efecto para cargar mensajes cuando cambia el chat actual
     useEffect(() => {
         if (!currentChatId) return;
+        console.log("Intentando cargar mensajes para el chat:", currentChatId);
         const storedData = localStorage.getItem(STORAGE_KEY);
         if (storedData) {
             try {
                 const parsedData = JSON.parse(storedData);
                 if (parsedData && parsedData[currentChatId]) {
                     const chatMessages = parsedData[currentChatId];
+                    console.log("Mensajes encontrados:", chatMessages.length);
                     setMessages(() =>
                         Array.isArray(chatMessages) ? chatMessages : []
                     );
                 } else {
-                    setMessages(() => []);
+                    // Si no hay mensajes para este chat, mostrar bienvenida y guardar
+                    console.log(
+                        "No hay mensajes para este chat, mostrando bienvenida"
+                    );
+                    const bienvenida = [
+                        {
+                            id: "intro-message",
+                            role: "assistant" as const,
+                            content:
+                                "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+                            timestamp: Date.now(),
+                        },
+                    ];
+                    setMessages(bienvenida);
+
+                    // Crear una estructura actualizada para guardar en localStorage
+                    const existingData = parsedData || {};
+                    const updatedData = {
+                        ...existingData,
+                        [currentChatId]: bienvenida,
+                    };
+
+                    localStorage.setItem(
+                        STORAGE_KEY,
+                        JSON.stringify(updatedData)
+                    );
                 }
             } catch (error) {
                 console.error("Error al cargar mensajes del chat:", error);
                 setMessages(() => []);
             }
-        } else {
-            setMessages(() => []);
+        } else if (currentChatId) {
+            // Si no hay nada en localStorage pero hay chatId, mostrar bienvenida y guardar
+            const bienvenida = [
+                {
+                    id: "intro-message",
+                    role: "assistant" as const,
+                    content:
+                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+                    timestamp: Date.now(),
+                },
+            ];
+            setMessages(bienvenida);
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify({ [currentChatId]: bienvenida })
+            );
         }
-    }, [currentChatId, setMessages]);
+        if (onFocusInput) onFocusInput();
+    }, [currentChatId, setMessages, onFocusInput]);
 
     // Efecto para guardar mensajes en localStorage
     useEffect(() => {
@@ -355,6 +455,7 @@ const ChatContainer = ({
                     responseTime: formattedTime,
                     tokensUsed: totalTokensUsed,
                     tokenLimit: modelTokenLimit,
+                    modelName: selectedModel, // Guardar el modelo usado
                 };
 
                 setMessages((prevMessages: ChatMessageType[]) => [
@@ -425,6 +526,16 @@ const ChatContainer = ({
         };
     }, [sendMessage]);
 
+    // Cuando la IA responde o se agrega un mensaje del asistente, enfocar input
+    useEffect(() => {
+        if (
+            messages.length > 0 &&
+            messages[messages.length - 1].role === "assistant"
+        ) {
+            if (onFocusInput) onFocusInput();
+        }
+    }, [messages, onFocusInput]);
+
     return (
         <>
             {/* Contenido principal (chat) */}
@@ -454,6 +565,7 @@ const ChatContainer = ({
                 onSelectChat={onSelectChat}
                 onNewChat={onNewChat}
                 currentChatId={currentChatId}
+                onUpdateChatTitle={onUpdateChatTitle} // Pasar la función al LeftMenu
             />
 
             <RightMenu
