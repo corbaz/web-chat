@@ -1,5 +1,5 @@
 import React from "react";
-import { ChatMessageType } from "./ChatInterface.tsx";
+import { ChatMessageType } from "../../interfaces/chat/chatTypes";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 
 interface ChatMessageProps {

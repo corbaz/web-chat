@@ -1,5 +1,5 @@
 import React from "react";
-import { ColorPalette } from "../../interfaces/temas/temas";
+import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import { groqModels } from "../models/groqModels";
 
 interface RightMenuProps {

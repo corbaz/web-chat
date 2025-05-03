@@ -1,5 +1,7 @@
 import React from "react";
 import ModelSelector from "./ModelSelector";
+import Title from "./Title";
+import MenuButton from "./menu/MenuButton";
 import { ColorPalette } from "../../interfaces/temas/temas";
 
 interface HeaderProps {
@@ -35,45 +37,16 @@ const Header: React.FC<HeaderProps> = ({
         >
             <div className="flex items-center justify-between">
                 {/* Menú hamburguesa izquierdo */}
-                <button
-                    className="text-base touch-manipulation min-w-[44px] min-h-[44px] p-2 rounded-lg transition-colors duration-200 hover:bg-opacity-20 hover:bg-white flex items-center justify-center"
+                <MenuButton
                     onClick={onToggleLeftMenu}
-                    aria-label="Abrir menú de historial"
-                    style={{ color: theme.title.color }}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
+                    ariaLabel="Abrir menú de historial"
+                    theme={theme}
+                />
 
-                {/* Título y versión */}
+                {/* Título y selector de modelos */}
                 <div className="flex flex-col items-center mx-4">
-                    <div className="flex items-end">
-                        <h1
-                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-center"
-                            style={{ color: theme.title.color }}
-                        >
-                            {title}
-                        </h1>
-                        <span
-                            className="text-sm ml-2 mb-1"
-                            style={{ color: theme.title.color }}
-                        >
-                            {version}
-                        </span>
-                    </div>
+                    {/* Componente de título y versión */}
+                    <Title title={title} version={version} theme={theme} />
 
                     {/* Selector de modelo */}
                     <div className="w-full mt-1">
@@ -87,28 +60,11 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Menú hamburguesa derecho */}
-                <button
-                    className="text-base touch-manipulation min-w-[44px] min-h-[44px] p-2 rounded-lg transition-colors duration-200 hover:bg-opacity-20 hover:bg-white flex items-center justify-center"
+                <MenuButton
                     onClick={onToggleRightMenu}
-                    aria-label="Abrir menú de configuración"
-                    style={{ color: theme.title.color }}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
+                    ariaLabel="Abrir menú de configuración"
+                    theme={theme}
+                />
             </div>
         </header>
     );
