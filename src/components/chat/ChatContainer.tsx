@@ -182,6 +182,7 @@ const ChatContainer = ({
         currentChatId,
         setMessages,
         onFocusInput,
+        chatHistory.length, // Añadir la dependencia faltante
     ]);
 
     // Efecto para cargar mensajes cuando cambia el chat actual

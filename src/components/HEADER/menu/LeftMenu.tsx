@@ -43,8 +43,13 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             let chatHistoryArr = chatHistoryRaw
                 ? JSON.parse(chatHistoryRaw)
                 : [];
-            chatHistoryArr = chatHistoryArr.map((c: any) =>
-                c.id === chat.id ? { ...c, title: editValue } : c
+            chatHistoryArr = chatHistoryArr.map(
+                (c: {
+                    id: string;
+                    title: string;
+                    date: Date;
+                    model?: string;
+                }) => (c.id === chat.id ? { ...c, title: editValue } : c)
             );
             localStorage.setItem(
                 "chat-history",
@@ -63,7 +68,10 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         // Eliminar el chat de localStorage
         const chatHistoryRaw = localStorage.getItem("chat-history");
         let chatHistoryArr = chatHistoryRaw ? JSON.parse(chatHistoryRaw) : [];
-        chatHistoryArr = chatHistoryArr.filter((c: any) => c.id !== chatId);
+        chatHistoryArr = chatHistoryArr.filter(
+            (c: { id: string; title: string; date: Date; model?: string }) =>
+                c.id !== chatId
+        );
         localStorage.setItem("chat-history", JSON.stringify(chatHistoryArr));
 
         // Llamar a la función de eliminación en el componente padre
