@@ -32,9 +32,11 @@ interface ChatContainerProps {
     selectedModel: string;
     currentChatId: string | undefined;
     setCurrentChatId: (chatId: string | undefined) => void;
-    chatHistory: { id: string; title: string; date: Date }[];
+    chatHistory: { id: string; title: string; date: Date; model?: string }[];
     setChatHistory: React.Dispatch<
-        React.SetStateAction<{ id: string; title: string; date: Date }[]>
+        React.SetStateAction<
+            { id: string; title: string; date: Date; model?: string }[]
+        >
     >;
     leftMenuOpen: boolean;
     rightMenuOpen: boolean;
@@ -44,7 +46,8 @@ interface ChatContainerProps {
     onNewChat: () => void;
     onModelChange: (modelId: string) => void;
     onFocusInput?: () => void;
-    onUpdateChatTitle?: (chatId: string, newTitle: string) => void; // Nueva prop para actualizar el título
+    onUpdateChatTitle?: (chatId: string, newTitle: string) => void; // Para actualizar el título
+    onDeleteChat?: (chatId: string) => void; // Para eliminar un chat
 }
 
 const ChatContainer = ({
@@ -68,6 +71,7 @@ const ChatContainer = ({
     onModelChange,
     onFocusInput,
     onUpdateChatTitle,
+    onDeleteChat,
 }: ChatContainerProps) => {
     // Ref para almacenar tiempos de inicio de solicitudes
     const requestStartTimeRef = useRef<Record<string, number>>({});
@@ -384,10 +388,15 @@ const ChatContainer = ({
                     content.trim().substring(0, 30) +
                     (content.length > 30 ? "..." : "");
 
-                // Actualizar historial de chat
+                // Actualizar historial de chat incluyendo el modelo actual
                 setChatHistory(
                     (
-                        prevHistory: { id: string; title: string; date: Date }[]
+                        prevHistory: {
+                            id: string;
+                            title: string;
+                            date: Date;
+                            model?: string;
+                        }[]
                     ) => [
                         ...prevHistory.filter(
                             (chat: { id: string }) => chat.id !== currentChatId
@@ -396,12 +405,22 @@ const ChatContainer = ({
                             id: newChatId,
                             title: title,
                             date: new Date(),
+                            model: selectedModel, // Guardar el modelo seleccionado actualmente
                         },
                     ]
                 );
 
                 // Actualizar el ID de chat actual
                 setCurrentChatId(newChatId);
+            } else {
+                // Si no es el primer mensaje, actualizar el modelo en el historial
+                setChatHistory((prevHistory) =>
+                    prevHistory.map((chat) =>
+                        chat.id === currentChatId
+                            ? { ...chat, model: selectedModel }
+                            : chat
+                    )
+                );
             }
 
             // Generar un ID único para esta solicitud
@@ -565,7 +584,8 @@ const ChatContainer = ({
                 onSelectChat={onSelectChat}
                 onNewChat={onNewChat}
                 currentChatId={currentChatId}
-                onUpdateChatTitle={onUpdateChatTitle} // Pasar la función al LeftMenu
+                onUpdateChatTitle={onUpdateChatTitle}
+                onDeleteChat={onDeleteChat} // Pasar la función para eliminar chats
             />
 
             <RightMenu

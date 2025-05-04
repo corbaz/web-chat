@@ -11,6 +11,7 @@ interface LeftMenuProps {
     onNewChat: () => void;
     currentChatId?: string;
     onUpdateChatTitle?: (chatId: string, newTitle: string) => void; // Nueva prop para actualizar el título
+    onDeleteChat?: (chatId: string) => void; // Nueva prop para eliminar el chat
 }
 
 const LeftMenu: React.FC<LeftMenuProps> = ({
@@ -23,6 +24,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
     onNewChat,
     currentChatId,
     onUpdateChatTitle,
+    onDeleteChat,
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState<string>("");
@@ -55,6 +57,19 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             }
         }
         setEditingId(null);
+    };
+
+    const handleDeleteChat = (chatId: string) => {
+        // Eliminar el chat de localStorage
+        const chatHistoryRaw = localStorage.getItem("chat-history");
+        let chatHistoryArr = chatHistoryRaw ? JSON.parse(chatHistoryRaw) : [];
+        chatHistoryArr = chatHistoryArr.filter((c: any) => c.id !== chatId);
+        localStorage.setItem("chat-history", JSON.stringify(chatHistoryArr));
+
+        // Llamar a la función de eliminación en el componente padre
+        if (onDeleteChat) {
+            onDeleteChat(chatId);
+        }
     };
 
     // Si no está abierto, no renderizar nada
@@ -231,53 +246,99 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                         }}
                                                     />
                                                 ) : (
-                                                    <>
-                                                        <span>
-                                                            {chat.title}
-                                                        </span>
-                                                        <button
-                                                            className="ml-1 p-1 hover:bg-gray-200 rounded"
-                                                            title="Editar nombre"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleEditClick(
-                                                                    chat
-                                                                );
-                                                            }}
-                                                        >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="14"
-                                                                height="14"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
+                                                    <div className="flex flex-col w-full">
+                                                        <div className="flex items-center">
+                                                            {/* Botón de editar (lápiz) a la izquierda */}
+                                                            <button
+                                                                className="mr-2 p-1 hover:bg-gray-200 rounded flex-shrink-0"
+                                                                title="Editar nombre"
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    handleEditClick(
+                                                                        chat
+                                                                    );
+                                                                }}
                                                             >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13zm-6 6h6"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                    </>
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="14"
+                                                                    height="14"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    stroke="currentColor"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="2"
+                                                                        d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13zm-6 6h6"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+
+                                                            {/* Título del chat */}
+                                                            <span className="flex-grow truncate">
+                                                                {chat.title}
+                                                            </span>
+
+                                                            {/* Botón de eliminar (papelera) a la derecha */}
+                                                            <button
+                                                                className="ml-2 p-1 hover:bg-gray-200 rounded flex-shrink-0"
+                                                                title="Eliminar chat"
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    if (
+                                                                        window.confirm(
+                                                                            "¿Estás seguro de que quieres eliminar esta conversación?"
+                                                                        )
+                                                                    ) {
+                                                                        handleDeleteChat(
+                                                                            chat.id
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="14"
+                                                                    height="14"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    stroke="currentColor"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="2"
+                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Fecha y hora debajo del título */}
+                                                        <span className="text-xs text-gray-400 mt-1">
+                                                            {(() => {
+                                                                const d =
+                                                                    new Date(
+                                                                        chat.date
+                                                                    );
+                                                                return `${d.toLocaleDateString()} ${d.toLocaleTimeString(
+                                                                    [],
+                                                                    {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                        second: "2-digit",
+                                                                    }
+                                                                )}`;
+                                                            })()}
+                                                        </span>
+                                                    </div>
                                                 )}
-                                                <span className="text-xs text-gray-400 ml-2">
-                                                    {(() => {
-                                                        const d = new Date(
-                                                            chat.date
-                                                        );
-                                                        return `${d.toLocaleDateString()} ${d.toLocaleTimeString(
-                                                            [],
-                                                            {
-                                                                hour: "2-digit",
-                                                                minute: "2-digit",
-                                                                second: "2-digit",
-                                                            }
-                                                        )}`;
-                                                    })()}
-                                                </span>
                                             </div>
                                         </button>
                                     </li>

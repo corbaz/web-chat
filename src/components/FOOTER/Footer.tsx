@@ -12,6 +12,7 @@ interface FooterProps {
     theme: ColorPalette;
     isDarkTheme: boolean;
     isLoading: boolean;
+    chatTitle?: string; // Nueva prop para mostrar el título del chat
 }
 
 // Crear una interfaz para exponer el método focus
@@ -29,6 +30,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             theme,
             isDarkTheme,
             isLoading,
+            chatTitle,
         },
         ref
     ) => {
@@ -225,8 +227,20 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                 </button>
                             </div>
 
-                            {/* Espacio para futuros botones o indicadores de estado - Columna central */}
+                            {/* Título del chat - Columna central */}
                             <div className="justify-self-center flex items-center">
+                                {chatTitle && (
+                                    <span
+                                        className="text-base font-medium"
+                                        style={{
+                                            color: isDarkTheme
+                                                ? theme.input.text
+                                                : theme.input.background,
+                                        }}
+                                    >
+                                        {chatTitle}
+                                    </span>
+                                )}
                                 {isLoading && (
                                     <div className="flex items-center gap-1">
                                         <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing"></span>
