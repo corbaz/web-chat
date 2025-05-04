@@ -87,9 +87,10 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         <>
             {/* Overlay - ocupa toda la pantalla */}
             <div
-                className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+                className="fixed inset-0 z-40 transition-opacity duration-300"
                 style={{
                     opacity: isOpen ? 1 : 0,
+                    pointerEvents: isOpen ? "auto" : "none",
                 }}
                 onClick={onClose}
                 aria-hidden="true"
