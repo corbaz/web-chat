@@ -126,13 +126,51 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                     : "rgba(0, 0, 0, 0.02)",
                             }}
                         >
+                            {/* Botón de papelera para limpiar el mensaje actual (ahora a la izquierda) */}
+                            <button
+                                onClick={handleClearText}
+                                title="Borrar mensaje"
+                                aria-label="Borrar mensaje"
+                                className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
+                                    message.length > 0
+                                        ? "opacity-100"
+                                        : "opacity-50 cursor-not-allowed"
+                                }`}
+                                style={{
+                                    backgroundColor:
+                                        message.length > 0
+                                            ? theme.button.background
+                                            : isDarkTheme
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.08)",
+                                    color: theme.button.text,
+                                    borderRight: `1px solid ${theme.accent}`,
+                                }}
+                                disabled={message.length === 0}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                </svg>
+                            </button>
+
                             <textarea
                                 ref={textareaRef}
                                 value={message}
                                 onChange={handleChange}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Escribe un mensaje..."
-                                className="flex-grow p-3 resize-none overflow-hidden min-h-[48px] max-h-[120px] bg-transparent rounded-l-lg text-base touch-manipulation appearance-none rounded-none"
+                                className="flex-grow p-3 resize-none overflow-hidden min-h-[48px] max-h-[120px] bg-transparent text-base touch-manipulation appearance-none rounded-none"
                                 style={{
                                     color: isDarkTheme
                                         ? theme.input.text
@@ -188,43 +226,9 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                 border: `1px solid ${theme.accent}`,
                             }}
                         >
-                            {/* Botón de papelera para limpiar el mensaje actual - Columna izquierda */}
+                            {/* Columna izquierda - vacía ahora que el botón se movió */}
                             <div className="justify-self-start flex items-center">
-                                <button
-                                    onClick={handleClearText}
-                                    className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 text-base touch-manipulation min-w-[44px] min-h-[44px] ${
-                                        message.length > 0
-                                            ? "opacity-100"
-                                            : "opacity-50 cursor-not-allowed"
-                                    }`}
-                                    style={{
-                                        backgroundColor:
-                                            message.length > 0
-                                                ? theme.button.background
-                                                : isDarkTheme
-                                                ? "rgba(255, 255, 255, 0.1)"
-                                                : "rgba(0, 0, 0, 0.08)",
-                                        color: theme.button.text,
-                                    }}
-                                    disabled={message.length === 0}
-                                    title="Borrar mensaje"
-                                    aria-label="Borrar mensaje"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        className="w-5 h-5"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                        />
-                                    </svg>
-                                </button>
+                                {/* El botón de papelera se movió al área de entrada de texto */}
                             </div>
 
                             {/* Título del chat - Columna central */}
