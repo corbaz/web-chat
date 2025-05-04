@@ -105,9 +105,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             <footer
                 className="fixed bottom-0 left-0 right-0 z-50 w-full"
                 style={{
-                    backgroundColor: isDarkTheme
-                        ? theme.background
-                        : theme.secondary,
+                    backgroundColor: theme.background,
                 }}
                 role="contentinfo"
                 aria-label="Entrada de mensajes"

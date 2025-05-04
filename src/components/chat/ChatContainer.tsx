@@ -29,9 +29,10 @@ interface ChatContainerProps {
     setIsLoading: (isLoading: boolean) => void;
     theme: ColorPalette;
     isDarkTheme: boolean;
+    toggleTheme: () => void; // Añadimos la función para cambiar el tema
     selectedModel: string;
     currentChatId: string | undefined;
-    setCurrentChatId: (chatId: string | undefined) => void;
+    setCurrentChatId: React.Dispatch<React.SetStateAction<string | undefined>>; // Añadimos esta propiedad
     chatHistory: { id: string; title: string; date: Date; model?: string }[];
     setChatHistory: React.Dispatch<
         React.SetStateAction<
@@ -57,6 +58,7 @@ const ChatContainer = ({
     setIsLoading,
     theme,
     isDarkTheme,
+    toggleTheme, // Añadimos aquí la prop toggleTheme para utilizarla
     selectedModel,
     currentChatId,
     setCurrentChatId,
@@ -594,9 +596,9 @@ const ChatContainer = ({
                 onClose={onCloseRightMenu}
                 theme={theme}
                 isDarkTheme={isDarkTheme}
-                toggleTheme={() => {}} // Pasamos una función vacía porque ya no manejamos el tema aquí
+                toggleTheme={toggleTheme} // Ahora pasamos la función real para cambiar el tema
                 selectedModel={selectedModel}
-                onModelChange={onModelChange} // Ahora pasamos la función real para cambiar el modelo
+                onModelChange={onModelChange}
             />
         </>
     );

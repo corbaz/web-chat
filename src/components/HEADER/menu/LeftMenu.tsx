@@ -102,9 +102,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 }`}
                 style={{
-                    backgroundColor: isDarkTheme
-                        ? theme.background
-                        : theme.secondary,
+                    backgroundColor: theme.background,
                     borderRight: `1px solid ${theme.accent}`,
                 }}
                 role="dialog"
@@ -330,7 +328,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                         </div>
 
                                                         {/* Fecha y hora debajo del título */}
-                                                        <span className="text-xs text-gray-400 mt-1">
+                                                        <span className="text-xs text-white mt-1">
                                                             {(() => {
                                                                 const d =
                                                                     new Date(

@@ -52,11 +52,11 @@ export const lightTheme: ColorPalette = {
     secondary: "#b8a0c9", // Lila/púrpura claro
     accent: "#94cfd5", // Turquesa/azul claro
     background: "#f1e5ea", // Rosa muy pálido
-    text: "#5b4d6b", // Púrpura grisáceo
+    text: "#b8a0c9", // Púrpura grisáceo
 
     // Colores específicos para componentes
     title: {
-        color: "#b8a0c9", // Lila/púrpura claro para el título
+        color: "##ffffff", // Lila/púrpura claro para el título
     },
     chat: {
         background: "#f1e5ea", // Fondo rosa muy pálido
@@ -78,7 +78,7 @@ export const lightTheme: ColorPalette = {
     },
     input: {
         background: "#f9f3f7", // Fondo rosa muy pálido
-        text: "#5b4d6b", // Texto púrpura grisáceo
+        text: "#f1e5ea", // Texto púrpura grisáceo
         placeholder: "#a390b4", // Púrpura claro para placeholder
     },
     scrollbar: {

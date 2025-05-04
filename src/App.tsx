@@ -14,7 +14,7 @@ import { ChatContainer } from "./components/CHAT";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.30";
+const APP_VERSION = "v.2.31";
 
 export const App = () => {
     // Estados para la UI
@@ -537,6 +537,7 @@ export const App = () => {
                 setIsLoading={handleLoadingChange}
                 theme={theme}
                 isDarkTheme={isDarkTheme}
+                toggleTheme={toggleTheme} // Añadimos esta propiedad
                 selectedModel={selectedModel}
                 currentChatId={currentChatId}
                 setCurrentChatId={setCurrentChatId}

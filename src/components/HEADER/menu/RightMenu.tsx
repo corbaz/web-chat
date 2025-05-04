@@ -1,6 +1,7 @@
 import React from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import { groqModels } from "../models/groqModels";
+import LunaIcon from "../../../assets/luna.svg";
 
 interface RightMenuProps {
     isOpen: boolean;
@@ -43,9 +44,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                     isOpen ? "translate-x-0" : "translate-x-full"
                 }`}
                 style={{
-                    backgroundColor: isDarkTheme
-                        ? theme.background
-                        : theme.secondary,
+                    backgroundColor: theme.background,
                     borderLeft: `1px solid ${theme.accent}`,
                 }}
                 role="dialog"
@@ -107,19 +106,14 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                 >
                                     {isDarkTheme ? "Tema Oscuro" : "Tema Claro"}
                                 </span>
-                                <div
-                                    className="relative inline-block w-[56px] h-[28px]"
+                                <button
+                                    onClick={toggleTheme}
+                                    className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full"
                                     title="Cambiar tema"
+                                    aria-label="Cambiar entre tema claro y oscuro"
                                 >
-                                    <input
-                                        type="checkbox"
-                                        className="opacity-0 w-0 h-0"
-                                        checked={!isDarkTheme}
-                                        onChange={toggleTheme}
-                                        aria-label="Cambiar entre tema claro y oscuro"
-                                    />
-                                    <span
-                                        className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full flex items-center transition-all duration-300"
+                                    <div
+                                        className="absolute cursor-pointer inset-0 rounded-full transition-all duration-300"
                                         style={{
                                             backgroundColor: isDarkTheme
                                                 ? theme.accent
@@ -129,25 +123,48 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                     >
                                         {/* Círculo del switch */}
                                         <span
-                                            className={`absolute h-5 w-5 left-1 bottom-1 bg-black rounded-full z-10 transition-transform duration-300 ${
-                                                !isDarkTheme
-                                                    ? "transform translate-x-7"
-                                                    : ""
-                                            }`}
-                                        ></span>
+                                            className="absolute h-5 w-5 bg-white rounded-full z-10 transition-transform duration-300 transform"
+                                            style={{
+                                                top: "4px",
+                                                left: "4px",
+                                                transform: isDarkTheme
+                                                    ? "translateX(24px)"
+                                                    : "translateX(0)",
+                                            }}
+                                        />
 
-                                        {/* Iconos de sol/luna */}
-                                        {isDarkTheme ? (
-                                            <span className="absolute left-1.5 top-1/2 transform -translate-y-1/2 text-yellow-300">
-                                                🌙
-                                            </span>
-                                        ) : (
-                                            <span className="absolute right-1.5 top-1/2 transform -translate-y-1/2 text-yellow-500">
-                                                ☀️
-                                            </span>
-                                        )}
-                                    </span>
-                                </div>
+                                        {/* Icono de sol (visible en tema claro) */}
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="absolute h-3.5 w-3.5 right-2 text-yellow-400 z-[2]"
+                                            style={{
+                                                top: "7px",
+                                                opacity: isDarkTheme ? 0 : 1,
+                                            }}
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                                            />
+                                        </svg>
+
+                                        {/* Icono de luna (visible en tema oscuro) */}
+                                        <img
+                                            src={LunaIcon}
+                                            alt="Tema oscuro"
+                                            className="absolute h-3.5 w-3.5 left-2 z-[2] text-yellow-400"
+                                            style={{
+                                                top: "7px",
+                                                opacity: isDarkTheme ? 1 : 0,
+                                            }}
+                                        />
+                                    </div>
+                                </button>
                             </div>
                         </div>
 
@@ -185,7 +202,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                             className="flex-1"
                                         >
                                             {model.name}
-                                            <div className="text-xs text-gray-400">
+                                            <div className="text-xs text-white">
                                                 {model.developer}
                                             </div>
                                         </label>
