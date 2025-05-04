@@ -1,6 +1,7 @@
 import React from "react";
 import { ChatMessageType } from "../../interfaces/chat/chatTypes";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
+import { groqModels } from "../../components/HEADER/models/groqModels";
 
 interface ChatMessageProps {
     message: ChatMessageType;
@@ -14,6 +15,34 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     isDarkTheme,
 }) => {
     const isUser = message.role === "user";
+
+    const getModelShortName = (modelId?: string): string => {
+        if (!modelId) return "modelo";
+
+        // Buscar el modelo en la lista de modelos
+        const model = groqModels.find((m) => m.id === modelId);
+        if (model) {
+            // Usar el nombre del modelo como está definido en groqModels
+            return model.name;
+        }
+
+        // Si no se encuentra, devolver solo la primera parte del ID
+        return modelId.split("/").pop()?.split("-")[0] || "modelo";
+    };
+
+    const formatResponseTimeToMs = (responseTime: string): string => {
+        // Extraer el valor numérico de segundos (elimina la 's' del final)
+        const timeInSeconds = parseFloat(responseTime.replace("s", ""));
+
+        // Si es menor a 1 segundo, mostrar en milisegundos
+        if (timeInSeconds < 1) {
+            return `${Math.round(timeInSeconds * 1000)}ms`;
+        }
+        // Si es igual o mayor a 1 segundo, mantener el formato original en segundos
+        else {
+            return responseTime;
+        }
+    };
 
     return (
         <div
@@ -50,8 +79,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     <div className="flex flex-col space-y-1 mt-2">
                         {message.responseTime && (
                             <div className="text-xs opacity-70 text-right">
-                                ⏱️ Respuesta de {message.modelName || "modelo"} en{" "}
-                                {message.responseTime.replace("s", " s")}
+                                ⏱️ Respuesta de{" "}
+                                {getModelShortName(message.modelName)} en{" "}
+                                {formatResponseTimeToMs(message.responseTime)}
                             </div>
                         )}
 

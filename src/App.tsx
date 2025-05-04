@@ -188,7 +188,7 @@ export const App = () => {
                 ...chatHistory,
                 {
                     id: newChatId,
-                    title: "Nueva conversación",
+                    title: "Nuevo Chat",
                     date: new Date(),
                     model: selectedModel, // Guardar el modelo seleccionado actualmente
                 },
@@ -212,7 +212,7 @@ export const App = () => {
                 ...prevHistory,
                 {
                     id: newChatId,
-                    title: "Nueva conversación",
+                    title: "Nuevo Chat",
                     date: new Date(),
                     model: selectedModel, // Incluir el modelo seleccionado actual
                 },
@@ -268,7 +268,7 @@ export const App = () => {
             );
             const newChatEntry = {
                 id: newChatId,
-                title: "Nueva conversación",
+                title: "Nuevo Chat",
                 date: new Date(),
                 model: selectedModel,
             };
@@ -416,7 +416,7 @@ export const App = () => {
                             const newHistory = [
                                 {
                                     id: newChatId,
-                                    title: "Nueva conversación",
+                                    title: "Nuevo Chat",
                                     date: new Date(),
                                     model: selectedModel,
                                 },
