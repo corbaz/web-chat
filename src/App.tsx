@@ -14,7 +14,7 @@ import { ChatContainer } from "./components/CHAT";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.20";
+const APP_VERSION = "v.2.30";
 
 export const App = () => {
     // Estados para la UI
@@ -161,7 +161,10 @@ export const App = () => {
                 try {
                     const parsed = JSON.parse(storedConversations);
                     if (parsed && typeof parsed === "object") {
-                        conversations = parsed;
+                        conversations = parsed as Record<
+                            string,
+                            ChatMessageType[]
+                        >;
                     }
                 } catch (e) {
                     console.error("Error al parsear conversaciones:", e);
@@ -244,7 +247,7 @@ export const App = () => {
         try {
             // 1. Actualizar los mensajes en localStorage
             const storedConversations = localStorage.getItem("chat-messages");
-            let conversations = {};
+            let conversations: Record<string, ChatMessageType[]> = {};
 
             if (storedConversations) {
                 conversations = JSON.parse(storedConversations);
@@ -399,7 +402,10 @@ export const App = () => {
                             ];
 
                             // Guardar el nuevo chat en localStorage
-                            const newConversations = {};
+                            const newConversations: Record<
+                                string,
+                                ChatMessageType[]
+                            > = {};
                             newConversations[newChatId] = welcomeMessage;
                             localStorage.setItem(
                                 "chat-messages",
