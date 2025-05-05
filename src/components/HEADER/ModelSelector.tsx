@@ -64,7 +64,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                 style={{
                                     color: isDarkTheme
                                         ? theme.input.text
-                                        : theme.input.background,
+                                        : theme.accent,
                                 }}
                             >
                                 {model.name}
