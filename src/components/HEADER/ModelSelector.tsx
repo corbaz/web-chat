@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import Select, { GroupBase, StylesConfig } from "react-select";
 
 import { ColorPalette } from "../../interfaces/temas/temas";
 import { groqModels, GroqModel } from "./models/groqModels";
@@ -8,6 +9,12 @@ interface ModelSelectorProps {
     onModelChange: (modelId: string) => void;
     theme: ColorPalette;
     isDarkTheme: boolean;
+}
+
+// Interfaz para las opciones del selector
+interface ModelOption {
+    value: string;
+    label: string;
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
@@ -21,58 +28,109 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         ...new Set(groqModels.map((model: GroqModel) => model.developer)),
     ];
 
+    // Preparar las opciones agrupadas para react-select
+    const groupedOptions: GroupBase<ModelOption>[] = modelDevelopers.map(
+        (developer) => ({
+            label: developer.toUpperCase(),
+            options: groqModels
+                .filter((model) => model.developer === developer)
+                .map((model) => ({
+                    value: model.id,
+                    label: model.name,
+                })),
+        })
+    );
+
     // Log when selectedModel changes to help debug
     useEffect(() => {
         console.log("ModelSelector - Current selected model:", selectedModel);
     }, [selectedModel]);
 
-    return (
-        <select
-            value={selectedModel}
-            onChange={(e) => {
-                console.log("Model changed to:", e.target.value);
-                onModelChange(e.target.value);
-            }}
-            style={{
-                padding: "6px 10px",
-                borderRadius: "6px",
+    // Estilos personalizados para react-select con tipos adecuados
+    const customStyles: StylesConfig<
+        ModelOption,
+        false,
+        GroupBase<ModelOption>
+    > = {
+        control: (provided) => ({
+            ...provided,
+            border: `3px solid ${theme.messages.ai.background}`,
+            borderRadius: "6px",
+            padding: "1px",
+            backgroundColor: isDarkTheme
+                ? theme.input.background
+                : theme.input.text,
+            boxShadow: "none",
+            "&:hover": {
                 border: `3px solid ${theme.messages.ai.background}`,
-                backgroundColor: isDarkTheme
-                    ? theme.input.background
-                    : theme.input.text,
-                color: theme.messages.ai.background,
-                fontWeight: "bold",
-                fontSize: "14px",
                 cursor: "pointer",
+            },
+        }),
+        option: (provided, state) => ({
+            ...provided,
+            backgroundColor: state.isSelected
+                ? theme.messages.ai.background
+                : isDarkTheme
+                ? theme.input.background
+                : theme.input.text,
+            color: state.isSelected
+                ? isDarkTheme
+                    ? theme.input.background
+                    : theme.input.text
+                : isDarkTheme
+                ? theme.input.text
+                : theme.accent,
+            cursor: "pointer",
+            "&:hover": {
+                backgroundColor: theme.button.background,
+                color: theme.button.text,
+            },
+        }),
+        singleValue: (provided) => ({
+            ...provided,
+            color: theme.messages.ai.background,
+            fontWeight: "bold",
+        }),
+        menu: (provided) => ({
+            ...provided,
+            backgroundColor: isDarkTheme ? theme.background : theme.secondary,
+            zIndex: 9999,
+        }),
+        group: (provided) => ({
+            ...provided,
+            paddingTop: "6px",
+            paddingBottom: "6px",
+        }),
+        groupHeading: (provided) => ({
+            ...provided,
+            color: theme.messages.ai.background,
+            fontWeight: "bold",
+            fontSize: "0.85em",
+            marginBottom: "4px",
+            paddingLeft: "12px",
+        }),
+    };
+
+    return (
+        <Select<ModelOption, false, GroupBase<ModelOption>>
+            instanceId="model-selector"
+            value={groupedOptions
+                .flatMap((group) => group.options)
+                .find((option) => option.value === selectedModel)}
+            onChange={(option) => {
+                if (option) {
+                    console.log("Model changed to:", option.value);
+                    onModelChange(option.value);
+                }
             }}
-            title="Seleccionar modelo de IA"
-        >
-            {modelDevelopers.map((developer: string) => (
-                <optgroup
-                    key={developer}
-                    label={developer.toUpperCase()}
-                    style={{ color: theme.messages.ai.background }}
-                >
-                    {groqModels
-                        .filter(
-                            (model: GroqModel) => model.developer === developer
-                        )
-                        .map((model: GroqModel) => (
-                            <option
-                                key={model.id}
-                                value={model.id}
-                                style={{
-                                    color: isDarkTheme
-                                        ? theme.input.text
-                                        : theme.accent,
-                                }}
-                            >
-                                {model.name}
-                            </option>
-                        ))}
-                </optgroup>
-            ))}
-        </select>
+            options={groupedOptions}
+            styles={customStyles}
+            isSearchable={false}
+            placeholder="Seleccionar modelo"
+            aria-label="Seleccionar modelo de IA"
+            className="react-select-container"
+            classNamePrefix="react-select"
+        />
     );
 };
 

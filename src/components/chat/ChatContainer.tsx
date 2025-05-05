@@ -454,7 +454,7 @@ const ChatContainer = ({
                         headers: {
                             "Content-Type": "application/json",
                             Authorization:
-                                "Bearer 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",
+                                "Bearer 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",
                         },
                     }
                 );

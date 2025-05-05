@@ -236,10 +236,15 @@ Como complemento de Vite es la forma más sencilla de integrarlo con marcos como
 
 ```cmd
 curl -X GET "https://api.groq.com/openai/v1/models" \
-     -H "Authorization: Bearer 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" \
+     -H "Authorization: Bearer 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" \
      -H "Content-Type: application/json"
 ```
 
+### Console API Groq
+
+API Key: https://console.groq.com/keys [![Groq](https://img.shields.io/badge/Groq-API-blue?style=flat&logo=groq)](https://console.groq.com/keys)
+
+---
 
 ### Repositorio en GitHub
 Repositorio: https://github.com/corbaz/web-chat [![GitHub](https://img.shields.io/badge/GitHub-Repo-blue?style=flat&logo=github)](https://github.com/corbaz/web-chat)
