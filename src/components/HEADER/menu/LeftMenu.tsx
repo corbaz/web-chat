@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
+import Swal from "sweetalert2";
 
 interface LeftMenuProps {
     isOpen: boolean;
@@ -77,6 +78,39 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         // Llamar a la función de eliminación en el componente padre
         if (onDeleteChat) {
             onDeleteChat(chatId);
+        }
+    };
+
+    const showDeleteConfirmation = async (
+        chatId: string,
+        chatTitle: string
+    ) => {
+        const result = await Swal.fire({
+            title: "¿Eliminar esta conversación?",
+            text: `¿Estás seguro de que quieres eliminar "${chatTitle}"?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: theme.button.background,
+            backdrop: true,
+            background: isDarkTheme ? theme.background : theme.secondary,
+            color: isDarkTheme ? theme.text : theme.primary,
+        });
+
+        if (result.isConfirmed) {
+            handleDeleteChat(chatId);
+
+            // Mostrar mensaje de éxito
+            Swal.fire({
+                title: "¡Eliminado!",
+                text: "La conversación ha sido eliminada.",
+                icon: "success",
+                timer: 1500,
+                confirmButtonColor: theme.button.background,
+                background: isDarkTheme ? theme.background : theme.secondary,
+                color: isDarkTheme ? theme.text : theme.primary,
+            });
         }
     };
 
@@ -298,15 +332,10 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                     e
                                                                 ) => {
                                                                     e.stopPropagation();
-                                                                    if (
-                                                                        window.confirm(
-                                                                            "¿Estás seguro de que quieres eliminar esta conversación?"
-                                                                        )
-                                                                    ) {
-                                                                        handleDeleteChat(
-                                                                            chat.id
-                                                                        );
-                                                                    }
+                                                                    showDeleteConfirmation(
+                                                                        chat.id,
+                                                                        chat.title
+                                                                    );
                                                                 }}
                                                             >
                                                                 <svg
