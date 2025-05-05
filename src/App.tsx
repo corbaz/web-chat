@@ -14,7 +14,7 @@ import { ChatContainer } from "./components/CHAT";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.33";
+const APP_VERSION = "v.2.34";
 
 export const App = () => {
     // Estados para la UI
@@ -598,6 +598,12 @@ export const App = () => {
                 chatTitle={
                     chatHistory.find((chat) => chat.id === currentChatId)?.title
                 }
+                onUpdateChatTitle={(newTitle) => {
+                    if (currentChatId) {
+                        handleUpdateChatTitle(currentChatId, newTitle);
+                    }
+                }}
+                currentChatId={currentChatId}
             />
         </div>
     );

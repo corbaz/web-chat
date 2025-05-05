@@ -12,7 +12,9 @@ interface FooterProps {
     theme: ColorPalette;
     isDarkTheme: boolean;
     isLoading: boolean;
-    chatTitle?: string; // Nueva prop para mostrar el título del chat
+    chatTitle?: string; // Título del chat
+    onUpdateChatTitle?: (newTitle: string) => void; // Nueva prop para actualizar el título
+    currentChatId?: string; // Necesario para saber qué chat se está editando
 }
 
 // Crear una interfaz para exponer el método focus
@@ -31,11 +33,16 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             isDarkTheme,
             isLoading,
             chatTitle,
+            onUpdateChatTitle,
+            currentChatId,
         },
         ref
     ) => {
         const [message, setMessage] = useState("");
+        const [isEditingTitle, setIsEditingTitle] = useState(false);
+        const [editTitleValue, setEditTitleValue] = useState("");
         const textareaRef = useRef<HTMLTextAreaElement>(null);
+        const titleInputRef = useRef<HTMLInputElement>(null);
         const mobileDevice = typeof window !== "undefined" && isMobile();
 
         // Exponer el método focusTextarea al componente padre
@@ -46,6 +53,20 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                 }
             },
         }));
+
+        // Actualizar el valor de edición cuando cambia el título
+        useEffect(() => {
+            if (chatTitle) {
+                setEditTitleValue(chatTitle);
+            }
+        }, [chatTitle]);
+
+        // Enfocar el input de título cuando se activa el modo de edición
+        useEffect(() => {
+            if (isEditingTitle && titleInputRef.current) {
+                titleInputRef.current.focus();
+            }
+        }, [isEditingTitle]);
 
         // Ajustar el tamaño del textarea según el contenido
         const adjustTextareaHeight = () => {
@@ -100,6 +121,70 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             if (textareaRef.current) {
                 textareaRef.current.style.height = "auto";
                 textareaRef.current.focus();
+            }
+        };
+
+        // Manejar inicio de edición del título
+        const handleTitleClick = () => {
+            if (!isLoading && chatTitle && currentChatId && onUpdateChatTitle) {
+                setIsEditingTitle(true);
+                setEditTitleValue(chatTitle);
+            }
+        };
+
+        // Manejar cambios en el input de título
+        const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            setEditTitleValue(e.target.value);
+        };
+
+        // Manejar la finalización de la edición del título
+        const handleTitleBlur = () => {
+            if (editTitleValue.trim() && onUpdateChatTitle && currentChatId) {
+                // Actualizar el título en el contexto del chat
+                onUpdateChatTitle(editTitleValue);
+
+                // También actualizamos en localStorage para persistencia
+                try {
+                    const chatHistoryRaw = localStorage.getItem("chat-history");
+                    if (chatHistoryRaw) {
+                        let chatHistoryArr = JSON.parse(chatHistoryRaw);
+                        chatHistoryArr = chatHistoryArr.map(
+                            (c: {
+                                id: string;
+                                title: string;
+                                date: Date;
+                                model?: string;
+                            }) =>
+                                c.id === currentChatId
+                                    ? { ...c, title: editTitleValue }
+                                    : c
+                        );
+                        localStorage.setItem(
+                            "chat-history",
+                            JSON.stringify(chatHistoryArr)
+                        );
+                    }
+                } catch (error) {
+                    console.error(
+                        "Error al actualizar título en localStorage:",
+                        error
+                    );
+                }
+            }
+            setIsEditingTitle(false);
+        };
+
+        // Manejar teclas en el input de título
+        const handleTitleKeyDown = (
+            e: React.KeyboardEvent<HTMLInputElement>
+        ) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                handleTitleBlur();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                setIsEditingTitle(false);
+                setEditTitleValue(chatTitle || "");
             }
         };
 
@@ -217,47 +302,22 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
 
                         {/* Barra de herramientas */}
                         <div
-                            className="grid grid-cols-3 items-center mt-2 mb-2 rounded-lg p-2"
+                            className="flex items-stretch justify-between rounded-lg border mt-2 mb-2"
                             style={{
+                                border: `1px solid ${theme.accent}`,
                                 backgroundColor: isDarkTheme
                                     ? "rgba(255, 255, 255, 0.05)"
                                     : "rgba(0, 0, 0, 0.03)",
-                                border: `1px solid ${theme.accent}`,
+                                height: "48px", // Misma altura que la barra de mensajes
                             }}
                         >
-                            {/* Columna izquierda - vacía ahora que el botón se movió */}
-                            <div className="justify-self-start flex items-center">
-                                {/* El botón de papelera se movió al área de entrada de texto */}
-                            </div>
-
-                            {/* Título del chat - Columna central */}
-                            <div className="justify-self-center flex items-center">
-                                {chatTitle && (
-                                    <span
-                                        className="text-base font-medium"
-                                        style={{
-                                            color: theme.text,
-                                        }}
-                                    >
-                                        {chatTitle}
-                                    </span>
-                                )}
-                                {isLoading && (
-                                    <div className="flex items-center gap-1">
-                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing"></span>
-                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing animation-delay-[200ms]"></span>
-                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing animation-delay-[400ms]"></span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Botones de utilidad - Columna derecha */}
-                            <div className="justify-self-end flex items-center space-x-2">
-                                {/* Botón de escoba para borrar el contexto */}
+                            {/* Columna izquierda - botón de escoba */}
+                            <div className="flex items-center">
+                                {/* Botón de escoba para borrar el contexto - estilo idéntico al botón trash */}
                                 {clearContext && (
                                     <button
                                         onClick={clearContext}
-                                        className={`p-1 rounded-full flex items-center justify-center transition-opacity duration-200 text-base touch-manipulation min-w-[44px] min-h-[44px] ${
+                                        className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
                                             hasContext
                                                 ? "opacity-100"
                                                 : "opacity-50 cursor-not-allowed"
@@ -269,6 +329,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                                 ? "rgba(255, 255, 255, 0.1)"
                                                 : "rgba(0, 0, 0, 0.08)",
                                             color: theme.button.text,
+                                            borderRight: `1px solid ${theme.accent}`,
                                         }}
                                         disabled={!hasContext}
                                         title="Borrar historial"
@@ -284,11 +345,50 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                         />
                                     </button>
                                 )}
+                            </div>
 
+                            {/* Título del chat - Columna central */}
+                            <div className="flex items-center justify-center flex-grow">
+                                {isEditingTitle ? (
+                                    <input
+                                        ref={titleInputRef}
+                                        value={editTitleValue}
+                                        onChange={handleTitleChange}
+                                        onBlur={handleTitleBlur}
+                                        onKeyDown={handleTitleKeyDown}
+                                        className="text-base font-medium bg-transparent border-none outline-none"
+                                        style={{
+                                            color: theme.text,
+                                        }}
+                                    />
+                                ) : (
+                                    chatTitle && (
+                                        <span
+                                            className="text-base font-medium cursor-pointer"
+                                            style={{
+                                                color: theme.text,
+                                            }}
+                                            onClick={handleTitleClick}
+                                        >
+                                            {chatTitle}
+                                        </span>
+                                    )
+                                )}
+                                {isLoading && (
+                                    <div className="flex items-center gap-1">
+                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing"></span>
+                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing animation-delay-[200ms]"></span>
+                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing animation-delay-[400ms]"></span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Switch de tema - Columna derecha */}
+                            <div className="flex items-center">
                                 {/* Switch de tema con clases Tailwind */}
                                 <button
                                     onClick={toggleTheme}
-                                    className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full"
+                                    className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full mr-2"
                                     title="Cambiar tema"
                                     aria-label="Cambiar entre tema claro y oscuro"
                                 >

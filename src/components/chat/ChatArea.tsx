@@ -46,7 +46,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
                 {isLoading && (
                     <div
-                        className="flex justify-center items-center p-3 rounded-lg my-2"
+                        className="flex justify-center items-center p-3 rounded-lg my-24"
                         style={{
                             backgroundColor: isDarkTheme
                                 ? "rgba(255, 255, 255, 0.1)"
