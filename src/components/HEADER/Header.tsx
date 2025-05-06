@@ -13,6 +13,9 @@ interface HeaderProps {
     isDarkTheme: boolean;
     onToggleLeftMenu: () => void;
     onToggleRightMenu: () => void;
+    chatId?: string;
+    onUpdateChatTitle?: (chatId: string, newTitle: string) => void;
+    editable?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -24,6 +27,9 @@ const Header: React.FC<HeaderProps> = ({
     isDarkTheme,
     onToggleLeftMenu,
     onToggleRightMenu,
+    chatId,
+    onUpdateChatTitle,
+    editable = false,
 }) => {
     return (
         <header
@@ -46,7 +52,14 @@ const Header: React.FC<HeaderProps> = ({
                 {/* Título y selector de modelos */}
                 <div className="flex flex-col items-center mx-4">
                     {/* Componente de título y versión */}
-                    <Title title={title} version={version} theme={theme} />
+                    <Title
+                        title={title}
+                        version={version}
+                        theme={theme}
+                        chatId={chatId}
+                        onUpdateChatTitle={onUpdateChatTitle}
+                        editable={editable}
+                    />
 
                     {/* Selector de modelo */}
                     <div className="w-full mt-1">

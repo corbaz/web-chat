@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import Swal from "sweetalert2";
+import { createTitleEditHandlers } from "../../../utils/titleUtils";
 
 interface LeftMenuProps {
     isOpen: boolean;
@@ -30,14 +31,25 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState<string>("");
 
+    const { handleEditKeyDown, truncateTitle } = createTitleEditHandlers({
+        maxLength: 40, // Truncamiento en menú lateral a 40 caracteres
+        onUpdateTitle: (chatId: string, newTitle: string) => {
+            if (onUpdateChatTitle) {
+                onUpdateChatTitle(chatId, newTitle);
+            }
+        },
+    });
+
     const handleEditClick = (chat: { id: string; title: string }) => {
         setEditingId(chat.id);
         setEditValue(chat.title);
     };
+
     const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEditValue(e.target.value);
     };
-    const handleEditBlur = (chat: { id: string }) => {
+
+    const handleEditBlur = (chat: { id: string; title: string }) => {
         if (editValue.trim()) {
             // Actualizar el nombre en localStorage
             const chatHistoryRaw = localStorage.getItem("chat-history");
@@ -63,6 +75,18 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             }
         }
         setEditingId(null);
+    };
+
+    const handleKeyDownInLeftMenu = (
+        e: React.KeyboardEvent<HTMLInputElement>,
+        chat: { id: string; title: string }
+    ) => {
+        handleEditKeyDown(e, chat.id, editValue, () => {
+            setEditingId(null);
+            if (e.key === "Escape") {
+                setEditValue(chat.title); // Restaurar el valor original solo si es Escape
+            }
+        });
     };
 
     const handleDeleteChat = (chatId: string) => {
@@ -111,6 +135,29 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                 background: isDarkTheme ? theme.background : theme.secondary,
                 color: isDarkTheme ? theme.text : theme.primary,
             });
+        }
+    };
+
+    const handleNewChat = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // Evitar que el evento burbujee
+
+        // Mostrar confirmación antes de crear un nuevo chat
+        const result = await Swal.fire({
+            title: "Nueva iteración",
+            text: "¿Desea continuar con la iteración?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, continuar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: theme.button.background,
+            backdrop: true,
+            background: isDarkTheme ? theme.background : theme.secondary,
+            color: isDarkTheme ? theme.text : theme.primary,
+        });
+
+        if (result.isConfirmed) {
+            onNewChat(); // Llamar a la función de nueva conversación solo si confirma
+            onClose(); // Cerrar el menú después de crear
         }
     };
 
@@ -185,11 +232,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                             backgroundColor: theme.button.background,
                             color: theme.button.text,
                         }}
-                        onClick={(e) => {
-                            e.stopPropagation(); // Evitar que el evento burbujee
-                            onNewChat(); // Llamar a la función de nueva conversación
-                            onClose(); // Cerrar el menú después de crear
-                        }}
+                        onClick={handleNewChat}
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -219,77 +262,68 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                             <ul className="space-y-1">
                                 {chatHistory.map((chat) => (
                                     <li key={chat.id}>
-                                        <button
-                                            className="w-full text-left p-3 rounded-lg transition-colors flex items-center"
-                                            style={{
-                                                backgroundColor:
-                                                    currentChatId === chat.id
-                                                        ? isDarkTheme
-                                                            ? "rgba(255, 255, 255, 0.1)"
-                                                            : "rgba(0, 0, 0, 0.1)"
-                                                        : "transparent",
-                                                color: isDarkTheme
-                                                    ? theme.text
-                                                    : theme.primary,
-                                            }}
-                                            onClick={() => {
-                                                onSelectChat(chat.id);
-                                                onClose(); // Cerrar el menú después de seleccionar el chat
-                                            }}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="18"
-                                                height="18"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                className="mr-2"
+                                        {editingId === chat.id ? (
+                                            <div className="w-full p-2 flex items-center">
+                                                <input
+                                                    value={editValue}
+                                                    onChange={handleEditChange}
+                                                    onBlur={() =>
+                                                        handleEditBlur(chat)
+                                                    }
+                                                    className="w-full bg-transparent border-b border-white text-white outline-none"
+                                                    autoFocus
+                                                    onFocus={(e) => {
+                                                        e.target.select();
+                                                    }}
+                                                    onKeyDown={(e) =>
+                                                        handleKeyDownInLeftMenu(
+                                                            e,
+                                                            chat
+                                                        )
+                                                    }
+                                                    maxLength={100} // Aumentar significativamente el máximo de caracteres permitidos
+                                                />
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="w-full text-left p-3 rounded-lg transition-colors flex items-center"
+                                                style={{
+                                                    backgroundColor:
+                                                        currentChatId ===
+                                                        chat.id
+                                                            ? isDarkTheme
+                                                                ? "rgba(255, 255, 255, 0.1)"
+                                                                : "rgba(0, 0, 0, 0.1)"
+                                                            : "transparent",
+                                                    color: isDarkTheme
+                                                        ? theme.text
+                                                        : theme.primary,
+                                                }}
+                                                onClick={() => {
+                                                    onSelectChat(chat.id);
+                                                    onClose(); // Cerrar el menú después de seleccionar el chat
+                                                }}
                                             >
-                                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                            </svg>
-                                            <div className="flex-1 truncate flex items-center gap-2">
-                                                {editingId === chat.id ? (
-                                                    <input
-                                                        className="bg-transparent border-b border-gray-400 text-sm text-white px-1 w-32"
-                                                        value={editValue}
-                                                        onChange={
-                                                            handleEditChange
-                                                        }
-                                                        onBlur={() =>
-                                                            handleEditBlur(chat)
-                                                        }
-                                                        autoFocus
-                                                        onKeyDown={(e) => {
-                                                            // Evitar que la barra espaciadora haga perder el foco
-                                                            e.stopPropagation();
-                                                            // Confirmar con Enter
-                                                            if (
-                                                                e.key ===
-                                                                "Enter"
-                                                            ) {
-                                                                handleEditBlur(
-                                                                    chat
-                                                                );
-                                                            }
-                                                            // Cancelar con Escape
-                                                            if (
-                                                                e.key ===
-                                                                "Escape"
-                                                            ) {
-                                                                setEditingId(
-                                                                    null
-                                                                );
-                                                            }
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="flex flex-col w-full">
-                                                        <div className="flex items-center">
-                                                            {/* Botón de editar (lápiz) a la izquierda */}
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="18"
+                                                    height="18"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className="mr-2"
+                                                >
+                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                                </svg>
+                                                <div className="flex flex-col w-full">
+                                                    {/* Primera fila: título y botones */}
+                                                    <div className="flex items-center justify-between w-full">
+                                                        {/* Grupo izquierdo: botón editar y título */}
+                                                        <div className="flex items-center flex-grow overflow-hidden">
+                                                            {/* Botón de editar (lápiz) */}
                                                             <button
                                                                 className="mr-2 p-1 hover:bg-gray-200 rounded flex-shrink-0"
                                                                 title="Editar nombre"
@@ -319,64 +353,63 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                 </svg>
                                                             </button>
 
-                                                            {/* Título del chat */}
-                                                            <span className="flex-grow truncate">
-                                                                {chat.title}
+                                                            {/* Título del chat - con más espacio para mostrar más caracteres */}
+                                                            <span className="truncate max-w-[200px]">
+                                                                {truncateTitle(
+                                                                    chat.title
+                                                                )}
                                                             </span>
-
-                                                            {/* Botón de eliminar (papelera) a la derecha */}
-                                                            <button
-                                                                className="ml-2 p-1 hover:bg-gray-200 rounded flex-shrink-0"
-                                                                title="Eliminar chat"
-                                                                onClick={(
-                                                                    e
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    showDeleteConfirmation(
-                                                                        chat.id,
-                                                                        chat.title
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="14"
-                                                                    height="14"
-                                                                    fill="none"
-                                                                    viewBox="0 0 24 24"
-                                                                    stroke="currentColor"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                    />
-                                                                </svg>
-                                                            </button>
                                                         </div>
 
-                                                        {/* Fecha y hora debajo del título */}
-                                                        <span className="text-xs text-white mt-1">
-                                                            {(() => {
-                                                                const d =
-                                                                    new Date(
-                                                                        chat.date
-                                                                    );
-                                                                return `${d.toLocaleDateString()} ${d.toLocaleTimeString(
-                                                                    [],
-                                                                    {
-                                                                        hour: "2-digit",
-                                                                        minute: "2-digit",
-                                                                        second: "2-digit",
-                                                                    }
-                                                                )}`;
-                                                            })()}
-                                                        </span>
+                                                        {/* Botón de eliminar (papelera) alineado a la derecha */}
+                                                        <button
+                                                            className="ml-auto p-1 hover:bg-gray-200 rounded flex-shrink-0"
+                                                            title="Eliminar chat"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                showDeleteConfirmation(
+                                                                    chat.id,
+                                                                    chat.title
+                                                                );
+                                                            }}
+                                                        >
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="14"
+                                                                height="14"
+                                                                fill="none"
+                                                                viewBox="0 0 24 24"
+                                                                stroke="currentColor"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                />
+                                                            </svg>
+                                                        </button>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </button>
+
+                                                    {/* Fecha y hora debajo del título */}
+                                                    <span className="text-xs text-white mt-1">
+                                                        {(() => {
+                                                            const d = new Date(
+                                                                chat.date
+                                                            );
+                                                            return `${d.toLocaleDateString()} ${d.toLocaleTimeString(
+                                                                [],
+                                                                {
+                                                                    hour: "2-digit",
+                                                                    minute: "2-digit",
+                                                                    second: "2-digit",
+                                                                }
+                                                            )}`;
+                                                        })()}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

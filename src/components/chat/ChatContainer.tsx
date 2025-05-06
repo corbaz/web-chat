@@ -20,6 +20,7 @@ import {
     TOKEN_LIMIT_SAFETY_FACTOR,
 } from "../../utils/tokenUtils";
 import { formatResponseTime } from "../../utils/timeUtils";
+import { createWelcomeMessage } from "../../constants/messages";
 import axios from "axios";
 
 interface ChatContainerProps {
@@ -161,15 +162,7 @@ const ChatContainer = ({
             setChatHistory(newHistory);
             setCurrentChatId(newChatId);
             // Mensaje de bienvenida automático
-            const bienvenida = [
-                {
-                    id: "intro-message",
-                    role: "assistant" as const,
-                    content:
-                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                    timestamp: Date.now(),
-                },
-            ];
+            const bienvenida = [createWelcomeMessage()];
             setMessages(bienvenida);
             // Guardar en localStorage para reflejarlo en la UI y persistencia
             localStorage.setItem(
@@ -206,15 +199,7 @@ const ChatContainer = ({
                     console.log(
                         "No hay mensajes para este chat, mostrando bienvenida"
                     );
-                    const bienvenida = [
-                        {
-                            id: "intro-message",
-                            role: "assistant" as const,
-                            content:
-                                "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                            timestamp: Date.now(),
-                        },
-                    ];
+                    const bienvenida = [createWelcomeMessage()];
                     setMessages(bienvenida);
 
                     // Crear una estructura actualizada para guardar en localStorage
@@ -235,15 +220,7 @@ const ChatContainer = ({
             }
         } else if (currentChatId) {
             // Si no hay nada en localStorage pero hay chatId, mostrar bienvenida y guardar
-            const bienvenida = [
-                {
-                    id: "intro-message",
-                    role: "assistant" as const,
-                    content:
-                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                    timestamp: Date.now(),
-                },
-            ];
+            const bienvenida = [createWelcomeMessage()];
             setMessages(bienvenida);
             localStorage.setItem(
                 STORAGE_KEY,

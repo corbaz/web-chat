@@ -3,6 +3,7 @@ import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { groqModels } from "./components/HEADER/models/groqModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 import { generateLayoutCSS } from "./utils/layoutConstants";
+import { createWelcomeMessage } from "./constants/messages";
 
 // Componentes principales
 import Header from "./components/HEADER/Header";
@@ -14,7 +15,7 @@ import { ChatContainer } from "./components/CHAT";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.34";
+const APP_VERSION = "v.2.40";
 
 export const App = () => {
     // Estados para la UI
@@ -137,16 +138,7 @@ export const App = () => {
 
     // Manejador para crear una nueva conversación
     const handleNewChat = () => {
-        const newMessages = [
-            {
-                id: "intro-message",
-                role: "assistant" as const,
-                content:
-                    "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                timestamp: Date.now(),
-                modelName: selectedModel, // Guardar el modelo actual en el mensaje de bienvenida
-            },
-        ];
+        const newMessages = [createWelcomeMessage(selectedModel)];
 
         // Generar un nuevo ID para esta conversación
         const newChatId = `chat_${Date.now()}`;
@@ -233,16 +225,7 @@ export const App = () => {
         const newChatId = `chat_${Date.now()}`;
 
         // Mensaje de bienvenida para el nuevo chat
-        const welcomeMessage = [
-            {
-                id: "intro-message",
-                role: "assistant" as const,
-                content:
-                    "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                timestamp: Date.now(),
-                modelName: selectedModel,
-            },
-        ];
+        const welcomeMessage = [createWelcomeMessage(selectedModel)];
 
         try {
             // 1. Actualizar los mensajes en localStorage
@@ -391,14 +374,7 @@ export const App = () => {
                             // Generar un nuevo ID único
                             const newChatId = `chat_${Date.now()}`;
                             const welcomeMessage = [
-                                {
-                                    id: "intro-message",
-                                    role: "assistant" as const,
-                                    content:
-                                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                                    timestamp: Date.now(),
-                                    modelName: selectedModel,
-                                },
+                                createWelcomeMessage(selectedModel),
                             ];
 
                             // Guardar el nuevo chat en localStorage

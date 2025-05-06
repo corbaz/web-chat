@@ -174,20 +174,6 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             setIsEditingTitle(false);
         };
 
-        // Manejar teclas en el input de título
-        const handleTitleKeyDown = (
-            e: React.KeyboardEvent<HTMLInputElement>
-        ) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                handleTitleBlur();
-            } else if (e.key === "Escape") {
-                e.preventDefault();
-                setIsEditingTitle(false);
-                setEditTitleValue(chatTitle || "");
-            }
-        };
-
         return (
             <footer
                 className="fixed bottom-0 left-0 right-0 z-50 w-full"
@@ -355,22 +341,52 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                         value={editTitleValue}
                                         onChange={handleTitleChange}
                                         onBlur={handleTitleBlur}
-                                        onKeyDown={handleTitleKeyDown}
-                                        className="text-base font-medium bg-transparent border-none outline-none"
+                                        onKeyDown={(e) => {
+                                            // Evitar que la barra espaciadora haga perder el foco
+                                            e.stopPropagation();
+
+                                            if (e.key === "Enter") {
+                                                handleTitleBlur();
+                                            } else if (e.key === "Escape") {
+                                                setIsEditingTitle(false);
+                                                setEditTitleValue(
+                                                    chatTitle || ""
+                                                );
+                                            }
+                                        }}
+                                        onFocus={(e) => {
+                                            // Seleccionar todo el texto al enfocar
+                                            e.target.select();
+                                        }}
+                                        className="text-base font-medium bg-transparent border-none outline-none text-center w-full"
                                         style={{
                                             color: theme.text,
                                         }}
+                                        maxLength={30} // Límite máximo de 30 caracteres
                                     />
                                 ) : (
                                     chatTitle && (
                                         <span
-                                            className="text-base font-medium cursor-pointer"
+                                            className="text-base font-medium cursor-pointer truncate max-w-[240px]"
                                             style={{
                                                 color: theme.text,
                                             }}
                                             onClick={handleTitleClick}
                                         >
-                                            {chatTitle}
+                                            {chatTitle.length > 25
+                                                ? chatTitle.split(" ")[0] +
+                                                  (chatTitle.split(" ")[0]
+                                                      .length < 25
+                                                      ? " " +
+                                                        chatTitle.substring(
+                                                            chatTitle.split(
+                                                                " "
+                                                            )[0].length + 1,
+                                                            25
+                                                        ) +
+                                                        "..."
+                                                      : "...")
+                                                : chatTitle}
                                         </span>
                                     )
                                 )}

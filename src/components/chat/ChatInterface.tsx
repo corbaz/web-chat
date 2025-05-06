@@ -15,6 +15,7 @@ import {
     MAX_RESPONSE_TOKENS,
     TOKEN_LIMIT_SAFETY_FACTOR,
 } from "../../utils/tokenUtils.ts";
+import { createWelcomeMessage } from "../../constants/messages";
 import axios from "axios";
 
 // Interfaz para los mensajes del chat
@@ -103,27 +104,11 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
 
                 // Solo si no hay mensajes guardados o son inválidos, mostrar el mensaje de bienvenida
                 console.log("Mostrando mensaje de bienvenida por defecto");
-                setMessages([
-                    {
-                        id: "intro-message",
-                        role: "assistant",
-                        content:
-                            "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                        timestamp: Date.now(),
-                    },
-                ]);
+                setMessages([createWelcomeMessage()]);
             } catch (error) {
                 console.error("Error al cargar mensajes:", error);
                 // Establecer mensaje de bienvenida en caso de error
-                setMessages([
-                    {
-                        id: "intro-message",
-                        role: "assistant",
-                        content:
-                            "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                        timestamp: Date.now(),
-                    },
-                ]);
+                setMessages([createWelcomeMessage()]);
             }
         }, []); // Ejecutar solo una vez al montar el componente
 
@@ -242,15 +227,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(
         // Función para borrar completamente el historial de conversación
         const clearContext = () => {
             // Mostrar mensaje de bienvenida después de borrar el historial
-            setMessages([
-                {
-                    id: "intro-message",
-                    role: "assistant",
-                    content:
-                        "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
-                    timestamp: Date.now(),
-                },
-            ]);
+            setMessages([createWelcomeMessage()]);
 
             // Enfocar el input después de limpiar el contexto
             setTimeout(() => {
