@@ -3,6 +3,7 @@ import { ColorPalette } from "../../interfaces/temas/temas";
 import { isMobile } from "../../utils/mobileUtils";
 import LunaIcon from "../../assets/luna.svg";
 import EscobaIcon from "../../assets/escoba.svg";
+import TrashIcon from "../../assets/trash.svg";
 
 interface FooterProps {
     onSendMessage: (message: string) => void;
@@ -186,7 +187,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             >
                 <div className="flex justify-center w-full">
                     <div className="px-4 py-2 w-full md:max-w-3xl lg:max-w-4xl xl:max-w-6xl">
-                        {/* Área de entrada de texto */}
+                        {/* Barra de entrada de texto */}
                         <div
                             className="flex items-stretch rounded-lg border"
                             style={{
@@ -196,7 +197,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                     : "rgba(0, 0, 0, 0.02)",
                             }}
                         >
-                            {/* Botón de papelera para limpiar el mensaje actual (ahora a la izquierda) */}
+                            {/* Botón de papelera para limpiar el mensaje actual */}
                             <button
                                 onClick={handleClearText}
                                 title="Borrar mensaje"
@@ -218,22 +219,18 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                 }}
                                 disabled={message.length === 0}
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
+                                <img
+                                    src={TrashIcon}
+                                    alt="Borrar mensaje"
                                     className="w-5 h-5"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                </svg>
+                                    style={{
+                                        filter: "brightness(0) invert(1)",
+                                    }}
+                                />
                             </button>
 
+                            {/* Área de texto para escribir mensajes */}
+                            {/* Usar textarea para permitir múltiples líneas */}
                             <textarea
                                 ref={textareaRef}
                                 value={message}
@@ -253,6 +250,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                 rows={1}
                             />
 
+                            {/* Botón de enviar mensaje */}
                             <button
                                 onClick={handleSendMessage}
                                 title="Enviar mensaje"
@@ -297,7 +295,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                 height: "48px", // Misma altura que la barra de mensajes
                             }}
                         >
-                            {/* Columna izquierda - botón de escoba */}
+                            {/* Botón de escoba a la izquierda - Limpia Contexto */}
                             <div className="flex items-center">
                                 {/* Botón de escoba para borrar el contexto - estilo idéntico al botón trash */}
                                 {clearContext && (
@@ -318,12 +316,12 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                             borderRight: `1px solid ${theme.accent}`,
                                         }}
                                         disabled={!hasContext}
-                                        title="Borrar historial"
-                                        aria-label="Borrar historial de conversación"
+                                        title="Borrar contexto de conversación"
+                                        aria-label="Borrar contexto de conversación"
                                     >
                                         <img
                                             src={EscobaIcon}
-                                            alt="Borrar historial"
+                                            alt="Borrar contexto de conversación"
                                             className="w-5 h-5"
                                             style={{
                                                 filter: "brightness(0) invert(1)",
@@ -414,7 +412,6 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                             backgroundColor: isDarkTheme
                                                 ? theme.accent
                                                 : theme.secondary,
-                                            boxShadow: `0 0 5px ${theme.accent}`,
                                         }}
                                     >
                                         {/* Círculo del switch */}

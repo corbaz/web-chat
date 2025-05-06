@@ -1,6 +1,9 @@
 import React, { useState } from "react";
-import { ColorPalette } from "../../interfaces/temas/temas";
-import { createTitleEditHandlers, TITLE_LIMITS } from "../../utils/titleUtils";
+import { ColorPalette } from "../../../interfaces/temas/temas";
+import {
+    createTitleEditHandlers,
+    TITLE_LIMITS,
+} from "../../../utils/titleUtils";
 
 interface TitleProps {
     title: string;

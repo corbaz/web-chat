@@ -8,7 +8,7 @@
  * Mensaje de bienvenida que se muestra cuando se inicia un nuevo chat
  */
 export const WELCOME_MESSAGE =
-    "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoyyy?";
+    "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?";
 
 /**
  * Crea un objeto de mensaje de bienvenida estándar

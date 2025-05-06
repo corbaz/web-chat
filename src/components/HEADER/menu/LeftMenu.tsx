@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import Swal from "sweetalert2";
 import { createTitleEditHandlers } from "../../../utils/titleUtils";
+import PenIcon from "../../../assets/pen.svg";
+import TrashIcon from "../../../assets/trash.svg";
+
 
 interface LeftMenuProps {
     isOpen: boolean;
@@ -281,7 +284,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                             chat
                                                         )
                                                     }
-                                                    maxLength={100} // Aumentar significativamente el máximo de caracteres permitidos
+                                                    maxLength={100} // máximo de caracteres permitidos
                                                 />
                                             </div>
                                         ) : (
@@ -304,6 +307,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                     onClose(); // Cerrar el menú después de seleccionar el chat
                                                 }}
                                             >
+                                                {/* Icono de conversación (bocadillo) */}
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
                                                     width="18"
@@ -318,6 +322,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                 >
                                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                                 </svg>
+                                                {/* Contenedor para el título y los botones */}
                                                 <div className="flex flex-col w-full">
                                                     {/* Primera fila: título y botones */}
                                                     <div className="flex items-center justify-between w-full">
@@ -325,7 +330,30 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                         <div className="flex items-center flex-grow overflow-hidden">
                                                             {/* Botón de editar (lápiz) */}
                                                             <button
-                                                                className="mr-2 p-1 hover:bg-gray-200 rounded flex-shrink-0"
+                                                                className="mr-2 p-1 rounded flex-shrink-0 transition-colors duration-150"
+                                                                style={{
+                                                                    color: isDarkTheme
+                                                                        ? theme.text
+                                                                        : theme.primary,
+                                                                    backgroundColor:
+                                                                        "transparent",
+                                                                }}
+                                                                onMouseEnter={(
+                                                                    e
+                                                                ) => {
+                                                                    e.currentTarget.style.backgroundColor =
+                                                                        isDarkTheme
+                                                                            ? theme.accent
+                                                                            : theme
+                                                                                  .button
+                                                                                  .background;
+                                                                }}
+                                                                onMouseLeave={(
+                                                                    e
+                                                                ) => {
+                                                                    e.currentTarget.style.backgroundColor =
+                                                                        "transparent";
+                                                                }}
                                                                 title="Editar nombre"
                                                                 onClick={(
                                                                     e
@@ -336,21 +364,18 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                     );
                                                                 }}
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="14"
-                                                                    height="14"
-                                                                    fill="none"
-                                                                    viewBox="0 0 24 24"
-                                                                    stroke="currentColor"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0L9 13zm-6 6h6"
-                                                                    />
-                                                                </svg>
+                                                                <img
+                                                                    src={
+                                                                        PenIcon
+                                                                    }
+                                                                    alt="Pen Icon"
+                                                                    className="w-4 h-4 md:w-5 md:h-5"
+                                                                    style={{
+                                                                        filter: "brightness(0) invert(1)", // Para que sea blanco como el otro icono
+                                                                        width: "15px",
+                                                                        height: "15px",
+                                                                    }}
+                                                                />
                                                             </button>
 
                                                             {/* Título del chat - con más espacio para mostrar más caracteres */}
@@ -364,6 +389,29 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                         {/* Botón de eliminar (papelera) alineado a la derecha */}
                                                         <button
                                                             className="ml-auto p-1 hover:bg-gray-200 rounded flex-shrink-0"
+                                                            style={{
+                                                                color: isDarkTheme
+                                                                    ? theme.text
+                                                                    : theme.primary,
+                                                                backgroundColor:
+                                                                    "transparent",
+                                                            }}
+                                                            onMouseEnter={(
+                                                                e
+                                                            ) => {
+                                                                e.currentTarget.style.backgroundColor =
+                                                                    isDarkTheme
+                                                                        ? theme.accent
+                                                                        : theme
+                                                                              .button
+                                                                              .background;
+                                                            }}
+                                                            onMouseLeave={(
+                                                                e
+                                                            ) => {
+                                                                e.currentTarget.style.backgroundColor =
+                                                                    "transparent";
+                                                            }}
                                                             title="Eliminar chat"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -373,21 +421,16 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                 );
                                                             }}
                                                         >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="14"
-                                                                height="14"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                />
-                                                            </svg>
+                                                            <img
+                                                                src={TrashIcon}
+                                                                alt="Trash Icon"
+                                                                className="w-4 h-4 md:w-5 md:h-5"
+                                                                style={{
+                                                                    filter: "brightness(0) invert(1)", // Para que sea blanco como el otro icono
+                                                                    width: "15px",
+                                                                    height: "15px",
+                                                                }}
+                                                            />
                                                         </button>
                                                     </div>
 
@@ -397,14 +440,42 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                             const d = new Date(
                                                                 chat.date
                                                             );
-                                                            return `${d.toLocaleDateString()} ${d.toLocaleTimeString(
-                                                                [],
-                                                                {
-                                                                    hour: "2-digit",
-                                                                    minute: "2-digit",
-                                                                    second: "2-digit",
-                                                                }
-                                                            )}`;
+
+                                                            // Array de días en español
+                                                            const dias = [
+                                                                "Domingo",
+                                                                "Lunes",
+                                                                "Martes",
+                                                                "Miércoles",
+                                                                "Jueves",
+                                                                "Viernes",
+                                                                "Sábado",
+                                                            ];
+
+                                                            const diaNombre =
+                                                                dias[
+                                                                    d.getDay()
+                                                                ];
+                                                            const fecha =
+                                                                d.toLocaleDateString(
+                                                                    "es-AR",
+                                                                    {
+                                                                        day: "2-digit",
+                                                                        month: "2-digit",
+                                                                        year: "numeric",
+                                                                    }
+                                                                );
+                                                            const hora =
+                                                                d.toLocaleTimeString(
+                                                                    "es-AR",
+                                                                    {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                        hour12: false,
+                                                                    }
+                                                                );
+
+                                                            return `${diaNombre} ${fecha} - ${hora}`;
                                                         })()}
                                                     </span>
                                                 </div>

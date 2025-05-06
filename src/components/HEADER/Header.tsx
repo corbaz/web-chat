@@ -1,6 +1,6 @@
 import React from "react";
 import ModelSelector from "./ModelSelector";
-import Title from "./Title";
+import Title from "./menu/Title";
 import MenuButton from "./menu/MenuButton";
 import { ColorPalette } from "../../interfaces/temas/temas";
 
