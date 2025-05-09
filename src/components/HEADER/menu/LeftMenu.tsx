@@ -5,7 +5,6 @@ import { createTitleEditHandlers } from "../../../utils/titleUtils";
 import PenIcon from "../../../assets/pen.svg";
 import TrashIcon from "../../../assets/trash.svg";
 
-
 interface LeftMenuProps {
     isOpen: boolean;
     onClose: () => void;
@@ -288,8 +287,8 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                 />
                                             </div>
                                         ) : (
-                                            <button
-                                                className="w-full text-left p-3 rounded-lg transition-colors flex items-center"
+                                            <div
+                                                className="w-full text-left p-3 rounded-lg transition-colors flex items-center cursor-pointer"
                                                 style={{
                                                     backgroundColor:
                                                         currentChatId ===
@@ -371,7 +370,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                     alt="Pen Icon"
                                                                     className="w-4 h-4 md:w-5 md:h-5"
                                                                     style={{
-                                                                        filter: "brightness(0) invert(1)", // Para que sea blanco como el otro icono
+                                                                        filter: "brightness(0) invert(1)",
                                                                         width: "15px",
                                                                         height: "15px",
                                                                     }}
@@ -426,7 +425,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                 alt="Trash Icon"
                                                                 className="w-4 h-4 md:w-5 md:h-5"
                                                                 style={{
-                                                                    filter: "brightness(0) invert(1)", // Para que sea blanco como el otro icono
+                                                                    filter: "brightness(0) invert(1)", 
                                                                     width: "15px",
                                                                     height: "15px",
                                                                 }}
@@ -479,7 +478,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                         })()}
                                                     </span>
                                                 </div>
-                                            </button>
+                                            </div>
                                         )}
                                     </li>
                                 ))}
