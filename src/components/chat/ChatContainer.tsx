@@ -346,13 +346,17 @@ const ChatContainer = ({
             // Generar ID único para el mensaje
             const userMessageId = `user_${Date.now()}_${Math.random()
                 .toString(36)
-                .substring(2, 9)}`;
+                .substring(2, 9)}`; // Filtrar contenido entre etiquetas <think></think> antes de añadirlo al chat
+            const filteredContent = content
+                .trim()
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim();
 
-            // Añadir mensaje del usuario
+            // Añadir mensaje del usuario (con contenido filtrado)
             const userMessage: ChatMessageType = {
                 id: userMessageId,
                 role: "user",
-                content: content.trim(),
+                content: filteredContent,
                 timestamp: Date.now(),
             };
 
@@ -441,7 +445,11 @@ const ChatContainer = ({
                 const responseTime =
                     endTime -
                     (requestStartTimeRef.current[requestId] || endTime);
-                const formattedTime = formatResponseTime(responseTime);
+                const formattedTime = formatResponseTime(responseTime); // Filtrar respuesta del asistente para eliminar contenido entre <think></think>
+                const filteredResponse =
+                    response.data.choices[0].message.content
+                        .replace(/<think>[\s\S]*?<\/think>/g, "")
+                        .trim();
 
                 // Añadir respuesta del asistente con info de tokens
                 const assistantMessage: ChatMessageType = {
@@ -449,7 +457,7 @@ const ChatContainer = ({
                         .toString(36)
                         .substring(2, 9)}`,
                     role: "assistant",
-                    content: response.data.choices[0].message.content,
+                    content: filteredResponse,
                     timestamp: Date.now(),
                     responseTime: formattedTime,
                     tokensUsed: totalTokensUsed,

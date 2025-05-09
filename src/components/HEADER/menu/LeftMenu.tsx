@@ -353,7 +353,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                     e.currentTarget.style.backgroundColor =
                                                                         "transparent";
                                                                 }}
-                                                                title="Editar nombre"
+                                                                title="Editar nombre del Chat"
                                                                 onClick={(
                                                                     e
                                                                 ) => {
@@ -411,7 +411,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                 e.currentTarget.style.backgroundColor =
                                                                     "transparent";
                                                             }}
-                                                            title="Eliminar chat"
+                                                            title="Eliminar Chat"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 showDeleteConfirmation(

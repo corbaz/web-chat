@@ -293,8 +293,8 @@ ${message}`;
                             {/* Botón de papelera para limpiar el mensaje actual */}
                             <button
                                 onClick={handleClearText}
-                                title="Borrar mensaje"
-                                aria-label="Borrar mensaje"
+                                title="Eliminar Prompt"
+                                aria-label="Eliminar Prompt"
                                 className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
                                     message.length > 0
                                         ? "opacity-100"
@@ -314,7 +314,7 @@ ${message}`;
                             >
                                 <img
                                     src={TrashIcon}
-                                    alt="Borrar mensaje"
+                                    alt="Eliminar Prompt"
                                     className="w-5 h-5"
                                     style={{
                                         filter: "brightness(0) invert(1)",
@@ -328,7 +328,7 @@ ${message}`;
                                 value={message}
                                 onChange={handleChange}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Escribe un mensaje..."
+                                placeholder="Escribe un Prompt ..."
                                 className="flex-grow p-3 resize-none overflow-y-auto min-h-[48px] max-h-[120px] bg-transparent text-base touch-manipulation appearance-none rounded-none"
                                 style={{
                                     color: isDarkTheme
@@ -395,8 +395,8 @@ ${message}`;
                             {/* Botón de enviar mensaje */}
                             <button
                                 onClick={handleSendMessage}
-                                title="Enviar mensaje"
-                                aria-label="Enviar mensaje"
+                                title="Enviar Prompt"
+                                aria-label="Enviar Prompt"
                                 className={`rounded-r-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
                                     message.trim() && !isLoading
                                         ? "opacity-100"
@@ -458,12 +458,12 @@ ${message}`;
                                             borderRight: `1px solid ${theme.accent}`,
                                         }}
                                         disabled={!hasContext}
-                                        title="Borrar contexto de conversación"
-                                        aria-label="Borrar contexto de conversación"
+                                        title="Eliminar contexto del Chat"
+                                        aria-label="Eliminar contexto del Chat"
                                     >
                                         <img
                                             src={EscobaIcon}
-                                            alt="Borrar contexto de conversación"
+                                            alt="Eliminar contexto del Chat"
                                             className="w-5 h-5"
                                             style={{
                                                 filter: "brightness(0) invert(1)",
@@ -538,7 +538,7 @@ ${message}`;
                                 <button
                                     onClick={toggleTheme}
                                     className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full mr-2"
-                                    title="Cambiar tema"
+                                    title="Cambiar Tema"
                                     aria-label="Cambiar entre tema claro y oscuro"
                                 >
                                     <div

@@ -109,7 +109,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                 <button
                                     onClick={toggleTheme}
                                     className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full"
-                                    title="Cambiar tema"
+                                    title="Cambiar Tema"
                                     aria-label="Cambiar entre tema claro y oscuro"
                                 >
                                     <div
