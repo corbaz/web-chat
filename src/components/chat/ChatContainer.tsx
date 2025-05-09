@@ -431,7 +431,7 @@ const ChatContainer = ({
                         headers: {
                             "Content-Type": "application/json",
                             Authorization:
-                                "Bearer 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",
+                                "Bearer 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",
                         },
                     }
                 );
@@ -443,7 +443,7 @@ const ChatContainer = ({
                     (requestStartTimeRef.current[requestId] || endTime);
                 const formattedTime = formatResponseTime(responseTime);
 
-                // Añadir respuesta del asistente con información de tokens
+                // Añadir respuesta del asistente con info de tokens
                 const assistantMessage: ChatMessageType = {
                     id: `assistant_${Date.now()}_${Math.random()
                         .toString(36)

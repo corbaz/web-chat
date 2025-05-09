@@ -1,3 +1,27 @@
 @import "tailwindcss";
 
-/* Las variables CSS para el layout ahora se generan dinámicamente desde layoutConstants.ts */
+@keyframes typing {
+  0% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.2; }
+}
+
+.animate-typing {
+  animation: typing 1.5s infinite ease-in-out;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+.animation-delay-800 {
+  animation-delay: 0.8s;
+}

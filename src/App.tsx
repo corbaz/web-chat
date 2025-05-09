@@ -9,13 +9,13 @@ import { createWelcomeMessage } from "./constants/messages";
 import Header from "./components/HEADER/Header";
 import Footer, { FooterRef } from "./components/FOOTER/Footer";
 // Importación utilizando el archivo índice
-import { ChatContainer } from "./components/CHAT";
+import ChatContainer from "./components/CHAT/ChatContainer";
 
 // Interfaces
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.51";
+const APP_VERSION = "v.2.52";
 
 export const App = () => {
     // Estados para la UI
@@ -504,7 +504,6 @@ export const App = () => {
                 onToggleLeftMenu={handleToggleLeftMenu}
                 onToggleRightMenu={handleToggleRightMenu}
             />
-
             {/* Contenedor principal del chat */}
             <ChatContainer
                 messages={messages}
@@ -551,8 +550,7 @@ export const App = () => {
                 onUpdateChatTitle={handleUpdateChatTitle}
                 onDeleteChat={handleDeleteChat}
             />
-
-            {/* Footer con área de entrada y controles */}
+            {/* Footer con área de entrada y controles */}{" "}
             <Footer
                 ref={footerRef}
                 onSendMessage={(message) => {
@@ -571,6 +569,7 @@ export const App = () => {
                 theme={theme}
                 isDarkTheme={isDarkTheme}
                 isLoading={isLoading}
+                selectedModel={selectedModel}
                 chatTitle={
                     chatHistory.find((chat) => chat.id === currentChatId)?.title
                 }

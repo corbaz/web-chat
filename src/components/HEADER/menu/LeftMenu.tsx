@@ -112,7 +112,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         chatTitle: string
     ) => {
         const result = await Swal.fire({
-            title: "¿Eliminar esta conversación?",
+            title: "¿Eliminar este Chat?",
             text: `¿Estás seguro de que quieres eliminar "${chatTitle}"?`,
             icon: "warning",
             showCancelButton: true,
@@ -130,7 +130,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             // Mostrar mensaje de éxito
             Swal.fire({
                 title: "¡Eliminado!",
-                text: "La conversación ha sido eliminada.",
+                text: "El Chat ha sido eliminado.",
                 icon: "success",
                 timer: 1500,
                 confirmButtonColor: theme.button.background,
@@ -145,8 +145,8 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
 
         // Mostrar confirmación antes de crear un nuevo chat
         const result = await Swal.fire({
-            title: "Nueva iteración",
-            text: "¿Desea continuar con la iteración?",
+            title: "Nuevo Chat",
+            text: "¿Desea continuar con la creación del Chat?",
             icon: "question",
             showCancelButton: true,
             confirmButtonText: "Sí, continuar",

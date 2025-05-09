@@ -4,6 +4,8 @@ import { isMobile } from "../../utils/mobileUtils";
 import LunaIcon from "../../assets/luna.svg";
 import EscobaIcon from "../../assets/escoba.svg";
 import TrashIcon from "../../assets/trash.svg";
+import VaritaIcon from "../../assets/varita_magica.svg";
+import axios from "axios"; // Importamos axios para las peticiones HTTP
 
 interface FooterProps {
     onSendMessage: (message: string) => void;
@@ -16,6 +18,7 @@ interface FooterProps {
     chatTitle?: string; // Título del chat
     onUpdateChatTitle?: (newTitle: string) => void; // Nueva prop para actualizar el título
     currentChatId?: string; // Necesario para saber qué chat se está editando
+    selectedModel?: string; // Modelo actualmente seleccionado
 }
 
 // Crear una interfaz para exponer el método focus
@@ -36,12 +39,14 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             chatTitle,
             onUpdateChatTitle,
             currentChatId,
+            selectedModel,
         },
         ref
     ) => {
         const [message, setMessage] = useState("");
         const [isEditingTitle, setIsEditingTitle] = useState(false);
         const [editTitleValue, setEditTitleValue] = useState("");
+        const [isMagicLoading, setIsMagicLoading] = useState(false); // Estado para controlar la carga de la varita mágica
         const textareaRef = useRef<HTMLTextAreaElement>(null);
         const titleInputRef = useRef<HTMLInputElement>(null);
         const mobileDevice = typeof window !== "undefined" && isMobile();
@@ -112,6 +117,94 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                     document.activeElement instanceof HTMLElement
                 ) {
                     document.activeElement.blur();
+                }
+            }
+        };
+
+        // Nueva función para manejar la varita mágica
+        const handleMagicButton = async () => {
+            if (message.trim() && !isLoading && !isMagicLoading) {
+                try {
+                    setIsMagicLoading(true); // Usar el modelo proporcionado como prop o buscar en el historial de chat si no está disponible
+                    let modelToUse = selectedModel || "mixtral-8x7b-32768"; // Usar el prop si está disponible, o el valor por defecto
+
+                    // Si no se proporcionó el modelo como prop, intentar obtenerlo del historial de chat
+                    if (!selectedModel && currentChatId) {
+                        try {
+                            const chatHistoryRaw =
+                                localStorage.getItem("chat-history");
+                            if (chatHistoryRaw) {
+                                const chatHistoryArr =
+                                    JSON.parse(chatHistoryRaw);
+                                const currentChat = chatHistoryArr.find(
+                                    (chat: { id: string }) =>
+                                        chat.id === currentChatId
+                                );
+                                if (currentChat && currentChat.model) {
+                                    modelToUse = currentChat.model;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(
+                                "Error al obtener modelo del chat:",
+                                e
+                            );
+                        }
+                    }
+
+                    // Construir el prompt para mejorar el texto
+                    const promptToSend = `Corrige y mejora la expresión en español del siguiente texto,
+asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones.
+
+Texto a mejorar:
+${message}`;
+
+                    // Realizar la petición a Groq con la misma configuración que en ChatContainer
+                    const response = await axios.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        {
+                            model: modelToUse,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: promptToSend,
+                                },
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 2048,
+                            presence_penalty: 0.1,
+                        },
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization:
+                                    "Bearer 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",
+                            },
+                        }
+                    ); // Extraer la respuesta mejorada
+                    let improvedText =
+                        response.data.choices[0].message.content.trim();
+
+                    // Filtrar el contenido entre etiquetas <think> </think>
+                    improvedText = improvedText
+                        .replace(/<think>[\s\S]*?<\/think>/g, "")
+                        .trim();
+
+                    // Actualizar el textarea con el texto mejorado filtrado
+                    setMessage(improvedText);
+
+                    // Ajustar altura del textarea para el nuevo contenido
+                    setTimeout(adjustTextareaHeight, 0);
+
+                    // Dar foco al textarea
+                    if (textareaRef.current) {
+                        textareaRef.current.focus();
+                    }
+                } catch (error) {
+                    console.error("Error al mejorar el texto:", error);
+                    // Opcionalmente, mostrar un mensaje de error al usuario
+                } finally {
+                    setIsMagicLoading(false);
                 }
             }
         };
@@ -228,28 +321,77 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                     }}
                                 />
                             </button>
-
                             {/* Área de texto para escribir mensajes */}
-                            {/* Usar textarea para permitir múltiples líneas */}
+                            {/* Usar textarea para permitir múltiples líneas */}{" "}
                             <textarea
                                 ref={textareaRef}
                                 value={message}
                                 onChange={handleChange}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Escribe un mensaje..."
-                                className="flex-grow p-3 resize-none overflow-hidden min-h-[48px] max-h-[120px] bg-transparent text-base touch-manipulation appearance-none rounded-none"
+                                className="flex-grow p-3 resize-none overflow-y-auto min-h-[48px] max-h-[120px] bg-transparent text-base touch-manipulation appearance-none rounded-none"
                                 style={{
                                     color: isDarkTheme
                                         ? theme.input.text
                                         : theme.text,
                                     border: "none",
                                     outline: "none",
+                                    scrollbarWidth: "thin",
+                                    scrollbarColor: `${theme.accent} transparent`,
                                 }}
-                                disabled={isLoading}
+                                disabled={isLoading || isMagicLoading}
                                 aria-label="Mensaje"
                                 rows={1}
                             />
-
+                            {/* Botón de varita mágica */}
+                            <button
+                                onClick={handleMagicButton}
+                                title="Mejorar Prompt"
+                                aria-label="Mejorar Prompt"
+                                className={`flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 pr-3 ${
+                                    message.trim() &&
+                                    !isLoading &&
+                                    !isMagicLoading
+                                        ? "opacity-100"
+                                        : "opacity-50 cursor-not-allowed"
+                                }`}
+                                style={{
+                                    backgroundColor: theme.button.background,
+                                    color: theme.button.text,
+                                    borderRight: `10px solid ${theme.background}`,
+                                }}
+                                disabled={
+                                    !message.trim() ||
+                                    isLoading ||
+                                    isMagicLoading
+                                }
+                            >
+                                {isMagicLoading ? (
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth="1.5"
+                                        stroke="currentColor"
+                                        className="w-6 h-6 animate-spin"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M12 4.5v15m7.5-7.5h-15"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <img
+                                        src={VaritaIcon}
+                                        alt="Mejorar Prompt"
+                                        className="w-5 h-5"
+                                        style={{
+                                            filter: "brightness(0) invert(1)",
+                                        }}
+                                    />
+                                )}
+                            </button>
                             {/* Botón de enviar mensaje */}
                             <button
                                 onClick={handleSendMessage}
@@ -387,13 +529,6 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
                                                 : chatTitle}
                                         </span>
                                     )
-                                )}
-                                {isLoading && (
-                                    <div className="flex items-center gap-1">
-                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing"></span>
-                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing animation-delay-[200ms]"></span>
-                                        <span className="h-2 w-2 rounded-full bg-gray-400 inline-block opacity-75 animate-typing animation-delay-[400ms]"></span>
-                                    </div>
                                 )}
                             </div>
 
