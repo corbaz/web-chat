@@ -39,102 +39,99 @@ export interface ColorPalette {
         track: string;
     };
     button: {
-        filter: string;
         background: string;
         text: string;
     };
 }
 
-// Tema claro con colores pastel
+// Tema claro estilo ChatGPT
 export const lightTheme: ColorPalette = {
-    // Colores principales de la nueva paleta pastel
-    primary: "#5885a2", // Azul grisáceo
-    secondary: "#b8a0c9", // Lila/púrpura claro
-    accent: "#94cfd5", // Turquesa/azul claro
-    background: "#f1e5ea", // Rosa muy pálido
-    text: "#b8a0c9", // Púrpura grisáceo
+    // Colores principales basados en ChatGPT tema claro
+    primary: "#202123", // Color oscuro para texto principal
+    secondary: "#f7f7f8", // Color de fondo secundario
+    accent: "#ececf1", // Color de acento para bordes
+    background: "#ffffff", // Fondo blanco
+    text: "#343541", // Texto principal
 
     // Colores específicos para componentes
     title: {
-        color: "##ffffff", // Lila/púrpura claro para el título
+        color: "#202123", // Color oscuro para el título
     },
     chat: {
-        background: "#f1e5ea", // Fondo rosa muy pálido
-        border: "1px solid #e7d9e3", // Borde sutil en tono rosa
+        background: "#ffffff", // Fondo blanco para chat
+        border: "1px solid #ececf1", // Borde sutil en tono gris
     },
     messages: {
         ai: {
-            background: "#5885a2", // Azul grisáceo para mensajes AI
-            text: "#ffffff", // Texto blanco para contraste
+            background: "#f7f7f8", // Gris muy claro para mensajes AI
+            text: "#343541", // Texto oscuro para contraste
         },
         user: {
-            background: "#b8a0c9", // Lila/púrpura claro para mensajes usuario
-            text: "#ffffff", // Texto blanco para contraste
+            background: "#ffffff", // Fondo blanco para mensajes usuario
+            text: "#343541", // Texto oscuro para contraste
         },
         loading: {
-            background: "#94cfd5", // Turquesa/azul claro para carga
-            text: "#5b4d6b", // Texto púrpura grisáceo
+            background: "#f7f7f8", // Gris claro para indicador de carga
+            text: "#40414f", // Texto gris oscuro
         },
     },
     input: {
-        background: "#f9f3f7", // Fondo rosa muy pálido
-        text: "#f1e5ea", // Texto púrpura grisáceo
-        placeholder: "#a390b4", // Púrpura claro para placeholder
+        background: "#ffffff", // Fondo blanco para input
+        text: "#343541", // Texto oscuro
+        placeholder: "#8e8ea0", // Gris para placeholder
     },
     scrollbar: {
-        thumb: "#b8a0c9", // Lila/púrpura claro para scrollbar
-        track: "#f1e5ea", // Rosa muy pálido para track
+        thumb: "#c5c5d2", // Gris medio para scrollbar
+        track: "#f7f7f8", // Gris claro para track
     },
     button: {
-        filter: "invert(55%) sepia(9%) saturate(1083%) hue-rotate(222deg) brightness(88%) contrast(87%)", // Filtro para botones en tono púrpura
-        background: "#b8a0c9", // Lila/púrpura claro para botones
-        text: "#ffffff", // Texto blanco para contraste
+        background: "#ececf1", // Gris claro para botones
+        text: "#343541", // Texto oscuro para botones
     },
 };
 
-// Tema oscuro con paleta púrpura
+// Tema oscuro estilo ChatGPT
 export const darkTheme: ColorPalette = {
-    // Colores principales de la paleta púrpura
-    primary: "#b365d3", // Púrpura brillante
-    secondary: "#5885a2", // Azul grisáceo
-    accent: "#8060a9", // Púrpura medio
-    background: "#2c1b47", // Azul marino oscuro
+    // Colores principales basados en ChatGPT tema oscuro
+    primary: "#ffffff", // Color blanco para texto principal
+    secondary: "#343541", // Color de fondo secundario
+    accent: "#444654", // Color de acento para bordes
+    background: "#202123", // Fondo gris oscuro, más cercano a ChatGPT
     text: "#ffffff", // Texto blanco
 
     // Colores específicos para componentes
     title: {
-        color: "#b365d3", // Púrpura brillante para el título
+        color: "#ffffff", // Color blanco para el título
     },
     chat: {
-        background: "#2c1b47", // Púrpura muy oscuro para el fondo del chat
-        border: "1px solid #3d2963", // Borde sutil en tono púrpura
+        background: "#202123", // Fondo gris oscuro para el chat
+        border: "1px solid #2a2b32", // Borde sutil en tono oscuro
     },
     messages: {
         ai: {
-            background: "#5885a2", // Azul grisáceo para mensajes AI
+            background: "#444654", // Gris oscuro para mensajes AI
             text: "#ffffff", // Texto blanco
         },
         user: {
-            background: "#8060a9", // Púrpura medio para mensajes usuario
+            background: "#343541", // Gris azulado para mensajes usuario
             text: "#ffffff", // Texto blanco
         },
         loading: {
-            background: "#493173", // Púrpura oscuro para la carga
+            background: "#444654", // Gris oscuro para carga
             text: "#ffffff", // Texto blanco
         },
     },
     input: {
-        background: "#2c1b47", // Púrpura muy oscuro para el input
+        background: "#343541", // Fondo gris oscuro para input
         text: "#ffffff", // Texto blanco
-        placeholder: "#9a85bb", // Púrpura claro para placeholder
+        placeholder: "#8e8ea0", // Gris claro para placeholder
     },
     scrollbar: {
-        thumb: "#8060a9", // Púrpura medio para scrollbar
-        track: "#2c1b47", // Púrpura muy oscuro para track
+        thumb: "#565869", // Gris medio para scrollbar
+        track: "#343541", // Gris oscuro para track
     },
     button: {
-        filter: "invert(67%) sepia(29%) saturate(721%) hue-rotate(242deg) brightness(88%) contrast(85%)", // Filtro para botones en tono púrpura
-        background: "#8060a9", // Púrpura medio para botones
+        background: "#444654", // Gris azulado para botones
         text: "#ffffff", // Texto blanco para botones
     },
 };

@@ -551,7 +551,7 @@ const ChatContainer = ({
                 style={{
                     top: `var(--header-height, ${HEADER_HEIGHT_MOBILE})`,
                     bottom: `var(--footer-height, ${FOOTER_HEIGHT_MOBILE})`,
-                    backgroundColor: isDarkTheme ? "#1a1a2e" : "#f8f8fc",
+                    backgroundColor: theme.background,
                 }}
             >
                 <ChatArea

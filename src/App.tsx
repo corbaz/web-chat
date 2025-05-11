@@ -15,7 +15,7 @@ import ChatContainer from "./components/CHAT/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-const APP_VERSION = "v.2.53";
+export const APP_VERSION = "v.2.55";
 
 export const App = () => {
     // Estados para la UI

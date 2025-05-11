@@ -28,9 +28,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <div
                 className="w-full h-full overflow-y-auto px-3 pt-5 pb-6 space-y-4 sm:pt-3 sm:pb-0 sm:px-5 md:px-8 lg:px-10 xl:px-12"
                 style={{
-                    backgroundColor: isDarkTheme
-                        ? "#1a1a2e" // Color oscuro sólido
-                        : "#f8f8fc", // Color claro sólido
+                    backgroundColor: theme.background
                 }}
                 aria-live="polite"
                 aria-relevant="additions"
@@ -48,15 +46,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     <div
                         className="flex justify-center items-center p-3 rounded-lg my-24"
                         style={{
-                            backgroundColor: isDarkTheme
-                                ? "rgba(255, 255, 255, 0.1)"
-                                : "rgba(0, 0, 0, 0.05)",
+                            backgroundColor:  theme.background
                         }}
                     >
                         <div className="flex items-center gap-2 p-2">
-                            <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing"></span>
-                            <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing animation-delay-[200ms]"></span>
-                            <span className="h-[10px] w-[10px] rounded-full bg-gray-500 inline-block opacity-60 animate-typing animation-delay-[400ms]"></span>
+                            <span className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing" 
+                                  style={{ backgroundColor: theme.text }}></span>
+                            <span className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]" 
+                                  style={{ backgroundColor: theme.text }}></span>
+                            <span className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]" 
+                                  style={{ backgroundColor: theme.text }}></span>
                         </div>
                     </div>
                 )}

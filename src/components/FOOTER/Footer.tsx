@@ -285,9 +285,8 @@ ${message}`;
                             className="flex items-stretch rounded-lg border"
                             style={{
                                 border: `1px solid ${theme.accent}`,
-                                backgroundColor: isDarkTheme
-                                    ? "rgba(255, 255, 255, 0.05)"
-                                    : "rgba(0, 0, 0, 0.02)",
+                                backgroundColor: theme.background,
+                                height: "48px", // Altura fija para la barra de mensajes
                             }}
                         >
                             {/* Botón de papelera para limpiar el mensaje actual */}
@@ -296,21 +295,15 @@ ${message}`;
                                 title="Eliminar Prompt"
                                 aria-label="Eliminar Prompt"
                                 className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
-                                    message.length > 0
+                                    message.trim() && !isLoading
                                         ? "opacity-100"
                                         : "opacity-50 cursor-not-allowed"
                                 }`}
                                 style={{
-                                    backgroundColor:
-                                        message.length > 0
-                                            ? theme.button.background
-                                            : isDarkTheme
-                                            ? "rgba(255, 255, 255, 0.1)"
-                                            : "rgba(0, 0, 0, 0.08)",
+                                    backgroundColor: theme.button.background,
                                     color: theme.button.text,
                                     borderRight: `1px solid ${theme.accent}`,
                                 }}
-                                disabled={message.length === 0}
                             >
                                 <img
                                     src={TrashIcon}
@@ -358,7 +351,7 @@ ${message}`;
                                 style={{
                                     backgroundColor: theme.button.background,
                                     color: theme.button.text,
-                                    borderRight: `10px solid ${theme.background}`,
+                                    borderRight: `1px solid ${theme.background}`,
                                 }}
                                 disabled={
                                     !message.trim() ||
@@ -407,7 +400,6 @@ ${message}`;
                                     color: theme.button.text,
                                     borderLeft: `1px solid ${theme.accent}`,
                                 }}
-                                disabled={!message.trim() || isLoading}
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -416,6 +408,9 @@ ${message}`;
                                     strokeWidth="1.5"
                                     stroke="currentColor"
                                     className="w-6 h-6"
+                                    style={{
+                                        filter: "brightness(0) invert(1)",
+                                    }}
                                 >
                                     <path
                                         strokeLinecap="round"
@@ -431,9 +426,7 @@ ${message}`;
                             className="flex items-stretch justify-between rounded-lg border mt-2 mb-2"
                             style={{
                                 border: `1px solid ${theme.accent}`,
-                                backgroundColor: isDarkTheme
-                                    ? "rgba(255, 255, 255, 0.05)"
-                                    : "rgba(0, 0, 0, 0.03)",
+                                backgroundColor: theme.background,
                                 height: "48px", // Misma altura que la barra de mensajes
                             }}
                         >

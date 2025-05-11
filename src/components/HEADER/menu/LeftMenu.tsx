@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import { createTitleEditHandlers } from "../../../utils/titleUtils";
 import PenIcon from "../../../assets/pen.svg";
 import TrashIcon from "../../../assets/trash.svg";
+import PieBrand from "./PieBrand.tsx";
 
 interface LeftMenuProps {
     isOpen: boolean;
@@ -181,7 +182,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
 
             {/* Menú lateral izquierdo */}
             <div
-                className={`fixed top-0 left-0 h-full w-4/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-50 transform transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 left-0 h-full w-4/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 }`}
                 style={{
@@ -425,7 +426,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                 alt="Trash Icon"
                                                                 className="w-4 h-4 md:w-5 md:h-5"
                                                                 style={{
-                                                                    filter: "brightness(0) invert(1)", 
+                                                                    filter: "brightness(0) invert(1)",
                                                                     width: "15px",
                                                                     height: "15px",
                                                                 }}
@@ -486,18 +487,8 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                         )}
                     </div>
 
-                    {/* Pie del menú con información de versión */}
-                    <div
-                        className="p-4 border-t text-center text-sm"
-                        style={{
-                            borderColor: theme.accent,
-                            color: isDarkTheme
-                                ? "rgba(255,255,255,0.5)"
-                                : "rgba(0,0,0,0.5)",
-                        }}
-                    >
-                        PROMPTING © {new Date().getFullYear()}
-                    </div>
+                    {/* Pie del menú con versión */}
+                    <PieBrand theme={theme} isDarkTheme={isDarkTheme} />
                 </div>
             </div>
         </>

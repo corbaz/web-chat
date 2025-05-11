@@ -16,6 +16,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
     const isUser = message.role === "user";
 
+    const userTheme = isDarkTheme
+        ? theme.messages.user
+        : {
+              background: theme.messages.user.text,
+              text: theme.messages.user.background,
+          };
+    const aiTheme = isDarkTheme
+        ? theme.messages.ai
+        : {
+              background: theme.messages.ai.text,
+              text: theme.messages.ai.background,
+          };
+
     const getModelShortName = (modelId?: string): string => {
         if (!modelId) return "modelo";
 
@@ -53,20 +66,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     isUser ? "rounded-tr-none" : "rounded-tl-none"
                 }`}
                 style={{
-                    backgroundColor: isUser
-                        ? isDarkTheme
-                            ? theme.messages.user.background
-                            : theme.messages.user.text
-                        : isDarkTheme
-                        ? theme.messages.ai.background
-                        : theme.messages.ai.text,
-                    color: isUser
-                        ? isDarkTheme
-                            ? theme.messages.user.text
-                            : theme.messages.user.background
-                        : isDarkTheme
-                        ? theme.messages.ai.text
-                        : theme.messages.ai.background,
+                    backgroundColor: isUser ? userTheme.background : aiTheme.background,
+                    color: isUser ? userTheme.text : aiTheme.text,
                     boxShadow:
                         "0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)",
                 }}

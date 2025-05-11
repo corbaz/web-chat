@@ -3,6 +3,8 @@ import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import { groqModels } from "../models/groqModels";
 import LunaIcon from "../../../assets/luna.svg";
 
+import PieBrand from "./PieBrand.tsx";
+
 interface RightMenuProps {
     isOpen: boolean;
     onClose: () => void;
@@ -40,7 +42,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
 
             {/* Menú lateral derecho */}
             <div
-                className={`fixed top-0 right-0 h-full w-4/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-50 transform transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 right-0 h-full w-4/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
                     isOpen ? "translate-x-0" : "translate-x-full"
                 }`}
                 style={{
@@ -191,6 +193,11 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                             onChange={() =>
                                                 onModelChange(model.id)
                                             }
+                                            style={{
+                                                accentColor: isDarkTheme
+                                                    ? theme.secondary
+                                                    : theme.primary,
+                                            }}
                                         />
                                         <label
                                             htmlFor={`model-${model.id}`}
@@ -222,9 +229,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                             <p
                                 className="text-sm"
                                 style={{
-                                    color: isDarkTheme
-                                        ? "rgba(255,255,255,0.7)"
-                                        : "rgba(0,0,0,0.7)",
+                                    color: theme.text,
                                 }}
                             >
                                 PROMPTING es una herramienta que te permite
@@ -234,9 +239,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                             <p
                                 className="text-sm mt-2"
                                 style={{
-                                    color: isDarkTheme
-                                        ? "rgba(255,255,255,0.7)"
-                                        : "rgba(0,0,0,0.7)",
+                                    color: theme.text,
                                 }}
                             >
                                 Desarrollado con Groq para obtener respuestas
@@ -246,17 +249,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                     </div>
 
                     {/* Pie del menú con versión */}
-                    <div
-                        className="p-4 border-t text-center text-sm"
-                        style={{
-                            borderColor: theme.accent,
-                            color: isDarkTheme
-                                ? "rgba(255,255,255,0.5)"
-                                : "rgba(0,0,0,0.5)",
-                        }}
-                    >
-                        Versión v.2.09
-                    </div>
+                    <PieBrand theme={theme} isDarkTheme={isDarkTheme} />
                 </div>
             </div>
         </>
