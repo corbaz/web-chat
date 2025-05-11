@@ -1,8 +1,8 @@
 import React from "react";
 import ModelSelector from "./ModelSelector";
 import Title from "./menu/Title";
-import MenuButton from "./menu/MenuButton";
 import { ColorPalette } from "../../interfaces/temas/temas";
+import MenuButton from "./menu/MenuButton";
 
 interface HeaderProps {
     title: string;
@@ -42,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({
             aria-label="Encabezado de la aplicación"
         >
             <div className="flex items-center justify-between">
-                {/* Menú hamburguesa izquierdo */}
+                {/* Menú hamburguesa izquierdo historial */}
                 <MenuButton
                     onClick={onToggleLeftMenu}
                     ariaLabel="Abrir menú de historial"
@@ -72,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({
                     </div>
                 </div>
 
-                {/* Menú hamburguesa derecho */}
+                {/* Menú hamburguesa derecho configuración */}
                 <MenuButton
                     onClick={onToggleRightMenu}
                     ariaLabel="Abrir menú de configuración"

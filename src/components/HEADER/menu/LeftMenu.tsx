@@ -189,7 +189,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
 
             {/* Menú lateral izquierdo */}
             <div
-                className={`fixed top-0 left-0 h-full w-4/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 left-0 h-full w-5/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 }`}
                 style={{
@@ -216,21 +216,20 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                             onClick={onClose}
                             title="Cerrar Menú"
                             aria-label="Cerrar menú"
-                            className="p-1 rounded-lg hover:opacity-50 transition-opacity duration-150"
+                            className="p-1 rounded-lg hover:opacity-60 transition-opacity duration-150"
                             style={{
                                 backgroundColor: theme.button.background,
                             }}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
+                                className="w-6 h-6"
                                 style={{
                                     color: theme.title.color,
                                 }}
@@ -286,7 +285,11 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                     onBlur={() =>
                                                         handleEditBlur(chat)
                                                     }
-                                                    className="w-full bg-transparent border-b border-white text-white outline-none"
+                                                    className="w-full bg-transparent border-b outline-none p-2"
+                                                    style={{
+                                                        borderColor: theme.text,
+                                                        color: theme.text,
+                                                    }}
                                                     autoFocus
                                                     onFocus={(e) => {
                                                         e.target.select();
@@ -297,7 +300,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                             chat
                                                         )
                                                     }
-                                                    maxLength={100} // máximo de caracteres permitidos
+                                                    maxLength={100} // máximo caracteres
                                                 />
                                             </div>
                                         ) : (
@@ -307,70 +310,61 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                     backgroundColor:
                                                         currentChatId ===
                                                         chat.id
-                                                            ? isDarkTheme
-                                                                ? "rgba(255, 255, 255, 0.1)"
-                                                                : "rgba(0, 0, 0, 0.1)"
-                                                            : "transparent",
+                                                            ? theme.secondary
+                                                            : theme.accent,
                                                     color: isDarkTheme
                                                         ? theme.text
                                                         : theme.primary,
                                                 }}
                                                 onClick={() => {
                                                     onSelectChat(chat.id);
-                                                    onClose(); // Cerrar el menú después de seleccionar el chat
+                                                    onClose(); // seleccionar el chat y cerrar el menú
                                                 }}
                                             >
                                                 {/* Contenedor para el título y los botones */}
                                                 <div className="flex flex-col w-full">
                                                     {/* Primera fila: título y botones */}
                                                     <div className="flex items-center justify-between w-full">
-                                                        {/* Grupo izquierdo: botón editar y título */}
+                                                        {/* Grupo izquierdo: título */}
                                                         <div className="flex items-center flex-grow overflow-hidden">
-                                                            {/* Botón de editar (lápiz) */}
-                                                            <button
-                                                                title="Editar nombre del Chat"
-                                                                aria-label="Editar nombre del Chat"
-                                                                className="mr-2 p-2 rounded-lg hover:opacity-60 transition-opacity duration-150"
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        theme
-                                                                            .button
-                                                                            .background,
-                                                                }}
-                                                                onClick={(
-                                                                    e
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    handleEditClick(
-                                                                        chat
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <img
-                                                                    src={
-                                                                        PenIcon
-                                                                    }
-                                                                    alt="Pen Icon"
-                                                                    className="w-4 h-4 md:w-5 md:h-5"
-                                                                    style={{
-                                                                        width: "15px",
-                                                                        height: "15px",
-                                                                        filter: isDarkTheme
-                                                                            ? "brightness(0) invert(1)"
-                                                                            : "brightness(1) invert(0)",
-                                                                    }}
-                                                                />
-                                                            </button>
-
-                                                            {/* Título del chat - con más espacio para mostrar más caracteres */}
+                                                            {/* Título del chat*/}
                                                             <span className="truncate max-w-[200px]">
                                                                 {truncateTitle(
                                                                     chat.title
                                                                 )}
                                                             </span>
                                                         </div>
-
-                                                        {/* Botón de eliminar (papelera) alineado a la derecha */}
+                                                        {/* Botón de editar (lápiz) */}
+                                                        <button
+                                                            title="Editar nombre del Chat"
+                                                            aria-label="Editar nombre del Chat"
+                                                            className="mr-2 p-2 rounded-lg hover:opacity-60 transition-opacity duration-150"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    theme.button
+                                                                        .background,
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleEditClick(
+                                                                    chat
+                                                                );
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={PenIcon}
+                                                                alt="Pen Icon"
+                                                                className="w-4 h-4 md:w-5 md:h-5"
+                                                                style={{
+                                                                    width: "15px",
+                                                                    height: "15px",
+                                                                    filter: isDarkTheme
+                                                                        ? "brightness(0) invert(1)"
+                                                                        : "brightness(1) invert(0)",
+                                                                }}
+                                                            />
+                                                        </button>
+                                                        {/* Botón de eliminar (papelera) */}
                                                         <button
                                                             title="Eliminar Chat"
                                                             aria-label="Eliminar Chat"
@@ -404,10 +398,12 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                     </div>
 
                                                     {/* Fecha y hora debajo del título */}
-                                                        <span className="text-xs mt-1"
-                                                            style={{
-                                                                color: theme.text,
-                                                            }}>
+                                                    <span
+                                                        className="text-xs mt-1"
+                                                        style={{
+                                                            color: theme.text,
+                                                        }}
+                                                    >
                                                         {(() => {
                                                             const d = new Date(
                                                                 chat.date

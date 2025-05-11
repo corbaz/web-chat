@@ -286,7 +286,6 @@ ${message}`;
                             style={{
                                 border: `1px solid ${theme.accent}`,
                                 backgroundColor: theme.background,
-                                height: "48px", // Altura fija para la barra de mensajes
                             }}
                         >
                             {/* Botón de papelera para limpiar el mensaje actual */}
@@ -430,13 +429,13 @@ ${message}`;
                         >
                             {/* Botón de escoba a la izquierda - Limpia Contexto */}
                             <div className="flex items-center">
-                                {/* Botón de escoba para borrar el contexto - estilo idéntico al botón trash */}
+                                
                                 {clearContext && (
                                     <button
                                         title="Eliminar contexto del Chat"
                                         aria-label="Eliminar contexto del Chat"
                                         onClick={clearContext}
-                                        className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
+                                        className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[44px] min-h-[44px] p-2.5 ${
                                             hasContext
                                                 ? "opacity-100"
                                                 : "opacity-50 cursor-not-allowed"
@@ -483,14 +482,15 @@ ${message}`;
                                             }
                                         }}
                                         onFocus={(e) => {
-                                            // Seleccionar todo el texto al enfocar
+                                            // Seleccionar texto al enfocar
                                             e.target.select();
                                         }}
-                                        className="text-base font-medium bg-transparent border-none outline-none text-center w-full"
+                                        className="text-base font-medium bg-transparent text-left border-b outline-none p-2 mb-2"
                                         style={{
+                                            borderColor: theme.text,
                                             color: theme.text,
                                         }}
-                                        maxLength={30} // Límite máximo de 30 caracteres
+                                        maxLength={30} // Límite máximo
                                     />
                                 ) : (
                                     chatTitle && (

@@ -42,7 +42,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
 
             {/* Menú lateral derecho */}
             <div
-                className={`fixed top-0 right-0 h-full w-4/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 right-0 h-full w-5/5 sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
                     isOpen ? "translate-x-0" : "translate-x-full"
                 }`}
                 style={{
@@ -76,16 +76,15 @@ const RightMenu: React.FC<RightMenuProps> = ({
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
+                                className="w-6 h-6"
                                 style={{
-                                   color: theme.title.color, 
+                                    color: theme.title.color,
                                 }}
                             >
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
