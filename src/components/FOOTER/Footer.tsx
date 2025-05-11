@@ -301,7 +301,6 @@ ${message}`;
                                 }`}
                                 style={{
                                     backgroundColor: theme.button.background,
-                                    color: theme.button.text,
                                     borderRight: `1px solid ${theme.accent}`,
                                 }}
                             >
@@ -310,7 +309,9 @@ ${message}`;
                                     alt="Eliminar Prompt"
                                     className="w-5 h-5"
                                     style={{
-                                        filter: "brightness(0) invert(1)",
+                                        filter: isDarkTheme
+                                            ? "brightness(0) invert(1)"
+                                            : "brightness(1) invert(0)",
                                     }}
                                 />
                             </button>
@@ -350,14 +351,8 @@ ${message}`;
                                 }`}
                                 style={{
                                     backgroundColor: theme.button.background,
-                                    color: theme.button.text,
                                     borderRight: `1px solid ${theme.background}`,
                                 }}
-                                disabled={
-                                    !message.trim() ||
-                                    isLoading ||
-                                    isMagicLoading
-                                }
                             >
                                 {isMagicLoading ? (
                                     <svg
@@ -380,7 +375,9 @@ ${message}`;
                                         alt="Mejorar Prompt"
                                         className="w-5 h-5"
                                         style={{
-                                            filter: "brightness(0) invert(1)",
+                                            filter: isDarkTheme
+                                                ? "brightness(0) invert(1)"
+                                                : "brightness(1) invert(0)",
                                         }}
                                     />
                                 )}
@@ -397,8 +394,7 @@ ${message}`;
                                 }`}
                                 style={{
                                     backgroundColor: theme.button.background,
-                                    color: theme.button.text,
-                                    borderLeft: `1px solid ${theme.accent}`,
+                                    borderRight: `1px solid ${theme.background}`,
                                 }}
                             >
                                 <svg
@@ -409,7 +405,9 @@ ${message}`;
                                     stroke="currentColor"
                                     className="w-6 h-6"
                                     style={{
-                                        filter: "brightness(0) invert(1)",
+                                        filter: isDarkTheme
+                                            ? "brightness(0) invert(1)"
+                                            : "brightness(1) invert(0)",
                                     }}
                                 >
                                     <path
@@ -435,6 +433,8 @@ ${message}`;
                                 {/* Botón de escoba para borrar el contexto - estilo idéntico al botón trash */}
                                 {clearContext && (
                                     <button
+                                        title="Eliminar contexto del Chat"
+                                        aria-label="Eliminar contexto del Chat"
                                         onClick={clearContext}
                                         className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
                                             hasContext
@@ -442,24 +442,19 @@ ${message}`;
                                                 : "opacity-50 cursor-not-allowed"
                                         }`}
                                         style={{
-                                            backgroundColor: hasContext
-                                                ? theme.button.background
-                                                : isDarkTheme
-                                                ? "rgba(255, 255, 255, 0.1)"
-                                                : "rgba(0, 0, 0, 0.08)",
-                                            color: theme.button.text,
+                                            backgroundColor:
+                                                theme.button.background,
                                             borderRight: `1px solid ${theme.accent}`,
                                         }}
-                                        disabled={!hasContext}
-                                        title="Eliminar contexto del Chat"
-                                        aria-label="Eliminar contexto del Chat"
                                     >
                                         <img
                                             src={EscobaIcon}
                                             alt="Eliminar contexto del Chat"
-                                            className="w-5 h-5"
+                                            className="w-6 h-6"
                                             style={{
-                                                filter: "brightness(0) invert(1)",
+                                                filter: isDarkTheme
+                                                    ? "brightness(0) invert(1)"
+                                                    : "brightness(1) invert(0)",
                                             }}
                                         />
                                     </button>

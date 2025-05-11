@@ -67,8 +67,12 @@ const RightMenu: React.FC<RightMenuProps> = ({
                         </h2>
                         <button
                             onClick={onClose}
-                            className="p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500 transition-colors"
+                            title="Cerrar Menú"
                             aria-label="Cerrar menú"
+                            className="p-1 rounded-lg hover:opacity-60 transition-opacity duration-150"
+                            style={{
+                                backgroundColor: theme.button.background,
+                            }}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -80,7 +84,9 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                style={{ color: theme.title.color }}
+                                style={{
+                                   color: theme.title.color, 
+                                }}
                             >
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>

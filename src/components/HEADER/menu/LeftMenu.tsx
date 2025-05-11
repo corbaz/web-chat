@@ -115,14 +115,16 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         const result = await Swal.fire({
             title: "¿Eliminar este Chat?",
             text: `¿Estás seguro de que quieres eliminar "${chatTitle}"?`,
-            icon: "warning",
+            icon: "question",
+            iconColor: theme.primary,
             showCancelButton: true,
             confirmButtonText: "Sí, eliminar",
+            confirmButtonColor: isDarkTheme ? theme.secondary : theme.primary,
             cancelButtonText: "Cancelar",
-            confirmButtonColor: theme.button.background,
+            cancelButtonColor: isDarkTheme ? theme.secondary : theme.primary,
             backdrop: true,
-            background: isDarkTheme ? theme.background : theme.secondary,
-            color: isDarkTheme ? theme.text : theme.primary,
+            background: theme.background,
+            color: theme.text,
         });
 
         if (result.isConfirmed) {
@@ -133,10 +135,13 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                 title: "¡Eliminado!",
                 text: "El Chat ha sido eliminado.",
                 icon: "success",
+                iconColor: theme.primary,
                 timer: 1500,
-                confirmButtonColor: theme.button.background,
-                background: isDarkTheme ? theme.background : theme.secondary,
-                color: isDarkTheme ? theme.text : theme.primary,
+                confirmButtonColor: isDarkTheme
+                    ? theme.secondary
+                    : theme.primary,
+                background: theme.background,
+                color: theme.text,
             });
         }
     };
@@ -149,13 +154,15 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             title: "Nuevo Chat",
             text: "¿Desea continuar con la creación del Chat?",
             icon: "question",
+            iconColor: theme.primary,
             showCancelButton: true,
             confirmButtonText: "Sí, continuar",
+            confirmButtonColor: isDarkTheme ? theme.secondary : theme.primary,
             cancelButtonText: "Cancelar",
-            confirmButtonColor: theme.button.background,
+            cancelButtonColor: isDarkTheme ? theme.secondary : theme.primary,
             backdrop: true,
-            background: isDarkTheme ? theme.background : theme.secondary,
-            color: isDarkTheme ? theme.text : theme.primary,
+            background: theme.background,
+            color: theme.text,
         });
 
         if (result.isConfirmed) {
@@ -207,8 +214,12 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                         </h2>
                         <button
                             onClick={onClose}
-                            className="p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500 transition-colors"
+                            title="Cerrar Menú"
                             aria-label="Cerrar menú"
+                            className="p-1 rounded-lg hover:opacity-50 transition-opacity duration-150"
+                            style={{
+                                backgroundColor: theme.button.background,
+                            }}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -220,7 +231,9 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                style={{ color: theme.title.color }}
+                                style={{
+                                    color: theme.title.color,
+                                }}
                             >
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -307,21 +320,6 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                     onClose(); // Cerrar el menú después de seleccionar el chat
                                                 }}
                                             >
-                                                {/* Icono de conversación (bocadillo) */}
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    width="18"
-                                                    height="18"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    className="mr-2"
-                                                >
-                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                                </svg>
                                                 {/* Contenedor para el título y los botones */}
                                                 <div className="flex flex-col w-full">
                                                     {/* Primera fila: título y botones */}
@@ -330,31 +328,15 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                         <div className="flex items-center flex-grow overflow-hidden">
                                                             {/* Botón de editar (lápiz) */}
                                                             <button
-                                                                className="mr-2 p-1 rounded flex-shrink-0 transition-colors duration-150"
-                                                                style={{
-                                                                    color: isDarkTheme
-                                                                        ? theme.text
-                                                                        : theme.primary,
-                                                                    backgroundColor:
-                                                                        "transparent",
-                                                                }}
-                                                                onMouseEnter={(
-                                                                    e
-                                                                ) => {
-                                                                    e.currentTarget.style.backgroundColor =
-                                                                        isDarkTheme
-                                                                            ? theme.accent
-                                                                            : theme
-                                                                                  .button
-                                                                                  .background;
-                                                                }}
-                                                                onMouseLeave={(
-                                                                    e
-                                                                ) => {
-                                                                    e.currentTarget.style.backgroundColor =
-                                                                        "transparent";
-                                                                }}
                                                                 title="Editar nombre del Chat"
+                                                                aria-label="Editar nombre del Chat"
+                                                                className="mr-2 p-2 rounded-lg hover:opacity-60 transition-opacity duration-150"
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        theme
+                                                                            .button
+                                                                            .background,
+                                                                }}
                                                                 onClick={(
                                                                     e
                                                                 ) => {
@@ -371,9 +353,11 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                     alt="Pen Icon"
                                                                     className="w-4 h-4 md:w-5 md:h-5"
                                                                     style={{
-                                                                        filter: "brightness(0) invert(1)",
                                                                         width: "15px",
                                                                         height: "15px",
+                                                                        filter: isDarkTheme
+                                                                            ? "brightness(0) invert(1)"
+                                                                            : "brightness(1) invert(0)",
                                                                     }}
                                                                 />
                                                             </button>
@@ -388,31 +372,14 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
 
                                                         {/* Botón de eliminar (papelera) alineado a la derecha */}
                                                         <button
-                                                            className="ml-auto p-1 hover:bg-gray-200 rounded flex-shrink-0"
-                                                            style={{
-                                                                color: isDarkTheme
-                                                                    ? theme.text
-                                                                    : theme.primary,
-                                                                backgroundColor:
-                                                                    "transparent",
-                                                            }}
-                                                            onMouseEnter={(
-                                                                e
-                                                            ) => {
-                                                                e.currentTarget.style.backgroundColor =
-                                                                    isDarkTheme
-                                                                        ? theme.accent
-                                                                        : theme
-                                                                              .button
-                                                                              .background;
-                                                            }}
-                                                            onMouseLeave={(
-                                                                e
-                                                            ) => {
-                                                                e.currentTarget.style.backgroundColor =
-                                                                    "transparent";
-                                                            }}
                                                             title="Eliminar Chat"
+                                                            aria-label="Eliminar Chat"
+                                                            className="p-2 rounded-lg hover:opacity-60 transition-opacity duration-150"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    theme.button
+                                                                        .background,
+                                                            }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 showDeleteConfirmation(
@@ -426,16 +393,21 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                                 alt="Trash Icon"
                                                                 className="w-4 h-4 md:w-5 md:h-5"
                                                                 style={{
-                                                                    filter: "brightness(0) invert(1)",
                                                                     width: "15px",
                                                                     height: "15px",
+                                                                    filter: isDarkTheme
+                                                                        ? "brightness(0) invert(1)"
+                                                                        : "brightness(1) invert(0)",
                                                                 }}
                                                             />
                                                         </button>
                                                     </div>
 
                                                     {/* Fecha y hora debajo del título */}
-                                                    <span className="text-xs text-white mt-1">
+                                                        <span className="text-xs mt-1"
+                                                            style={{
+                                                                color: theme.text,
+                                                            }}>
                                                         {(() => {
                                                             const d = new Date(
                                                                 chat.date

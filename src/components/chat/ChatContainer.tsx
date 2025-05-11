@@ -547,7 +547,7 @@ const ChatContainer = ({
         <>
             {/* Contenido principal (chat) */}
             <div
-                className="fixed inset-x-0 overflow-hidden"
+                className="fixed inset-x-0 overflow-hidden "
                 style={{
                     top: `var(--header-height, ${HEADER_HEIGHT_MOBILE})`,
                     bottom: `var(--footer-height, ${FOOTER_HEIGHT_MOBILE})`,
