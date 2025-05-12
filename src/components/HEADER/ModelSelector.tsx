@@ -8,7 +8,6 @@ interface ModelSelectorProps {
     selectedModel: string;
     onModelChange: (modelId: string) => void;
     theme: ColorPalette;
-    isDarkTheme: boolean;
 }
 
 // Interfaz para las opciones del selector
@@ -21,7 +20,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     selectedModel,
     onModelChange,
     theme,
-    isDarkTheme,
 }) => {
     // Obtener los desarrolladores únicos de modelos
     const modelDevelopers = [
@@ -57,43 +55,34 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             border: `3px solid ${theme.messages.ai.background}`,
             borderRadius: "6px",
             padding: "1px",
-            backgroundColor: isDarkTheme
-                ? theme.input.background
-                : theme.input.text,
+            backgroundColor: theme.input.background,
             boxShadow: "none",
             "&:hover": {
-                border: `3px solid ${theme.messages.ai.background}`,
+                border: `3px solid ${"theme.messages.ai.background"}`,
                 cursor: "pointer",
             },
         }),
         option: (provided, state) => ({
             ...provided,
             backgroundColor: state.isSelected
-                ? theme.messages.ai.background
-                : isDarkTheme
-                ? theme.input.background
-                : theme.input.text,
+                ? theme.selectModel.isSelectedBackground
+                : theme.selectModel.modelBackground,
             color: state.isSelected
-                ? isDarkTheme
-                    ? theme.input.background
-                    : theme.input.text
-                : isDarkTheme
-                ? theme.input.text
-                : theme.accent,
+                ? theme.selectModel.isSelectedText
+                : theme.selectModel.modelText,
             cursor: "pointer",
             "&:hover": {
-                backgroundColor: theme.button.background,
-                color: theme.button.text,
+                backgroundColor: theme.selectModel.hoverBackground,
+                color: theme.selectModel.hoverText,
             },
         }),
         singleValue: (provided) => ({
             ...provided,
-            color: theme.messages.ai.background,
-            fontWeight: "bold",
+            color: theme.selectModel.text,
         }),
         menu: (provided) => ({
             ...provided,
-            backgroundColor: isDarkTheme ? theme.background : theme.secondary,
+            backgroundColor: theme.selectModel.empresaBackground,
             zIndex: 9999,
         }),
         group: (provided) => ({
@@ -103,11 +92,15 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         }),
         groupHeading: (provided) => ({
             ...provided,
-            color: theme.messages.ai.background,
+            color: theme.selectModel.empresaText,
             fontWeight: "bold",
             fontSize: "0.85em",
-            marginBottom: "4px",
-            paddingLeft: "12px",
+            marginBottom: "14px",
+            textAlign: "center",
+            backgroundColor: theme.selectModel.empresaBackground,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
         }),
     };
 

@@ -19,14 +19,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const userTheme = isDarkTheme
         ? theme.messages.user
         : {
-              background: theme.messages.user.text,
-              text: theme.messages.user.background,
+              background:theme.messages.user.background, 
+              text: theme.messages.user.text,
           };
     const aiTheme = isDarkTheme
         ? theme.messages.ai
         : {
-              background: theme.messages.ai.text,
-              text: theme.messages.ai.background,
+              background: theme.messages.ai.background,
+              text: theme.messages.ai.text,
           };
 
     const getModelShortName = (modelId?: string): string => {
@@ -68,8 +68,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 style={{
                     backgroundColor: isUser ? userTheme.background : aiTheme.background,
                     color: isUser ? userTheme.text : aiTheme.text,
-                    boxShadow:
-                        "0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)",
+                    boxShadow: isUser
+                        ? "0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)"
+                        : "",
                 }}
             >
                 <div className="whitespace-pre-wrap text-left">

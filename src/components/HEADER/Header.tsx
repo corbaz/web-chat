@@ -24,7 +24,6 @@ const Header: React.FC<HeaderProps> = ({
     selectedModel,
     onModelChange,
     theme,
-    isDarkTheme,
     onToggleLeftMenu,
     onToggleRightMenu,
     chatId,
@@ -67,7 +66,6 @@ const Header: React.FC<HeaderProps> = ({
                             selectedModel={selectedModel}
                             onModelChange={onModelChange}
                             theme={theme}
-                            isDarkTheme={isDarkTheme}
                         />
                     </div>
                 </div>

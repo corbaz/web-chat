@@ -386,14 +386,13 @@ ${message}`;
                                 onClick={handleSendMessage}
                                 title="Enviar Prompt"
                                 aria-label="Enviar Prompt"
-                                className={`rounded-r-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
+                                className={`rounded-r-md flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
                                     message.trim() && !isLoading
                                         ? "opacity-100"
                                         : "opacity-50 cursor-not-allowed"
                                 }`}
                                 style={{
                                     backgroundColor: theme.button.background,
-                                    borderRight: `1px solid ${theme.background}`,
                                 }}
                             >
                                 <svg
@@ -435,7 +434,7 @@ ${message}`;
                                         title="Eliminar contexto del Chat"
                                         aria-label="Eliminar contexto del Chat"
                                         onClick={clearContext}
-                                        className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[44px] min-h-[44px] p-2.5 ${
+                                        className={`rounded-l-md flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
                                             hasContext
                                                 ? "opacity-100"
                                                 : "opacity-50 cursor-not-allowed"
@@ -443,7 +442,6 @@ ${message}`;
                                         style={{
                                             backgroundColor:
                                                 theme.button.background,
-                                            borderRight: `1px solid ${theme.accent}`,
                                         }}
                                     >
                                         <img

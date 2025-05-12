@@ -42,6 +42,18 @@ export interface ColorPalette {
         background: string;
         text: string;
     };
+    selectModel: {
+        background: string;
+        text: string;
+        empresaBackground: string;
+        empresaText: string;
+        isSelectedBackground: string;
+        isSelectedText: string;
+        modelBackground: string;
+        modelText: string;
+        hoverBackground?: string; // Color de fondo al pasar el mouse
+        hoverText?: string; // Color de texto al pasar el mouse
+    };
 }
 
 // Tema claro estilo ChatGPT
@@ -62,22 +74,22 @@ export const lightTheme: ColorPalette = {
         border: "1px solid #ececf1", // Borde sutil en tono gris
     },
     messages: {
-        ai: {
-            background: "#f7f7f8", // Gris muy claro para mensajes AI
-            text: "#343541", // Texto oscuro para contraste
-        },
         user: {
-            background: "#ffffff", // Fondo blanco para mensajes usuario
-            text: "#343541", // Texto oscuro para contraste
+            background: "#f4f4f4", // Fondo blanco para mensajes usuario
+            text: "#0d0d0d", // Texto oscuro para contraste
+        },
+        ai: {
+            background: "#ffffff", // Gris muy claro para mensajes AI
+            text: "#0d0d0d", // Texto oscuro para contraste
         },
         loading: {
-            background: "#f7f7f8", // Gris claro para indicador de carga
-            text: "#40414f", // Texto gris oscuro
+            background: "#f4f4f4", // Gris claro para indicador de carga
+            text: "#0d0d0d", // Texto gris oscuro
         },
     },
     input: {
-        background: "#ffffff", // Fondo blanco para input
-        text: "#343541", // Texto oscuro
+        background: "#f4f4f4", // Fondo blanco para input
+        text: "#0d0d0d", // Texto oscuro
         placeholder: "#8e8ea0", // Gris para placeholder
     },
     scrollbar: {
@@ -88,15 +100,39 @@ export const lightTheme: ColorPalette = {
         background: "#ececf1", // Gris claro para botones
         text: "#343541", // Texto oscuro para botones
     },
+    selectModel: {
+        background: "#f4f4f4", // Fondo blanco para el selector de modelos
+        text: "#0d0d0d", // Texto oscuro para el selector de modelos
+        empresaBackground: "#0d0d0d", // Fondo blanco para el selector de modelos
+        empresaText: "#f4f4f4", // Texto oscuro para el selector de modelos
+        isSelectedBackground: "#8e8ea0", // Estado de selección
+        isSelectedText: "#f4f4f4", // Texto azul para el estado de selección
+        modelBackground: "#f4f4f4", // Fondo verde para el modelo
+        modelText: "#0d0d0d", // Texto amarillo para el modelo
+        hoverBackground: "#343541", // Color de fondo al pasar el mouse
+        hoverText: "#f4f4f4", // Color de texto al pasar el mouse
+    },
 };
 
 // Tema oscuro estilo ChatGPT
 export const darkTheme: ColorPalette = {
+    selectModel: {
+        background: "#2f2f2f", // Fondo gris oscuro para el selector de modelos
+        text: "#ffffff", // Texto blanco para el selector de modelos
+        empresaBackground: "#2f2f2f", // Fondo gris oscuro para el selector de modelos
+        empresaText: "#ffffff", // Texto blanco para el selector de modelos
+        isSelectedBackground: "#0d0d0d", // Estado de selección
+        isSelectedText: "#f4f4f4", // Texto blanco para el estado de selección
+        modelBackground: "#f4f4f4", // Fondo gris claro para el modelo
+        modelText: "#0d0d0d", // Texto oscuro para el modelo
+        hoverBackground: "#8e8ea0", // Color de fondo al pasar el mouse
+        hoverText: "#ffffff", // Color de texto al pasar el mouse
+    },
     // Colores principales basados en ChatGPT tema oscuro
     primary: "#ffffff", // Color blanco para texto principal
     secondary: "#343541", // Color de fondo secundario
     accent: "#444654", // Color de acento para bordes
-    background: "#202123", // Fondo gris oscuro, más cercano a ChatGPT
+    background: "#171717", // Fondo gris oscuro, más cercano a ChatGPT
     text: "#ffffff", // Texto blanco
 
     // Colores específicos para componentes
@@ -104,25 +140,25 @@ export const darkTheme: ColorPalette = {
         color: "#ffffff", // Color blanco para el título
     },
     chat: {
-        background: "#202123", // Fondo gris oscuro para el chat
+        background: "red", // Fondo gris oscuro para el chat
         border: "1px solid #2a2b32", // Borde sutil en tono oscuro
     },
     messages: {
-        ai: {
-            background: "#444654", // Gris oscuro para mensajes AI
-            text: "#ffffff", // Texto blanco
-        },
         user: {
-            background: "#343541", // Gris azulado para mensajes usuario
-            text: "#ffffff", // Texto blanco
+            background: "#2f2f2f", // Fondo blanco para mensajes usuario
+            text: "#ffffff", // Texto oscuro para contraste
+        },
+        ai: {
+            background: "#212121", // Gris muy claro para mensajes AI
+            text: "#ffffff", // Texto oscuro para contraste
         },
         loading: {
-            background: "#444654", // Gris oscuro para carga
+            background: "#2f2f2f", // Gris oscuro para carga
             text: "#ffffff", // Texto blanco
         },
     },
     input: {
-        background: "#343541", // Fondo gris oscuro para input
+        background: "#2f2f2f", // Fondo gris oscuro para input
         text: "#ffffff", // Texto blanco
         placeholder: "#8e8ea0", // Gris claro para placeholder
     },

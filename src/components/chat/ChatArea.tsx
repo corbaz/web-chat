@@ -28,7 +28,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <div
                 className="w-full h-full overflow-y-auto px-3 pt-5 pb-6 space-y-4 sm:pt-3 sm:pb-0 sm:px-5 md:px-8 lg:px-10 xl:px-12"
                 style={{
-                    backgroundColor: theme.background
+                    backgroundColor: theme.messages.ai.background,
                 }}
                 aria-live="polite"
                 aria-relevant="additions"
@@ -46,16 +46,28 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     <div
                         className="flex justify-center items-center p-3 rounded-lg my-24"
                         style={{
-                            backgroundColor:  theme.background
+                            backgroundColor: theme.messages.user.background,
                         }}
                     >
                         <div className="flex items-center gap-2 p-2">
-                            <span className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing" 
-                                  style={{ backgroundColor: theme.text }}></span>
-                            <span className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]" 
-                                  style={{ backgroundColor: theme.text }}></span>
-                            <span className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]" 
-                                  style={{ backgroundColor: theme.text }}></span>
+                            <span
+                                className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing"
+                                style={{
+                                    backgroundColor: theme.messages.user.text,
+                                }}
+                            ></span>
+                            <span
+                                className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]"
+                                style={{
+                                    backgroundColor: theme.messages.user.text,
+                                }}
+                            ></span>
+                            <span
+                                className="h-[10px] w-[10px] rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]"
+                                style={{
+                                    backgroundColor: theme.messages.user.text,
+                                }}
+                            ></span>
                         </div>
                     </div>
                 )}
