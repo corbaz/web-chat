@@ -19,7 +19,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const userTheme = isDarkTheme
         ? theme.messages.user
         : {
-              background:theme.messages.user.background, 
+              background: theme.messages.user.background,
               text: theme.messages.user.text,
           };
     const aiTheme = isDarkTheme
@@ -61,19 +61,26 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         <div
             className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}
         >
+            {" "}
             <div
                 className={`max-w-[80%] md:max-w-[70%] rounded-lg px-4 py-3 ${
                     isUser ? "rounded-tr-none" : "rounded-tl-none"
                 }`}
                 style={{
-                    backgroundColor: isUser ? userTheme.background : aiTheme.background,
+                    backgroundColor: isUser
+                        ? userTheme.background
+                        : aiTheme.background,
                     color: isUser ? userTheme.text : aiTheme.text,
                     boxShadow: isUser
                         ? "0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)"
                         : "",
+                    overflowWrap: "break-word",
+                    wordWrap: "break-word",
+                    wordBreak: "break-word",
+                    hyphens: "auto",
                 }}
             >
-                <div className="whitespace-pre-wrap text-left">
+                <div className="whitespace-pre-wrap text-left overflow-hidden">
                     {message.content}
                 </div>
 
