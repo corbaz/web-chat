@@ -126,7 +126,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
             if (message.trim() && !isLoading && !isMagicLoading) {
                 try {
                     setIsMagicLoading(true); // Usar el modelo proporcionado como prop o buscar en el historial de chat si no está disponible
-                    let modelToUse = selectedModel || "mixtral-8x7b-32768"; // Usar el prop si está disponible, o el valor por defecto
+                    let modelToUse = selectedModel; // Usar el prop si está disponible, o el valor por defecto
 
                     // Si no se proporcionó el modelo como prop, intentar obtenerlo del historial de chat
                     if (!selectedModel && currentChatId) {
@@ -157,7 +157,9 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
 asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones.
 
 Texto a mejorar:
-${message}`;
+${message}`; // Obtener la API key del localStorage o usar la predeterminada como respaldo
+                    const savedApiKey = localStorage.getItem("groqApiKey");
+                    const apiKey = savedApiKey;
 
                     // Realizar la petición a Groq con la misma configuración que en ChatContainer
                     const response = await axios.post(
@@ -177,8 +179,7 @@ ${message}`;
                         {
                             headers: {
                                 "Content-Type": "application/json",
-                                Authorization:
-                                    "Bearer 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",
+                                Authorization: `Bearer ${apiKey}`,
                             },
                         }
                     ); // Extraer la respuesta mejorada
@@ -428,7 +429,6 @@ ${message}`;
                         >
                             {/* Botón de escoba a la izquierda - Limpia Contexto */}
                             <div className="flex items-center">
-                                
                                 {clearContext && (
                                     <button
                                         title="Eliminar contexto del Chat"

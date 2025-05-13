@@ -4,6 +4,7 @@ import { groqModels } from "../models/groqModels";
 import LunaIcon from "../../../assets/luna.svg";
 
 import PieBrand from "./PieBrand.tsx";
+import ApiKeyInput from "./ApiKeyInput.tsx";
 
 interface RightMenuProps {
     isOpen: boolean;
@@ -220,8 +221,11 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                         </label>
                                     </div>
                                 ))}
-                            </div>
+                            </div>{" "}
                         </div>
+
+                        {/* Sección de API Key */}
+                        <ApiKeyInput theme={theme} isDarkTheme={isDarkTheme} />
 
                         {/* Sección de información */}
                         <div className="mb-6">

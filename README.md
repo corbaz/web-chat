@@ -65,11 +65,11 @@ bun create vite@latest web-chat
 {
     "name": "web-chat",
     "private": true,
-    "version": "v.2.01",
+    "version": "v.2.7",
     "type": "module",
     "scripts": {
         "bun-install": "bun install",
-        "bun-upgrade": "bun upgrade",
+        "bun-upgrade": "bun upgrade && bunx -y npm-check-updates",
         "ncu": "npx -y npm-check-updates -u && bun update",
         "dev": "vite --host",
         "build": "tsc -b && vite build --outDir ./docs",
@@ -78,24 +78,26 @@ bun create vite@latest web-chat
         "deploy": "surge docs --domain deepchat.surge.sh"
     },
     "dependencies": {
-        "@tailwindcss/vite": "^4.1.4",
+        "@tailwindcss/vite": "^4.1.6",
         "axios": "^1.9.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "tailwindcss": "^4.1.4"
+        "react-select": "^5.10.1",
+        "sweetalert2": "^11.21.0",
+        "tailwindcss": "^4.1.6"
     },
     "devDependencies": {
-        "@eslint/js": "^9.25.1",
-        "@types/react": "^19.1.2",
-        "@types/react-dom": "^19.1.2",
+        "@eslint/js": "^9.26.0",
+        "@types/react": "^19.1.4",
+        "@types/react-dom": "^19.1.4",
         "@vitejs/plugin-react": "^4.4.1",
-        "eslint": "^9.25.1",
+        "eslint": "^9.26.0",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.20",
-        "globals": "^16.0.0",
+        "globals": "^16.1.0",
         "typescript": "~5.8.3",
-        "typescript-eslint": "^8.31.1",
-        "vite": "^6.3.3"
+        "typescript-eslint": "^8.32.1",
+        "vite": "^6.3.5"
     }
 }
 ```
@@ -236,7 +238,7 @@ Como complemento de Vite es la forma más sencilla de integrarlo con marcos como
 
 ```cmd
 curl -X GET "https://api.groq.com/openai/v1/models" \
-     -H "Authorization: Bearer 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" \
+     -H "Authorization: Bearer API_KEY" \
      -H "Content-Type: application/json"
 ```
 
@@ -257,65 +259,3 @@ Deploy en surge: https://deepchat.surge.sh/ [![Surge](https://img.shields.io/bad
 Deploy en github pages: https://corbaz.github.io/web-chat/ [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deploy-blue?style=flat&logo=github)](https://corbaz.github.io/web-chat/)
   
 ---
-mkdir -p src/components/HEADER src/components/CHAT src/components/FOOTER
-
-
-```markdown
-# Installation
-
-Getting started with Desktop Commander MCP is quick and easy.
-
-There are multiple options for installing Desktop Commander MCP:
-
-## NPX Install
-
-Install using `npx` directly:
-
-```bash
-npx @wonderwhy-er/desktop-commander@latest setup
-```
-
-## Bash Install (macOS)
-
-For macOS users, you can also use this bash script:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/wonderwhy-er/DesktopCommanderMCP/refs/heads/main/install.sh | bash
-```
-
-## Smithery Install
-
-*(Details for Smithery Install can be added here if available)*
-
-## Manual Configuration
-
-*(Details for Manual Configuration can be added here if available)*
-
-## Local Installation
-
-*(Details for Local Installation can be added here if available)*
-
----
-
-To install Desktop Commander MCP you need to have **Node.js v18.18.0+** and **Claude Desktop** installed on your system:
-
-- Download Node.js: [https://nodejs.org/en/download](https://nodejs.org/en/download)
-- Download Claude Desktop: [https://claude.ai/download](https://claude.ai/download)
-
-**Remember to restart Claude after installation.**
-
----
-
-## Trusted by Developers
-
-Join thousands of developers who have transformed their Claude experience with Desktop Commander.
-
-| Metric           | Value |
-| ---------------- | ----- |
-| Weekly Downloads | 26K+  |
-| User Rating      | 9/10  |
-| GitHub Stars     | 1800+ |
-
----
-
-## Install

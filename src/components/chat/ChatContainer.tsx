@@ -420,7 +420,9 @@ const ChatContainer = ({
                     selectedModel
                 );
                 const totalTokensUsed = estimateMessagesTokens(apiMessages);
-                const modelTokenLimit = getModelTokenLimit(selectedModel);
+                const modelTokenLimit = getModelTokenLimit(selectedModel); // Obtener la API key del localStorage o usar la predeterminada como respaldo
+                const savedApiKey = localStorage.getItem("groqApiKey");
+                const apiKey = savedApiKey;
 
                 const response = await axios.post(
                     "https://api.groq.com/openai/v1/chat/completions",
@@ -434,8 +436,7 @@ const ChatContainer = ({
                     {
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization:
-                                "Bearer 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",
+                            Authorization: `Bearer ${apiKey}`,
                         },
                     }
                 );
