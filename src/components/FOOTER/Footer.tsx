@@ -157,7 +157,8 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
 asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones.
 
 Texto a mejorar:
-${message}`; // Obtener la API key del localStorage o usar la predeterminada como respaldo
+${message}`;
+                    // Obtener la API key del localStorage o usar la predeterminada como respaldo
                     const savedApiKey = localStorage.getItem("groqApiKey");
                     const apiKey = savedApiKey;
 

@@ -67,7 +67,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
                             setIsSaved(false);
                         }}
                         placeholder="Ingresa tu API Key de Groq"
-                        className="w-full p-2 rounded"
+                        className="w-full p-2 pr-8 rounded"
                         style={{
                             backgroundColor: theme.input.background,
                             color: theme.input.text,
@@ -77,7 +77,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
                     />
                     <button
                         onClick={() => setIsVisible(!isVisible)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                        className="absolute pl-4 right-2 top-1/2 transform -translate-y-1/2"
                         style={{ color: theme.text }}
                         title={
                             isVisible ? "Ocultar API Key" : "Mostrar API Key"

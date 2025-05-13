@@ -1,7 +1,7 @@
 {
     "name": "web-chat",
     "private": true,
-    "version": "v.2.7",
+    "version": "v.2.7.1",
     "type": "module",
     "scripts": {
         "bun-install": "bun install",
