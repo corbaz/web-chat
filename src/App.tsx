@@ -4,6 +4,7 @@ import { groqModels } from "./components/HEADER/models/groqModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 import { generateLayoutCSS } from "./utils/layoutConstants";
 import { createWelcomeMessage } from "./constants/messages";
+import ApiKeyModal from "./components/ApiKeyModal/ApiKeyModal.tsx";
 
 // Componentes principales
 import Header from "./components/HEADER/Header";
@@ -35,6 +36,9 @@ export const App = () => {
     >([]);
     const [currentChatId, setCurrentChatId] = useState<string | undefined>(
         undefined
+    );
+    const [isApiKeySet, setIsApiKeySet] = useState(
+        !!localStorage.getItem("groqApiKey")
     );
 
     const footerRef = useRef<FooterRef>(null);
@@ -486,6 +490,10 @@ export const App = () => {
         ]
     );
 
+    const handleApiKeyProvided = () => {
+        setIsApiKeySet(true);
+    };
+
     return (
         <div
             className="flex flex-col h-screen w-full overflow-hidden"
@@ -493,93 +501,97 @@ export const App = () => {
                 backgroundColor: theme.background,
             }}
         >
-            {/* Header con título, versión y selector de modelos */}
-            <Header
-                title="PROMPTING"
-                version={APP_VERSION}
-                selectedModel={selectedModel}
-                onModelChange={handleModelChange}
+            <ApiKeyModal
                 theme={theme}
                 isDarkTheme={isDarkTheme}
-                onToggleLeftMenu={handleToggleLeftMenu}
-                onToggleRightMenu={handleToggleRightMenu}
+                onApiKeyProvided={handleApiKeyProvided}
             />
-            {/* Contenedor principal del chat */}
-            <ChatContainer
-                messages={messages}
-                setMessages={setMessages} // Usar setMessages directamente
-                isLoading={isLoading}
-                setIsLoading={handleLoadingChange}
-                theme={theme}
-                isDarkTheme={isDarkTheme}
-                toggleTheme={toggleTheme} // Añadimos esta propiedad
-                selectedModel={selectedModel}
-                currentChatId={currentChatId}
-                setCurrentChatId={setCurrentChatId}
-                chatHistory={chatHistory}
-                setChatHistory={handleUpdateChatHistory}
-                leftMenuOpen={leftMenuOpen}
-                rightMenuOpen={rightMenuOpen}
-                onCloseLeftMenu={() => {
-                    setLeftMenuOpen(false);
-                    focusInput();
-                }}
-                onCloseRightMenu={() => {
-                    setRightMenuOpen(false);
-                    focusInput();
-                }}
-                onSelectChat={(chatId) => {
-                    // Buscar el chat seleccionado
-                    const selectedChat = chatHistory.find(
-                        (chat) => chat.id === chatId
-                    );
-
-                    // Simplemente cambiamos al chat seleccionado
-                    setCurrentChatId(chatId);
-
-                    // Si el chat tiene un modelo guardado, actualizamos el selector
-                    if (selectedChat && selectedChat.model) {
-                        setSelectedModel(selectedChat.model);
-                    }
-
-                    focusInput();
-                }}
-                onNewChat={handleNewChat}
-                onModelChange={handleModelChange}
-                onFocusInput={focusInput}
-                onUpdateChatTitle={handleUpdateChatTitle}
-                onDeleteChat={handleDeleteChat}
-            />
-            {/* Footer con área de entrada y controles */}{" "}
-            <Footer
-                ref={footerRef}
-                onSendMessage={(message) => {
-                    // Delegamos la lógica de envío al componente ChatContainer
-                    if (message.trim()) {
-                        const event = new CustomEvent("send-message", {
-                            detail: { message },
-                        });
-                        document.dispatchEvent(event);
-                        focusInput();
-                    }
-                }}
-                toggleTheme={toggleTheme}
-                clearContext={handleClearChat}
-                hasContext={messages.length > 1}
-                theme={theme}
-                isDarkTheme={isDarkTheme}
-                isLoading={isLoading}
-                selectedModel={selectedModel}
-                chatTitle={
-                    chatHistory.find((chat) => chat.id === currentChatId)?.title
-                }
-                onUpdateChatTitle={(newTitle) => {
-                    if (currentChatId) {
-                        handleUpdateChatTitle(currentChatId, newTitle);
-                    }
-                }}
-                currentChatId={currentChatId}
-            />
+            {isApiKeySet && (
+                <>
+                    {/* Header con título, versión y selector de modelos */}
+                    <Header
+                        title="PROMPTING"
+                        version={APP_VERSION}
+                        selectedModel={selectedModel}
+                        onModelChange={handleModelChange}
+                        theme={theme}
+                        isDarkTheme={isDarkTheme}
+                        onToggleLeftMenu={handleToggleLeftMenu}
+                        onToggleRightMenu={handleToggleRightMenu}
+                    />
+                    {/* Contenedor principal del chat */}
+                    <ChatContainer
+                        messages={messages}
+                        setMessages={setMessages}
+                        isLoading={isLoading}
+                        setIsLoading={handleLoadingChange}
+                        theme={theme}
+                        isDarkTheme={isDarkTheme}
+                        toggleTheme={toggleTheme}
+                        selectedModel={selectedModel}
+                        currentChatId={currentChatId}
+                        setCurrentChatId={setCurrentChatId}
+                        chatHistory={chatHistory}
+                        setChatHistory={handleUpdateChatHistory}
+                        leftMenuOpen={leftMenuOpen}
+                        rightMenuOpen={rightMenuOpen}
+                        onCloseLeftMenu={() => {
+                            setLeftMenuOpen(false);
+                            focusInput();
+                        }}
+                        onCloseRightMenu={() => {
+                            setRightMenuOpen(false);
+                            focusInput();
+                        }}
+                        onSelectChat={(chatId) => {
+                            const selectedChat = chatHistory.find(
+                                (chat) => chat.id === chatId
+                            );
+                            setCurrentChatId(chatId);
+                            if (selectedChat && selectedChat.model) {
+                                setSelectedModel(selectedChat.model);
+                            }
+                            focusInput();
+                        }}
+                        onNewChat={handleNewChat}
+                        onModelChange={handleModelChange}
+                        onFocusInput={focusInput}
+                        onUpdateChatTitle={handleUpdateChatTitle}
+                        onDeleteChat={handleDeleteChat}
+                    />
+                    {/* Footer con área de entrada y controles */}
+                    <Footer
+                        ref={footerRef}
+                        onSendMessage={(message) => {
+                            if (message.trim()) {
+                                const event = new CustomEvent("send-message", {
+                                    detail: { message },
+                                });
+                                document.dispatchEvent(event);
+                                focusInput();
+                            }
+                        }}
+                        toggleTheme={toggleTheme}
+                        clearContext={handleClearChat}
+                        hasContext={messages.length > 1}
+                        theme={theme}
+                        isDarkTheme={isDarkTheme}
+                        isLoading={isLoading}
+                        selectedModel={selectedModel}
+                        chatTitle={
+                            chatHistory.find(
+                                (chat) => chat.id === currentChatId
+                            )?.title
+                        }
+                        onUpdateChatTitle={(newTitle) => {
+                            if (currentChatId) {
+                                handleUpdateChatTitle(currentChatId, newTitle);
+                            }
+                        }}
+                        currentChatId={currentChatId}
+                    />
+                </>
+            )}
         </div>
     );
 };

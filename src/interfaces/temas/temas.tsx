@@ -105,11 +105,11 @@ export const lightTheme: ColorPalette = {
         text: "#0d0d0d", // Texto oscuro para el selector de modelos
         empresaBackground: "#0d0d0d", // Fondo blanco para el selector de modelos
         empresaText: "#f4f4f4", // Texto oscuro para el selector de modelos
-        isSelectedBackground: "#8e8ea0", // Estado de selección
+        isSelectedBackground: "#9b9b9b", // Estado de selección
         isSelectedText: "#f4f4f4", // Texto azul para el estado de selección
         modelBackground: "#f4f4f4", // Fondo verde para el modelo
         modelText: "#0d0d0d", // Texto amarillo para el modelo
-        hoverBackground: "#343541", // Color de fondo al pasar el mouse
+        hoverBackground: "#8e8ea0", // Color de fondo al pasar el mouse
         hoverText: "#f4f4f4", // Color de texto al pasar el mouse
     },
 };
@@ -119,9 +119,9 @@ export const darkTheme: ColorPalette = {
     selectModel: {
         background: "#2f2f2f", // Fondo gris oscuro para el selector de modelos
         text: "#ffffff", // Texto blanco para el selector de modelos
-        empresaBackground: "#2f2f2f", // Fondo gris oscuro para el selector de modelos
+        empresaBackground: "#0d0d0d", // Fondo gris oscuro para el selector de modelos
         empresaText: "#ffffff", // Texto blanco para el selector de modelos
-        isSelectedBackground: "#0d0d0d", // Estado de selección
+        isSelectedBackground: "#2f2f2f", // Estado de selección
         isSelectedText: "#f4f4f4", // Texto blanco para el estado de selección
         modelBackground: "#f4f4f4", // Fondo gris claro para el modelo
         modelText: "#0d0d0d", // Texto oscuro para el modelo
