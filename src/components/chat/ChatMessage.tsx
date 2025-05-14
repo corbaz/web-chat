@@ -1,11 +1,11 @@
-// filepath: c:\www\web-chat\src\components\CHAT\ChatMessage.tsx
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { ChatMessageType } from "../../interfaces/chat/chatTypes";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import "./markdown-styles.css";
+
+// Componente de markdown cargado dinámicamente
+const MarkdownRenderer = lazy(() => import("./MarkdownRenderer.tsx"));
 
 // Tipos para los props
 interface ChatMessageProps {
@@ -85,13 +85,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     // Texto plano para mensajes del usuario
                     <div className="whitespace-pre-wrap text-left overflow-hidden">
                         {message.content}
-                    </div>
+                    </div> // Markdown para mensajes de IA
                 ) : (
-                    // Markdown para mensajes de IA
                     <div className="markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {message.content}
-                        </ReactMarkdown>
+                        <Suspense
+                            fallback={
+                                <div className="p-2">{message.content}</div>
+                            }
+                        >
+                            <MarkdownRenderer content={message.content} />
+                        </Suspense>
                     </div>
                 )}
 

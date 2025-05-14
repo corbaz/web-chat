@@ -18,6 +18,8 @@ export default defineConfig({
                     vendor: ["react", "react-dom"],
                     // Chunk para utilidades como axios
                     utils: ["axios"],
+                    // Chunk para markdown
+                    markdown: ["react-markdown", "remark-gfm"],
                 },
                 // Optimizar los nombres de los chunks
                 chunkFileNames: "assets/[name]-[hash].js",
