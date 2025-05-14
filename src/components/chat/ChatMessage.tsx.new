@@ -5,7 +5,17 @@ import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "./markdown-styles.css";
+
+// Define un tipo para los componentes de code
+interface CodeProps {
+  node?: any;
+  inline?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}
 
 // Tipos para los props
 interface ChatMessageProps {
@@ -14,27 +24,17 @@ interface ChatMessageProps {
     isDarkTheme: boolean;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({
-    message,
-    theme,
-    isDarkTheme,
-}) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, theme, isDarkTheme }) => {
     const isUser = message.role === "user";
 
     // Determinar el tema a usar según el modo claro/oscuro
     const userTheme = isDarkTheme
         ? theme.messages.user
-        : {
-              background: theme.messages.user.background,
-              text: theme.messages.user.text,
-          };
+        : { background: theme.messages.user.background, text: theme.messages.user.text };
 
     const aiTheme = isDarkTheme
         ? theme.messages.ai
-        : {
-              background: theme.messages.ai.background,
-              text: theme.messages.ai.text,
-          };
+        : { background: theme.messages.ai.background, text: theme.messages.ai.text };
 
     // Obtener el nombre corto del modelo
     const getModelShortName = (modelId?: string): string => {
@@ -70,10 +70,31 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         hyphens: "auto" as const,
     };
 
+    // Función de renderizado de código para Markdown
+    const CodeBlock = ({ inline, className, children, ...props }: CodeProps) => {
+        const match = /language-(\w+)/.exec(className || "");
+        
+        return !inline && match ? (
+            <SyntaxHighlighter
+                style={isDarkTheme ? oneDark as any : oneLight as any}
+                language={match[1]}
+                PreTag="div"
+                {...props}
+            >
+                {String(children).replace(/\n$/, "")}
+            </SyntaxHighlighter>
+        ) : (
+            <code
+                className="bg-opacity-20 px-1 py-0.5 rounded font-mono text-sm"
+                {...props}
+            >
+                {children}
+            </code>
+        );
+    };
+
     return (
-        <div
-            className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}
-        >
+        <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
             <div
                 className={`max-w-[80%] md:max-w-[70%] rounded-lg px-4 py-3 ${
                     isUser ? "rounded-tr-none" : "rounded-tl-none"
@@ -89,7 +110,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 ) : (
                     // Markdown para mensajes de IA
                     <div className="markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                code: CodeBlock
+                            }}
+                        >
                             {message.content}
                         </ReactMarkdown>
                     </div>

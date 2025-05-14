@@ -5,6 +5,8 @@ import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "./markdown-styles.css";
 
 // Tipos para los props
@@ -14,27 +16,17 @@ interface ChatMessageProps {
     isDarkTheme: boolean;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({
-    message,
-    theme,
-    isDarkTheme,
-}) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, theme, isDarkTheme }) => {
     const isUser = message.role === "user";
 
     // Determinar el tema a usar según el modo claro/oscuro
     const userTheme = isDarkTheme
         ? theme.messages.user
-        : {
-              background: theme.messages.user.background,
-              text: theme.messages.user.text,
-          };
+        : { background: theme.messages.user.background, text: theme.messages.user.text };
 
     const aiTheme = isDarkTheme
         ? theme.messages.ai
-        : {
-              background: theme.messages.ai.background,
-              text: theme.messages.ai.text,
-          };
+        : { background: theme.messages.ai.background, text: theme.messages.ai.text };
 
     // Obtener el nombre corto del modelo
     const getModelShortName = (modelId?: string): string => {
@@ -71,9 +63,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     };
 
     return (
-        <div
-            className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}
-        >
+        <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
             <div
                 className={`max-w-[80%] md:max-w-[70%] rounded-lg px-4 py-3 ${
                     isUser ? "rounded-tr-none" : "rounded-tl-none"
@@ -100,17 +90,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     <div className="flex flex-col space-y-1 mt-2">
                         {message.responseTime && (
                             <div className="text-xs opacity-70 text-right">
-                                ⏱️ Respuesta de{" "}
-                                {getModelShortName(message.modelName)} en{" "}
-                                {formatResponseTimeToMs(message.responseTime)}
+                                ⏱️ Respuesta de {getModelShortName(message.modelName)} en {formatResponseTimeToMs(message.responseTime)}
                             </div>
                         )}
 
                         {message.tokensUsed !== undefined &&
                             message.tokenLimit !== undefined && (
                                 <div className="text-xs opacity-70 text-right">
-                                    📊 Tokens enviados: {message.tokensUsed} /{" "}
-                                    {message.tokenLimit}
+                                    📊 Tokens enviados: {message.tokensUsed} / {message.tokenLimit}
                                 </div>
                             )}
                     </div>
