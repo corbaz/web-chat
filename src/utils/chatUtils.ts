@@ -9,17 +9,17 @@
  * @returns Array actualizado del historial de chats
  */
 export const updateChatTitle = (chatId: string, newTitle: string) => {
-    const chatHistoryRaw = localStorage.getItem("chat-history");
-    let chatHistoryArr = chatHistoryRaw ? JSON.parse(chatHistoryRaw) : [];
+  const chatHistoryRaw = localStorage.getItem("chat-history");
+  let chatHistoryArr = chatHistoryRaw ? JSON.parse(chatHistoryRaw) : [];
 
-    chatHistoryArr = chatHistoryArr.map(
-        (c: { id: string; title: string; date: Date; model?: string }) =>
-            c.id === chatId ? { ...c, title: newTitle } : c
-    );
+  chatHistoryArr = chatHistoryArr.map(
+    (c: { id: string; title: string; date: Date; model?: string }) =>
+      c.id === chatId ? { ...c, title: newTitle } : c,
+  );
 
-    localStorage.setItem("chat-history", JSON.stringify(chatHistoryArr));
+  localStorage.setItem("chat-history", JSON.stringify(chatHistoryArr));
 
-    return chatHistoryArr;
+  return chatHistoryArr;
 };
 
 /**
@@ -29,9 +29,7 @@ export const updateChatTitle = (chatId: string, newTitle: string) => {
  * @returns Texto truncado con puntos suspensivos o el texto original
  */
 export const truncateText = (text: string, maxLength: number): string => {
-    return text.length > maxLength
-        ? text.substring(0, maxLength) + "..."
-        : text;
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 };
 
 /**
@@ -44,36 +42,36 @@ export const truncateText = (text: string, maxLength: number): string => {
  * @param onSave Función que se ejecuta al guardar la edición
  */
 export const handleTitleEditKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    chat: { id: string; title: string },
-    editValue: string,
-    onUpdateTitle?: (chatId: string, newTitle: string) => void,
-    onCancel?: () => void,
-    onSave?: () => void
+  e: React.KeyboardEvent<HTMLInputElement>,
+  chat: { id: string; title: string },
+  editValue: string,
+  onUpdateTitle?: (chatId: string, newTitle: string) => void,
+  onCancel?: () => void,
+  onSave?: () => void,
 ) => {
-    // Evitar que la barra espaciadora haga perder el foco
-    e.stopPropagation();
+  // Evitar que la barra espaciadora haga perder el foco
+  e.stopPropagation();
 
-    if (e.key === "Enter" || e.key === "Escape") {
-        // Evitar comportamiento predeterminado
-        e.preventDefault();
+  if (e.key === "Enter" || e.key === "Escape") {
+    // Evitar comportamiento predeterminado
+    e.preventDefault();
 
-        if (e.key === "Enter" && editValue.trim()) {
-            // Actualizar en localStorage
-            updateChatTitle(chat.id, editValue);
+    if (e.key === "Enter" && editValue.trim()) {
+      // Actualizar en localStorage
+      updateChatTitle(chat.id, editValue);
 
-            // Llamar a la función de actualización del componente padre si existe
-            if (onUpdateTitle) {
-                onUpdateTitle(chat.id, editValue);
-            }
+      // Llamar a la función de actualización del componente padre si existe
+      if (onUpdateTitle) {
+        onUpdateTitle(chat.id, editValue);
+      }
 
-            // Ejecutar callback de guardado si existe
-            if (onSave) {
-                onSave();
-            }
-        } else if (e.key === "Escape" && onCancel) {
-            // Ejecutar callback de cancelación
-            onCancel();
-        }
+      // Ejecutar callback de guardado si existe
+      if (onSave) {
+        onSave();
+      }
+    } else if (e.key === "Escape" && onCancel) {
+      // Ejecutar callback de cancelación
+      onCancel();
     }
+  }
 };

@@ -1,58 +1,64 @@
 {
-    "name": "prompting",
-    "private": true,
-    "version": "v.3.1",
-    "type": "module",
-    "packageManager": "bun@1.2.13",
-    "homepage": "https://corbaz.github.io/web-chat",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/corbaz/web-chat.git"
-    },
-    "author": "Julio Corbaz <julio.corbaz@gmail.com>",
-    "bugs": {
-        "url": "https://github.com/corbaz/web-chat/issues"
-    },
-    "license": "MIT",
-    "keywords": [
-        "web chat",
-        "AI",
-        "Groq"
-    ],
-    "scripts": {
-        "bun-install": "bun install",
-        "bun-upgrade": "bun upgrade && bunx -y npm-check-updates",
-        "ncu": "npx -y npm-check-updates -u && bun update",
-        "dev": "vite --host",
-        "build": "tsc -b && vite build --outDir ./docs",
-        "lint": "eslint src",
-        "preview": "vite preview --host",
-        "deploy": "surge docs --domain deepchat.surge.sh"
-    },
-    "dependencies": {
-        "@tailwindcss/vite": "^4.1.6",
-        "axios": "^1.9.0",
-        "react": "^19.1.0",
-        "react-dom": "^19.1.0",
-        "react-markdown": "^10.1.0",
-        "react-select": "^5.10.1",
-        "react-syntax-highlighter": "^15.6.1",
-        "remark-gfm": "^4.0.1",
-        "sweetalert2": "^11.21.0",
-        "tailwindcss": "^4.1.6"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.26.0",
-        "@types/react": "^19.1.4",
-        "@types/react-dom": "^19.1.5",
-        "@types/react-syntax-highlighter": "^15.5.13",
-        "@vitejs/plugin-react": "^4.4.1",
-        "eslint": "^9.26.0",
-        "eslint-plugin-react-hooks": "^5.2.0",
-        "eslint-plugin-react-refresh": "^0.4.20",
-        "globals": "^16.1.0",
-        "typescript": "~5.8.3",
-        "typescript-eslint": "^8.32.1",
-        "vite": "^6.3.5"
-    }
+  "name": "prompting",
+  "private": true,
+  "version": "v.3.2",
+  "type": "module",
+  "packageManager": "bun@1.2.13",
+  "homepage": "https://corbaz.github.io/web-chat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/corbaz/web-chat.git"
+  },
+  "author": "Julio Corbaz <julio.corbaz@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/corbaz/web-chat/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "web chat",
+    "AI",
+    "Groq"
+  ],
+  "scripts": {
+    "bun-install": "bun install",
+    "bun-upgrade": "bun upgrade && bunx -y npm-check-updates",
+    "ncu": "bunx -y npm-check-updates -u && bun update",
+    "dev": "vite --host",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --fix",
+    "format:check": "prettier --check src",
+    "format:write": "prettier --write src",
+    "build": "tsc -b && vite build --outDir ./docs",
+    "preview": "vite preview --host",
+    "deploy": "surge docs --domain deepchat.surge.sh"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.7",
+    "axios": "^1.9.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "react-select": "^5.10.1",
+    "react-syntax-highlighter": "^15.6.1",
+    "remark-gfm": "^4.0.1",
+    "sweetalert2": "^11.21.0",
+    "tailwindcss": "^4.1.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^9.26.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.1.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "vite": "^6.3.5"
+  },
+  "trustedDependencies": [
+    "@tailwindcss/oxide"
+  ]
 }

@@ -10,15 +10,15 @@
  * @returns Número estimado de tokens
  */
 export const estimateTokens = (text: string): number => {
-    if (!text) return 0;
+  if (!text) return 0;
 
-    // Contar palabras (aproximadamente 4 caracteres por palabra)
-    const wordCount = text.trim().split(/\s+/).length;
+  // Contar palabras (aproximadamente 4 caracteres por palabra)
+  const wordCount = text.trim().split(/\s+/).length;
 
-    // Aplicar factor de conversión palabra-token (aproximadamente 1.3 tokens por palabra)
-    const estimatedTokens = Math.ceil(wordCount * 1.3);
+  // Aplicar factor de conversión palabra-token (aproximadamente 1.3 tokens por palabra)
+  const estimatedTokens = Math.ceil(wordCount * 1.3);
 
-    return estimatedTokens;
+  return estimatedTokens;
 };
 
 /**
@@ -28,23 +28,23 @@ export const estimateTokens = (text: string): number => {
  * @returns Número total estimado de tokens
  */
 export const estimateMessagesTokens = (
-    messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
 ): number => {
-    // Tokens base por cada mensaje (4 tokens por mensaje para metadata)
-    const baseTokensPerMessage = 4;
+  // Tokens base por cada mensaje (4 tokens por mensaje para metadata)
+  const baseTokensPerMessage = 4;
 
-    // Suma de tokens de todos los mensajes
-    let totalTokens = 0;
+  // Suma de tokens de todos los mensajes
+  let totalTokens = 0;
 
-    for (const message of messages) {
-        // Tokens del contenido
-        totalTokens += estimateTokens(message.content);
+  for (const message of messages) {
+    // Tokens del contenido
+    totalTokens += estimateTokens(message.content);
 
-        // Tokens base por mensaje (metadata)
-        totalTokens += baseTokensPerMessage;
-    }
+    // Tokens base por mensaje (metadata)
+    totalTokens += baseTokensPerMessage;
+  }
 
-    return totalTokens;
+  return totalTokens;
 };
 
 /**
@@ -54,35 +54,35 @@ export const estimateMessagesTokens = (
  * @returns Límite de tokens para el modelo (por defecto 8192 si no se conoce)
  */
 export const getModelTokenLimit = (modelId: string): number => {
-    // Definir límites para modelos específicos
-    const tokenLimits: Record<string, number> = {
-        // Meta
-        "llama-3.3-70b-versatile": 128000,
-        "llama-3.1-8b-instant": 128000,
-        "llama3-8b-8192": 8192,
-        "llama3-70b-8192": 8192,
-        "llama-guard-3-8b": 8192,
-        "meta-llama/llama-4-maverick-17b-128e-instruct": 131072,
-        "meta-llama/llama-4-scout-17b-16e-instruct": 131072,
+  // Definir límites para modelos específicos
+  const tokenLimits: Record<string, number> = {
+    // Meta
+    "llama-3.3-70b-versatile": 128000,
+    "llama-3.1-8b-instant": 128000,
+    "llama3-8b-8192": 8192,
+    "llama3-70b-8192": 8192,
+    "llama-guard-3-8b": 8192,
+    "meta-llama/llama-4-maverick-17b-128e-instruct": 131072,
+    "meta-llama/llama-4-scout-17b-16e-instruct": 131072,
 
-        // Google
-        "gemma2-9b-it": 8192,
+    // Google
+    "gemma2-9b-it": 8192,
 
-        // Mistral
-        "mistral-saba-24b": 32768,
+    // Mistral
+    "mistral-saba-24b": 32768,
 
-        // Alibaba
-        "qwen-qwq-32b": 128000,
+    // Alibaba
+    "qwen-qwq-32b": 128000,
 
-        // DeepSeek
-        "deepseek-r1-distill-llama-70b": 128000,
+    // DeepSeek
+    "deepseek-r1-distill-llama-70b": 128000,
 
-        // SDAIA
-        "allam-2-7b": 4096,
-    };
+    // SDAIA
+    "allam-2-7b": 4096,
+  };
 
-    // Devolver el límite para el modelo específico o un valor por defecto
-    return tokenLimits[modelId] || 8192;
+  // Devolver el límite para el modelo específico o un valor por defecto
+  return tokenLimits[modelId] || 8192;
 };
 
 /**

@@ -16,7 +16,7 @@ export const DESKTOP_BREAKPOINT = 768;
 
 // Función para generar CSS con las variables
 export const generateLayoutCSS = (): string => {
-    return `
+  return `
   /* Variables para alturas responsive - Generadas desde layoutConstants.ts */
   :root {
     --header-height: ${HEADER_HEIGHT_MOBILE}px; /* Altura por defecto para móvil */
