@@ -10,13 +10,13 @@ import ApiKeyModal from "./components/ApiKeyModal/ApiKeyModal.tsx";
 import Header from "./components/HEADER/Header";
 import Footer, { FooterRef } from "./components/FOOTER/Footer";
 // Importación utilizando el archivo índice
-import ChatContainer from "./components/CHAT/ChatContainer";
+import ChatContainer from "./components/chat/ChatContainer";
 
 // Interfaces
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-export const APP_VERSION = "v.3.2";
+export const APP_VERSION = "v.3.3";
 
 export const App = () => {
   // Estados para la UI
