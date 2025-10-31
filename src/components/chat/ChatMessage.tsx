@@ -1,11 +1,12 @@
 import React, { lazy, Suspense } from "react";
-import { ChatMessageType } from "../../interfaces/chat/chatTypes";
+import { ChatMessageType } from "../../interfaces/chat/chatTypes.ts"; //../../interfaces/chat/chatTypes";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
+import { getTokenUsageString } from "../../utils/tokenUtils";
 import "./markdown-styles.css";
 
 // Componente de markdown cargado dinámicamente
-const MarkdownRenderer = lazy(() => import("./MarkdownRenderer.tsx"));
+const MarkdownRenderer = lazy(() => import("../chat/MarkdownRenderer.tsx"));
 
 // Tipos para los props
 interface ChatMessageProps {
@@ -106,8 +107,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.tokensUsed !== undefined &&
               message.tokenLimit !== undefined && (
                 <div className="text-xs opacity-70 text-right">
-                  📊 Tokens enviados: {message.tokensUsed} /{" "}
-                  {message.tokenLimit}
+                  📊 Tokens: {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
                 </div>
               )}
           </div>

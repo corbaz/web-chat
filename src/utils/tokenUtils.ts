@@ -47,6 +47,8 @@ export const estimateMessagesTokens = (
   return totalTokens;
 };
 
+import { groqModels } from '../components/HEADER/models/groqModels';
+
 /**
  * Obtiene el límite de tokens para un modelo específico
  *
@@ -54,41 +56,46 @@ export const estimateMessagesTokens = (
  * @returns Límite de tokens para el modelo (por defecto 8192 si no se conoce)
  */
 export const getModelTokenLimit = (modelId: string): number => {
-  // Definir límites para modelos específicos
-  const tokenLimits: Record<string, number> = {
-    // Meta
-    "llama-3.3-70b-versatile": 128000,
-    "llama-3.1-8b-instant": 128000,
-    "llama3-8b-8192": 8192,
-    "llama3-70b-8192": 8192,
-    "llama-guard-3-8b": 8192,
-    "meta-llama/llama-4-maverick-17b-128e-instruct": 131072,
-    "meta-llama/llama-4-scout-17b-16e-instruct": 131072,
-
-    // Google
-    "gemma2-9b-it": 8192,
-
-    // Mistral
-    "mistral-saba-24b": 32768,
-
-    // Alibaba
-    "qwen-qwq-32b": 128000,
-
-    // DeepSeek
-    "deepseek-r1-distill-llama-70b": 128000,
-
-    // SDAIA
-    "allam-2-7b": 4096,
-  };
-
-  // Devolver el límite para el modelo específico o un valor por defecto
-  return tokenLimits[modelId] || 8192;
+  // Buscar el modelo por su ID
+  const model = groqModels.find(m => m.id === modelId);
+  
+  if (!model || !model.contextWindow) return 8192; // Valor por defecto
+  
+  // Convertir el contextWindow a número, eliminando comas y K/M
+  const contextWindow = model.contextWindow
+    .replace(/,/g, '') // Eliminar comas de formato
+    .toLowerCase();
+  
+  // Convertir a número, manejando sufijos como K o M
+  let limit = 8192; // Valor por defecto
+  
+  if (contextWindow.includes('k')) {
+    limit = parseFloat(contextWindow) * 1000;
+  } else if (contextWindow.includes('m')) {
+    limit = parseFloat(contextWindow) * 1000000;
+  } else {
+    limit = parseFloat(contextWindow) || 8192;
+  }
+  
+  return Math.round(limit);
 };
 
 /**
  * Número máximo de tokens que reservaremos para la respuesta del modelo
  */
 export const MAX_RESPONSE_TOKENS = 2048;
+
+/**
+ * Obtiene el porcentaje de uso de tokens formateado
+ * 
+ * @param usedTokens Número de tokens utilizados
+ * @param totalTokens Número total de tokens disponibles
+ * @returns Cadena con el formato "XXXX / YYYYY - Usado: ZZ%"
+ */
+export const getTokenUsageString = (usedTokens: number, totalTokens: number): string => {
+  const percentage = Math.round((usedTokens / totalTokens) * 100);
+  return `${usedTokens} / ${totalTokens} - Contexto Usado: ${percentage}%`;
+};
 
 /**
  * Factor de seguridad para evitar llegar al límite exacto (0.9 = usar el 90% del límite)

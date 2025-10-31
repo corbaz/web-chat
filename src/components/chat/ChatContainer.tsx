@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import { ColorPalette } from "../../interfaces/temas/temas";
-import ChatArea from "./ChatArea";
+import ChatArea from "../chat/ChatArea";
 import LeftMenu from "../HEADER/menu/LeftMenu";
 import RightMenu from "../HEADER/menu/RightMenu";
 import {
@@ -366,16 +366,16 @@ const ChatContainer = ({
               model?: string;
             }[],
           ) => [
-            ...prevHistory.filter(
-              (chat: { id: string }) => chat.id !== currentChatId,
-            ), // Filtrar el actual si existe
-            {
-              id: newChatId,
-              title: title,
-              date: new Date(),
-              model: selectedModel, // Guardar el modelo seleccionado actualmente
-            },
-          ],
+              ...prevHistory.filter(
+                (chat: { id: string }) => chat.id !== currentChatId,
+              ), // Filtrar el actual si existe
+              {
+                id: newChatId,
+                title: title,
+                date: new Date(),
+                model: selectedModel, // Guardar el modelo seleccionado actualmente
+              },
+            ],
         );
 
         // Actualizar el ID de chat actual
@@ -416,6 +416,10 @@ const ChatContainer = ({
             temperature: 0.7,
             max_tokens: MAX_RESPONSE_TOKENS,
             presence_penalty: 0.1,
+            search_settings: {
+              include_domains: ["*.*"],
+              exclude_domains: []
+            }
           },
           {
             headers: {
@@ -458,9 +462,8 @@ const ChatContainer = ({
         let errorMessage =
           "Error al obtener respuesta. Por favor, intenta de nuevo.";
         if (axios.isAxiosError(error) && error.response) {
-          errorMessage = `Error del servidor (${error.response.status}): ${
-            error.response.data.error?.message || "Error desconocido"
-          }`;
+          errorMessage = `Error del servidor (${error.response.status}): ${error.response.data.error?.message || "Error desconocido"
+            }`;
         }
 
         // Añadir mensaje de error

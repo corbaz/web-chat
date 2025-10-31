@@ -1,111 +1,182 @@
 // Definición de los modelos de Groq
 export interface GroqModel {
-  id: string;
-  name: string;
-  developer: string;
-  contextWindow: string;
-  maxCompletionTokens?: string;
-  maxFileSize?: string;
+  "id": string;
+  "name": string;
+  "developer": string;
+  "contextWindow": string;
+  "maxCompletionTokens"?: string;
+  "maxFileSize"?: string;
+  "fecha"?: string;
+  "velocidad"?: string;
+  "precio"?: string;
 }
 
 export const groqModels: GroqModel[] = [
   // Meta
   {
-    id: "llama-3.3-70b-versatile",
-    name: "Llama 3.3 Versatile",
-    developer: "Meta",
-    contextWindow: "128K",
-    maxCompletionTokens: "32,768",
+    "id": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "name": "Meta Llama 4 Maverick 17B 128E",
+    "developer": "Meta",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "8192",
+    "fecha": "2025-10-30",
+    "velocidad": "600",
+    "precio": "0.20"
   },
   {
-    id: "llama3-8b-8192",
-    name: "Llama 3",
-    developer: "Meta",
-    contextWindow: "8,192",
+    "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "name": "Meta Llama 4 Scout 17B 16E",
+    "developer": "Meta",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "8192",
+    "fecha": "2025-10-30",
+    "velocidad": "750",
+    "precio": "0.11"
   },
   {
-    id: "meta-llama/llama-4-maverick-17b-128e-instruct",
-    name: "Llama 4 Maverick",
-    developer: "Meta",
-    contextWindow: "131,072",
-    maxCompletionTokens: "8,192",
+    "id": "llama-3.3-70b-versatile",
+    "name": "Meta Llama 3.3 Versatile",
+    "developer": "Meta",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "32768",
+    "fecha": "2025-10-30"
   },
   {
-    id: "meta-llama/llama-4-scout-17b-16e-instruct",
-    name: "Llama 4 Scout",
-    developer: "Meta",
-    contextWindow: "131,072",
-    maxCompletionTokens: "8,192",
-  },
-
-  // Google
-  {
-    id: "gemma2-9b-it",
-    name: "Gemma 2",
-    developer: "Google",
-    contextWindow: "8,192",
-  },
-
-  // Mistral AI
-  {
-    id: "mistral-saba-24b",
-    name: "Mistral Saba",
-    developer: "Mistral AI",
-    contextWindow: "32K",
+    "id": "llama-3.1-8b-instant",
+    "name": "Meta Llama 3.1 8B",
+    "developer": "Meta",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "131072",
+    "fecha": "2025-10-30",
+    "velocidad": "560",
+    "precio": "0.05"
   },
 
-  // Alibaba Cloud
+  // Groq
   {
-    id: "qwen-qwq-32b",
-    name: "Qwen QWQ",
-    developer: "Alibaba Cloud",
-    contextWindow: "128K",
+    "id": "groq/compound",
+    "name": "Groq Compound",
+    "developer": "Groq",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "8192",
+    "fecha": "2025-10-30",
+    "velocidad": "450",
+    "precio": "0.00"
+  },
+  {
+    "id": "groq/compound-mini",
+    "name": "Groq Compound Mini",
+    "developer": "Groq",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "8192",
+    "fecha": "2025-10-30",
+    "velocidad": "450",
+    "precio": "0.00"
   },
 
-  // DeepSeek
+  // Kimi 2
   {
-    id: "deepseek-r1-distill-llama-70b",
-    name: "Deepseek R1",
-    developer: "DeepSeek",
-    contextWindow: "128K",
+    "id": "moonshotai/kimi-k2-instruct-0905",
+    "name": "Moonshot AI Kimi K2 0905",
+    "developer": "Kimi 2 Moonshot AI",
+    "contextWindow": "262144",
+    "maxCompletionTokens": "16384",
+    "fecha": "2025-10-30",
+    "velocidad": "200",
+    "precio": "1.00"
+  },
+
+  {
+    "id": "moonshotai/kimi-k2-instruct",
+    "name": "Moonshot AI Kimi K2",
+    "developer": "Kimi 2 Moonshot AI",
+    "contextWindow": "262144",
+    "maxCompletionTokens": "16384",
+    "fecha": "2025-10-30",
+    "velocidad": "200",
+    "precio": "1.00"
   },
 
   // OpenAI
   {
-    id: "whisper-large-v3",
-    name: "Whisper v3",
-    developer: "OpenAI",
-    contextWindow: "",
-    maxFileSize: "25 MB",
+    "id": "openai/gpt-oss-120b",
+    "name": "Open AI GPT OSS 120B",
+    "developer": "Open AI",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "65536",
+    "fecha": "2025-10-30",
+    "velocidad": "500",
+    "precio": "0.15"
   },
   {
-    id: "whisper-large-v3-turbo",
-    name: "Whisper v3 Turbo",
-    developer: "OpenAI",
-    contextWindow: "",
-    maxFileSize: "25 MB",
+    "id": "openai/gpt-oss-20b",
+    "name": "Open AI GPT OSS 20B",
+    "developer": "Open AI",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "65536",
+    "fecha": "2025-10-30",
+    "velocidad": "1000",
+    "precio": "0.075"
+  },
+  {
+    "id": "openai/gpt-oss-safeguard-20b",
+    "name": "Open AI Safety GPT OSS 20B",
+    "developer": "Open AI",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "65536",
+    "fecha": "2025-10-30",
+    "velocidad": "1000",
+    "precio": "0.075"
+  },
+
+  // Alibaba Cloud
+  {
+    "id": "qwen/qwen3-32b",
+    "name": "Alibaba Cloud Qwen3-32B",
+    "developer": "Alibaba Cloud",
+    "contextWindow": "131072",
+    "maxCompletionTokens": "40960",
+    "fecha": "2025-10-30",
+    "velocidad": "400",
+    "precio": "0.20"
+  },
+
+  // OpenAI Voice
+  {
+    "id": "whisper-large-v3",
+    "name": "Whisper v3",
+    "developer": "Open AI",
+    "contextWindow": "",
+    "maxFileSize": "25 MB",
+  },
+  {
+    "id": "whisper-large-v3-turbo",
+    "name": "Whisper v3 Turbo",
+    "developer": "Open AI",
+    "contextWindow": "",
+    "maxFileSize": "25 MB",
   },
 
   // HuggingFace
   {
-    id: "distil-whisper-large-v3-en",
-    name: "Distil Whisper v3 (EN)",
-    developer: "HuggingFace",
-    contextWindow: "",
-    maxFileSize: "25 MB",
+    "id": "distil-whisper-large-v3-en",
+    "name": "Distil Whisper v3 (EN)",
+    "developer": "HuggingFace",
+    "contextWindow": "",
+    "maxFileSize": "25 MB",
   },
 
   // PlayHT
   {
-    id: "playai-tts",
-    name: "PlayAI TTS",
-    developer: "Playht, Inc",
-    contextWindow: "10K",
+    "id": "playai-tts",
+    "name": "PlayAI TTS",
+    "developer": "Playht, Inc",
+    "contextWindow": "10K",
   },
   {
-    id: "playai-tts-arabic",
-    name: "PlayAI TTS Arabic",
-    developer: "Playht, Inc",
-    contextWindow: "10K",
+    "id": "playai-tts-arabic",
+    "name": "PlayAI TTS Arabic",
+    "developer": "Playht, Inc",
+    "contextWindow": "10K",
   },
 ];

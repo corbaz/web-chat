@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { ColorPalette } from "../../interfaces/temas/temas";
-import ChatMessage from "../CHAT/ChatMessage";
+import ChatMessage from "../chat/ChatMessage";
 import { ChatMessageType } from "../../interfaces/chat/chatTypes";
 
 interface ChatAreaProps {
