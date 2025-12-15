@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import ModelSelector from "./ModelSelector";
+import ProviderSelector from "./ProviderSelector";
 import Title from "./menu/Title";
 import { ColorPalette } from "../../interfaces/temas/temas";
 import MenuButton from "./menu/MenuButton";
@@ -16,6 +17,8 @@ interface HeaderProps {
   chatId?: string;
   onUpdateChatTitle?: (chatId: string, newTitle: string) => void;
   editable?: boolean;
+  selectedProvider?: string;
+  onProviderChange?: (providerId: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -29,7 +32,33 @@ const Header: React.FC<HeaderProps> = ({
   chatId,
   onUpdateChatTitle,
   editable = false,
+  selectedProvider: externalProvider,
+  onProviderChange: externalOnProviderChange,
 }) => {
+  const [internalProvider, setInternalProvider] = useState<string>(() => {
+    // Inicializar con el primer proveedor que tenga API key
+    if (!externalProvider) {
+      const providers = ["groq", "routellm", "openai", "anthropic"];
+      for (const provider of providers) {
+        const apiKey = localStorage.getItem(`${provider}ApiKey`);
+        if (apiKey && apiKey.trim() !== "") {
+          return provider;
+        }
+      }
+    }
+    return "groq";
+  });
+
+  // Usar el proveedor externo si está disponible, sino el interno
+  const selectedProvider = externalProvider || internalProvider;
+
+  const handleProviderChange = (providerId: string) => {
+    setInternalProvider(providerId);
+    if (externalOnProviderChange) {
+      externalOnProviderChange(providerId);
+    }
+  };
+
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 w-full py-2 px-4"
@@ -48,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
           theme={theme}
         />
 
-        {/* Título y selector de modelos */}
+        {/* Título y selectores */}
         <div className="flex flex-col items-center mx-4">
           {/* Componente de título y versión */}
           <Title
@@ -60,13 +89,25 @@ const Header: React.FC<HeaderProps> = ({
             editable={editable}
           />
 
-          {/* Selector de modelo */}
-          <div className="w-full mt-1">
-            <ModelSelector
-              selectedModel={selectedModel}
-              onModelChange={onModelChange}
-              theme={theme}
-            />
+          {/* Selectores de modelo y proveedor */}
+          <div className="flex items-center gap-2 w-full mt-1">
+            {/* Selector de modelo */}
+            <div className="flex-1">
+              <ModelSelector
+                selectedModel={selectedModel}
+                onModelChange={onModelChange}
+                theme={theme}
+                providerFilter={selectedProvider}
+              />
+            </div>
+            {/* Selector de proveedor */}
+            <div className="w-auto">
+              <ProviderSelector
+                selectedProvider={selectedProvider}
+                onProviderChange={handleProviderChange}
+                theme={theme}
+              />
+            </div>
           </div>
         </div>
 

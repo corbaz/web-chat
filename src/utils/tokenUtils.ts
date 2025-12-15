@@ -47,7 +47,10 @@ export const estimateMessagesTokens = (
   return totalTokens;
 };
 
-import { groqModels } from '../components/HEADER/models/groqModels';
+import { groqModels } from "../components/HEADER/models/groqModels";
+import { routellmModels } from "../components/HEADER/models/routellmModels";
+import { openaiModels } from "../components/HEADER/models/openaiModels";
+import { anthropicModels } from "../components/HEADER/models/anthropicModels";
 
 /**
  * Obtiene el límite de tokens para un modelo específico
@@ -56,28 +59,42 @@ import { groqModels } from '../components/HEADER/models/groqModels';
  * @returns Límite de tokens para el modelo (por defecto 8192 si no se conoce)
  */
 export const getModelTokenLimit = (modelId: string): number => {
-  // Buscar el modelo por su ID
-  const model = groqModels.find(m => m.id === modelId);
-  
-  if (!model || !model.contextWindow) return 8192; // Valor por defecto
-  
-  // Convertir el contextWindow a número, eliminando comas y K/M
-  const contextWindow = model.contextWindow
-    .replace(/,/g, '') // Eliminar comas de formato
-    .toLowerCase();
-  
-  // Convertir a número, manejando sufijos como K o M
-  let limit = 8192; // Valor por defecto
-  
-  if (contextWindow.includes('k')) {
-    limit = parseFloat(contextWindow) * 1000;
-  } else if (contextWindow.includes('m')) {
-    limit = parseFloat(contextWindow) * 1000000;
-  } else {
-    limit = parseFloat(contextWindow) || 8192;
+  // Buscar el modelo por su ID en todas las colecciones disponibles
+  const allModels = [
+    ...groqModels,
+    ...routellmModels,
+    ...openaiModels,
+    ...anthropicModels,
+  ];
+  const model = allModels.find((m) => m.id === modelId);
+
+  if (!model) return 8192; // Valor por defecto
+
+  // Para modelos con maxTokens (OpenAI, Anthropic)
+  if ("maxTokens" in model) {
+    return model.maxTokens;
   }
-  
-  return Math.round(limit);
+
+  // Para modelos con contextWindow (Groq, RouteLLM)
+  if ("contextWindow" in model && model.contextWindow) {
+    const contextWindow = model.contextWindow
+      .replace(/,/g, "") // Eliminar comas de formato
+      .toLowerCase();
+
+    let limit = 8192; // Valor por defecto
+
+    if (contextWindow.includes("k")) {
+      limit = parseFloat(contextWindow) * 1000;
+    } else if (contextWindow.includes("m")) {
+      limit = parseFloat(contextWindow) * 1000000;
+    } else {
+      limit = parseFloat(contextWindow) || 8192;
+    }
+
+    return Math.round(limit);
+  }
+
+  return 8192;
 };
 
 /**
@@ -87,12 +104,15 @@ export const MAX_RESPONSE_TOKENS = 2048;
 
 /**
  * Obtiene el porcentaje de uso de tokens formateado
- * 
+ *
  * @param usedTokens Número de tokens utilizados
  * @param totalTokens Número total de tokens disponibles
  * @returns Cadena con el formato "XXXX / YYYYY - Usado: ZZ%"
  */
-export const getTokenUsageString = (usedTokens: number, totalTokens: number): string => {
+export const getTokenUsageString = (
+  usedTokens: number,
+  totalTokens: number,
+): string => {
   const percentage = Math.round((usedTokens / totalTokens) * 100);
   return `${usedTokens} / ${totalTokens} - Contexto Usado: ${percentage}%`;
 };

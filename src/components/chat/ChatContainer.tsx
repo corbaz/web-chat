@@ -21,6 +21,7 @@ import {
 } from "../../utils/tokenUtils";
 import { formatResponseTime } from "../../utils/timeUtils";
 import { createWelcomeMessage } from "../../constants/messages";
+import { getProviderConfig, getApiKeyStorageKey } from "../../config/providers";
 import axios from "axios";
 
 interface ChatContainerProps {
@@ -50,6 +51,7 @@ interface ChatContainerProps {
   onFocusInput?: () => void;
   onUpdateChatTitle?: (chatId: string, newTitle: string) => void; // Para actualizar el título
   onDeleteChat?: (chatId: string) => void; // Para eliminar un chat
+  selectedProvider?: string; // Proveedor seleccionado en el header
 }
 
 const ChatContainer = ({
@@ -75,6 +77,7 @@ const ChatContainer = ({
   onFocusInput,
   onUpdateChatTitle,
   onDeleteChat,
+  selectedProvider,
 }: ChatContainerProps) => {
   // Ref para almacenar tiempos de inicio de solicitudes
   const requestStartTimeRef = useRef<Record<string, number>>({});
@@ -366,16 +369,16 @@ const ChatContainer = ({
               model?: string;
             }[],
           ) => [
-              ...prevHistory.filter(
-                (chat: { id: string }) => chat.id !== currentChatId,
-              ), // Filtrar el actual si existe
-              {
-                id: newChatId,
-                title: title,
-                date: new Date(),
-                model: selectedModel, // Guardar el modelo seleccionado actualmente
-              },
-            ],
+            ...prevHistory.filter(
+              (chat: { id: string }) => chat.id !== currentChatId,
+            ), // Filtrar el actual si existe
+            {
+              id: newChatId,
+              title: title,
+              date: new Date(),
+              model: selectedModel, // Guardar el modelo seleccionado actualmente
+            },
+          ],
         );
 
         // Actualizar el ID de chat actual
@@ -397,37 +400,100 @@ const ChatContainer = ({
         .substring(2, 9)}`;
       requestStartTimeRef.current[requestId] = Date.now();
 
+      // Obtener proveedor y configuración antes del try-catch
+      const provider =
+        selectedProvider || localStorage.getItem("selectedProvider") || "groq";
+
+      const providerConfig = getProviderConfig(provider);
+
       try {
+        if (!providerConfig) {
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: "assistant",
+            content: `Proveedor no configurado: ${provider}`,
+            timestamp: Date.now(),
+          };
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ]);
+          setIsLoading(false);
+          delete requestStartTimeRef.current[requestId];
+          return;
+        }
+
         // Preparar mensajes para enviar como contexto
         const apiMessages = prepareMessagesForApi(
           updatedMessages,
           selectedModel,
         );
         const totalTokensUsed = estimateMessagesTokens(apiMessages);
-        const modelTokenLimit = getModelTokenLimit(selectedModel); // Obtener la API key del localStorage o usar la predeterminada como respaldo
-        const savedApiKey = localStorage.getItem("groqApiKey");
-        const apiKey = savedApiKey;
+        const modelTokenLimit = getModelTokenLimit(selectedModel);
 
-        const response = await axios.post(
-          "https://api.groq.com/openai/v1/chat/completions",
-          {
-            model: selectedModel,
-            messages: apiMessages,
-            temperature: 0.7,
-            max_tokens: MAX_RESPONSE_TOKENS,
-            presence_penalty: 0.1,
-            search_settings: {
-              include_domains: ["*.*"],
-              exclude_domains: []
-            }
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-          },
+        const apiKeyStorageKey = getApiKeyStorageKey(provider);
+        const apiKey = localStorage.getItem(apiKeyStorageKey);
+
+        if (!apiKey || !apiKey.trim()) {
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: "assistant",
+            content: `Falta API key para ${providerConfig.name}. Guárdala en el menú de configuración antes de enviar mensajes.`,
+            timestamp: Date.now(),
+          };
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ]);
+          setIsLoading(false);
+          delete requestStartTimeRef.current[requestId];
+          return;
+        }
+
+        const payload = providerConfig.payloadBuilder(
+          selectedModel,
+          apiMessages,
+          MAX_RESPONSE_TOKENS,
         );
+        const endpoint = providerConfig.endpoint;
+        const headers = {
+          "Content-Type": "application/json",
+          ...providerConfig.headerAuth(apiKey),
+        };
+
+        // Log completo del request para debugging
+        console.log("🚀 Enviando petición al chat:", {
+          proveedor: provider,
+          proveedorNombre: providerConfig.name,
+          modelo: selectedModel,
+          endpoint: endpoint,
+          apiKey: `${apiKey.substring(0, 10)}...${apiKey.substring(
+            apiKey.length - 4,
+          )}`,
+          headers: headers,
+          payload: payload,
+          totalMensajes: apiMessages.length,
+          tokensEstimados: totalTokensUsed,
+        });
+
+        const response = await axios.post(endpoint, payload, {
+          headers,
+        });
+
+        // Log de la respuesta exitosa
+        console.log("✅ Respuesta recibida:", {
+          proveedor: provider,
+          modelo: selectedModel,
+          status: response.status,
+          dataKeys: Object.keys(response.data),
+          responsePreview:
+            response.data.choices?.[0]?.message?.content?.substring(0, 100) +
+            "...",
+        });
 
         // Calcular el tiempo de respuesta
         const endTime = Date.now();
@@ -457,13 +523,38 @@ const ChatContainer = ({
           assistantMessage,
         ]);
       } catch (error) {
-        console.error("Error al obtener respuesta:", error);
+        // Log detallado del error
+        console.error("❌ Error al obtener respuesta:", {
+          proveedor: provider,
+          modelo: selectedModel,
+          endpoint: providerConfig?.endpoint,
+          errorType: axios.isAxiosError(error) ? error.code : "Unknown",
+          errorMessage: axios.isAxiosError(error)
+            ? error.message
+            : String(error),
+          errorResponse: axios.isAxiosError(error)
+            ? error.response?.data
+            : undefined,
+          errorStatus: axios.isAxiosError(error)
+            ? error.response?.status
+            : undefined,
+        });
 
         let errorMessage =
           "Error al obtener respuesta. Por favor, intenta de nuevo.";
-        if (axios.isAxiosError(error) && error.response) {
-          errorMessage = `Error del servidor (${error.response.status}): ${error.response.data.error?.message || "Error desconocido"
+
+        if (axios.isAxiosError(error)) {
+          if (error.code === "ERR_NETWORK") {
+            if (providerConfig?.warning) {
+              errorMessage = providerConfig.warning;
+            } else {
+              errorMessage = `Error de red: No se pudo conectar con ${providerConfig?.name}. Verifica tu conexión y que el API Key sea válido.`;
+            }
+          } else if (error.response) {
+            errorMessage = `Error del servidor (${error.response.status}): ${
+              error.response.data.error?.message || "Error desconocido"
             }`;
+          }
         }
 
         // Añadir mensaje de error
@@ -488,6 +579,7 @@ const ChatContainer = ({
     [
       messages,
       selectedModel,
+      selectedProvider,
       currentChatId,
       setCurrentChatId,
       setChatHistory,
@@ -566,6 +658,7 @@ const ChatContainer = ({
         isDarkTheme={isDarkTheme}
         toggleTheme={toggleTheme} // Ahora pasamos la función real para cambiar el tema
         selectedModel={selectedModel}
+        selectedProvider={selectedProvider}
         onModelChange={onModelChange}
       />
     </>

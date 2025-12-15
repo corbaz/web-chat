@@ -9,6 +9,26 @@ interface ApiKeyModalProps {
   onApiKeyProvided?: () => void;
 }
 
+// Proveedores disponibles
+const PROVIDERS = [
+  { id: "groq", name: "Groq", link: "https://console.groq.com/keys" },
+  {
+    id: "routellm",
+    name: "RouteLLM (Abacus.AI)",
+    link: "https://routellm.abacus.ai/",
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    link: "https://platform.openai.com/api-keys",
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    link: "https://console.anthropic.com/settings/keys",
+  },
+] as const;
+
 const ApiKeyModal = ({
   theme,
   isDarkTheme,
@@ -20,27 +40,51 @@ const ApiKeyModal = ({
     const manageApiKeyModal = async () => {
       if (!isModalLogicActive) return;
 
-      const savedApiKey = localStorage.getItem("groqApiKey");
-      if (!savedApiKey) {
+      const hasAnyKey = PROVIDERS.some((p) =>
+        localStorage.getItem(`${p.id}ApiKey`),
+      );
+      if (!hasAnyKey) {
         if (Swal.isVisible()) return;
         const TITULO = `PROMPTING  <span style="font-size: 12px">${APP_VERSION}</span>`;
 
         const result = await Swal.fire({
           title: TITULO,
           html: `
-                      <div style="display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 350px; margin: 0 auto; padding: 0; overflow: hidden;">
+                      <div style="display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 420px; margin: 0 auto; padding: 0; overflow: hidden;">
                         <div style="width: 100%; text-align: center; display: grid; place-items: center;">
                           <p style="margin-bottom: 1.5rem; font-size: 1rem; line-height: 1.6; font-weight: 500; letter-spacing: 0.01em; text-align: center; width: 100%;">
-                            Para utilizar la aplicación, es necesario obtener previamente una clave de API key proporcionada por Groq.
+                            Selecciona un proveedor de IA e ingresa tu API Key
                           </p>
-                          
+
+                        </div>
+                        <div style="width: 100%; position: relative; margin-bottom: 1.2rem; display: grid; place-items: center;">
+                          <label style="display:block; margin-bottom: 0.4rem; font-size: 1.9rem; font-weight:600; color:${
+                            theme.text
+                          }; width: 100%; text-align: center;">Proveedor</label>
+                          <div style="position: relative; width: 100%;">
+                            <select id="swal-select-provider" class="swal2-select" style="width: 100%; padding: 0.8em 3.8em 0.8em 1.2em; background: ${
+                              theme.input.background
+                            }; color: ${theme.input.text}; border: 2px solid ${
+                              theme.accent
+                            }; border-radius: 8px; box-sizing: border-box; height: 3.1em; font-size: 1rem; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; letter-spacing: 0.01em; transition: all 0.2s ease; outline: none; appearance: none; box-shadow: 0 2px 5px rgba(0,0,0,0.08); text-align: left;">
+                              ${PROVIDERS.map(
+                                (p) =>
+                                  `<option value="${p.id}">${p.name}</option>`,
+                              ).join("")}
+                            </select>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; right:12px; top:50%; transform: translateY(-50%); color:${
+                              theme.input.text
+                            }; pointer-events: none; opacity:0.7;">
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          </div>
                         </div>
                         <div style="width: 100%; position: relative; margin-bottom: 1.2rem; display: grid; place-items: center;">
                           <input
                             type="password"
                             id="swal-input-apikey-ue"
                             class="swal2-input"
-                            placeholder="Ingresa tu API Key de Groq"
+                            placeholder="Ingresa tu API Key"
                             style="width: 100%; padding: 0.8em 3.8em 0.8em 1.2em; background: ${
                               theme.input.background
                             }; color: ${theme.input.text}; border: 2px solid ${
@@ -50,8 +94,8 @@ const ApiKeyModal = ({
                             spellcheck="false"
                             required
                           />
-                          <div 
-                            id="toggle-apikey-visibility-ue" 
+                          <div
+                            id="toggle-apikey-visibility-ue"
                             style="position: absolute; right: 10px; top: 0; bottom: 0; margin: auto 0; height: 32px; background: ${
                               isDarkTheme
                                 ? "rgba(255,255,255,0.08)"
@@ -73,18 +117,15 @@ const ApiKeyModal = ({
                           isDarkTheme ? "#b0b8c9" : "#444"
                         }; text-align: center; width: 100%;">
                             Puedes obtenerla en
-                            <a
-                              href="https://console.groq.com/keys"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style="color: ${
-                                isDarkTheme ? "#8AB4F8" : "#0066CC"
-                              }; font-weight: 600; border-bottom: 2px solid ${
-                                isDarkTheme ? "#8AB4F8" : "#0066CC"
-                              }; padding-bottom: 1px; transition: border 0.2s;"
-                            >
-                              console.groq.com/keys
-                            </a>
+                            <a id="provider-link" href="${
+                              PROVIDERS[0].link
+                            }" target="_blank" rel="noopener noreferrer" style="color: ${
+                              isDarkTheme ? "#8AB4F8" : "#0066CC"
+                            }; font-weight: 600; border-bottom: 2px solid ${
+                              isDarkTheme ? "#8AB4F8" : "#0066CC"
+                            }; padding-bottom: 1px; transition: border 0.2s;">${
+                              PROVIDERS[0].name
+                            }</a>
                           </p>
                           <span style="font-size: 0.85rem; color: ${
                             isDarkTheme ? "#8AB4F8" : theme.accent
@@ -155,9 +196,41 @@ const ApiKeyModal = ({
             const input = document.getElementById(
               "swal-input-apikey-ue",
             ) as HTMLInputElement | null;
+            const select = document.getElementById(
+              "swal-select-provider",
+            ) as HTMLSelectElement | null;
+            const link = document.getElementById(
+              "provider-link",
+            ) as HTMLAnchorElement | null;
             const toggleButton = document.getElementById(
               "toggle-apikey-visibility-ue",
             );
+            if (select && link && input) {
+              // Preseleccionar proveedor guardado y precargar API key si existe
+              const storedProvider =
+                localStorage.getItem("selectedProvider") || PROVIDERS[0].id;
+              select.value = storedProvider;
+              const providerMeta =
+                PROVIDERS.find((pr) => pr.id === storedProvider) ||
+                PROVIDERS[0];
+              link.href = providerMeta.link;
+              link.textContent = providerMeta.name;
+              input.placeholder = `Ingresa tu API Key de ${providerMeta.name}`;
+              const savedKey = localStorage.getItem(`${storedProvider}ApiKey`);
+              if (savedKey) {
+                input.value = savedKey;
+              }
+              select.addEventListener("change", () => {
+                const p =
+                  PROVIDERS.find((pr) => pr.id === select.value) ||
+                  PROVIDERS[0];
+                link.href = p.link;
+                link.textContent = p.name;
+                input.placeholder = `Ingresa tu API Key de ${p.name}`;
+                const existing = localStorage.getItem(`${p.id}ApiKey`);
+                input.value = existing || "";
+              });
+            }
             if (input && toggleButton) {
               // Posicionar el cursor al inicio del campo y asegurar alineación izquierda
               setTimeout(() => {
@@ -208,7 +281,11 @@ const ApiKeyModal = ({
             const apiKeyInput = document.getElementById(
               "swal-input-apikey-ue",
             ) as HTMLInputElement | null;
+            const select = document.getElementById(
+              "swal-select-provider",
+            ) as HTMLSelectElement | null;
             const apiKey = apiKeyInput?.value;
+            const provider = select?.value || PROVIDERS[0].id;
             if (!apiKey || apiKey.trim() === "") {
               Swal.showValidationMessage(
                 `Por favor, ingresa una API Key válida`,
@@ -221,9 +298,17 @@ const ApiKeyModal = ({
                 validationMessage.setAttribute(
                   "style",
                   `
-                                background: ${isDarkTheme ? "rgba(255, 60, 60, 0.1)" : "rgba(255, 0, 0, 0.05)"};
+                                background: ${
+                                  isDarkTheme
+                                    ? "rgba(255, 60, 60, 0.1)"
+                                    : "rgba(255, 0, 0, 0.05)"
+                                };
                                 color: ${isDarkTheme ? "#ff9999" : "#d32f2f"};
-                                border-color: ${isDarkTheme ? "rgba(255, 60, 60, 0.3)" : "rgba(255, 0, 0, 0.2)"};
+                                border-color: ${
+                                  isDarkTheme
+                                    ? "rgba(255, 60, 60, 0.3)"
+                                    : "rgba(255, 0, 0, 0.2)"
+                                };
                                 padding: 0.75em;
                                 margin-top: 0.75em;
                                 border-radius: 6px;
@@ -246,17 +331,23 @@ const ApiKeyModal = ({
               return false;
             }
 
-            return apiKey.trim();
+            return { apiKey: apiKey.trim(), provider };
           },
         });
 
         if (result.isConfirmed && result.value) {
-          const apiKey = result.value;
-          localStorage.setItem("groqApiKey", apiKey);
+          const { apiKey, provider } = result.value as {
+            apiKey: string;
+            provider: string;
+          };
+          localStorage.setItem(`${provider}ApiKey`, apiKey);
+          localStorage.setItem("selectedProvider", provider);
           setIsModalLogicActive(false);
           Swal.fire({
             title: "¡Guardada!",
-            text: "Tu API Key de Groq ha sido guardada.",
+            text: `Tu API Key de ${
+              PROVIDERS.find((p) => p.id === provider)?.name || provider
+            } ha sido guardada.`,
             icon: "success",
             background: theme.background,
             color: theme.text,

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { darkTheme, lightTheme } from "./interfaces/temas/temas.tsx";
 import { groqModels } from "./components/HEADER/models/groqModels";
+import { routellmModels } from "./components/HEADER/models/routellmModels";
+import { openaiModels } from "./components/HEADER/models/openaiModels";
+import { anthropicModels } from "./components/HEADER/models/anthropicModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 import { generateLayoutCSS } from "./utils/layoutConstants";
 import { createWelcomeMessage } from "./constants/messages";
@@ -16,13 +19,53 @@ import ChatContainer from "./components/chat/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-export const APP_VERSION = "v.3.3";
+export const APP_VERSION = "v.3.4";
 
 export const App = () => {
   // Estados para la UI
   const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const [theme, setTheme] = useState(darkTheme);
+  const theme = isDarkTheme ? darkTheme : lightTheme;
+  const getInitialProvider = () => {
+    const stored = localStorage.getItem("selectedProvider");
+    const providers = ["groq", "routellm", "openai", "anthropic"];
+    // Si hay un provider guardado y tiene API key, úsalo
+    if (stored) {
+      const key = localStorage.getItem(`${stored}ApiKey`);
+      if (key && key.trim() !== "") return stored;
+    }
+    // Si no, elige el primero que tenga API key
+    for (const p of providers) {
+      const key = localStorage.getItem(`${p}ApiKey`);
+      if (key && key.trim() !== "") return p;
+    }
+    // Fallback
+    return "groq";
+  };
+
   const [selectedModel, setSelectedModel] = useState(groqModels[0].id);
+  const [selectedProvider, setSelectedProvider] =
+    useState<string>(getInitialProvider());
+
+  const getDefaultModelForProvider = (provider: string) => {
+    switch (provider) {
+      case "groq":
+        return groqModels[0]?.id || selectedModel;
+      case "routellm":
+        return routellmModels[0]?.id || selectedModel;
+      case "openai":
+        return openaiModels[0]?.id || selectedModel;
+      case "anthropic":
+        return anthropicModels[0]?.id || selectedModel;
+      default:
+        return groqModels[0]?.id || selectedModel;
+    }
+  };
+
+  const handleProviderChange = (providerId: string) => {
+    setSelectedProvider(providerId);
+    localStorage.setItem("selectedProvider", providerId);
+    setSelectedModel(getDefaultModelForProvider(providerId));
+  };
 
   // Estados para los menús laterales
   const [leftMenuOpen, setLeftMenuOpen] = useState(false);
@@ -67,17 +110,12 @@ export const App = () => {
 
   // Función para cambiar el tema
   const toggleTheme = useCallback(() => {
-    setIsDarkTheme((prevIsDark) => {
-      // Actualizamos el tema basándonos en el valor previo real
-      setTheme(prevIsDark ? lightTheme : darkTheme);
-      return !prevIsDark;
-    });
+    setIsDarkTheme((prevIsDark) => !prevIsDark);
   }, []);
 
   // Configurar el manejador del teclado para dispositivos móviles
   useEffect(() => {
     setupMobileKeyboardHandler();
-    setTheme(isDarkTheme ? darkTheme : lightTheme);
 
     // Configurar clases de HTML y body
     const htmlElement = document.documentElement;
@@ -468,6 +506,8 @@ export const App = () => {
             isDarkTheme={isDarkTheme}
             onToggleLeftMenu={handleToggleLeftMenu}
             onToggleRightMenu={handleToggleRightMenu}
+            selectedProvider={selectedProvider}
+            onProviderChange={handleProviderChange}
           />
           {/* Contenedor principal del chat */}
           <ChatContainer
@@ -508,6 +548,7 @@ export const App = () => {
             onFocusInput={focusInput}
             onUpdateChatTitle={handleUpdateChatTitle}
             onDeleteChat={handleDeleteChat}
+            selectedProvider={selectedProvider}
           />
           {/* Footer con área de entrada y controles */}
           <Footer
@@ -528,6 +569,7 @@ export const App = () => {
             isDarkTheme={isDarkTheme}
             isLoading={isLoading}
             selectedModel={selectedModel}
+            selectedProvider={selectedProvider}
             chatTitle={
               chatHistory.find((chat) => chat.id === currentChatId)?.title
             }

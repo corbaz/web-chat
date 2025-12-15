@@ -5,6 +5,7 @@ import LunaIcon from "../../assets/luna.svg";
 import EscobaIcon from "../../assets/escoba.svg";
 import TrashIcon from "../../assets/trash.svg";
 import VaritaIcon from "../../assets/varita_magica.svg";
+import { getProviderConfig, getApiKeyStorageKey } from "../../config/providers";
 import axios from "axios"; // Importamos axios para las peticiones HTTP
 
 interface FooterProps {
@@ -19,6 +20,7 @@ interface FooterProps {
   onUpdateChatTitle?: (newTitle: string) => void; // Nueva prop para actualizar el título
   currentChatId?: string; // Necesario para saber qué chat se está editando
   selectedModel?: string; // Modelo actualmente seleccionado
+  selectedProvider?: string; // Proveedor actualmente seleccionado
 }
 
 // Crear una interfaz para exponer el método focus
@@ -40,6 +42,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
       onUpdateChatTitle,
       currentChatId,
       selectedModel,
+      selectedProvider,
     },
     ref,
   ) => {
@@ -47,6 +50,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState("");
     const [isMagicLoading, setIsMagicLoading] = useState(false); // Estado para controlar la carga de la varita mágica
+    const [showMagicResponse, setShowMagicResponse] = useState(false); // Estado para mostrar color especial cuando la varita responde
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
     const mobileDevice = typeof window !== "undefined" && isMobile();
@@ -92,6 +96,10 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setMessage(e.target.value);
+      // Resetear el color especial cuando el usuario empieza a escribir
+      if (showMagicResponse) {
+        setShowMagicResponse(false);
+      }
       adjustTextareaHeight();
     };
 
@@ -120,7 +128,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
       if (message.trim() && !isLoading && !isMagicLoading) {
         try {
           setIsMagicLoading(true); // Usar el modelo proporcionado como prop o buscar en el historial de chat si no está disponible
-          let modelToUse = selectedModel; // Usar el prop si está disponible, o el valor por defecto
+          let modelToUse: string = selectedModel || "llama-3.3-70b-versatile"; // Usar el prop si está disponible, o el valor por defecto
 
           // Si no se proporcionó el modelo como prop, intentar obtenerlo del historial de chat
           if (!selectedModel && currentChatId) {
@@ -146,32 +154,78 @@ asegurándote de que la gramática y la sintaxis sean impecables.El texto debe s
 
 Texto a mejorar:
 ${message}`;
-          // Obtener la API key del localStorage o usar la predeterminada como respaldo
-          const savedApiKey = localStorage.getItem("groqApiKey");
-          const apiKey = savedApiKey;
+          // Seleccionar proveedor y obtener API key
+          const provider =
+            selectedProvider ||
+            localStorage.getItem("selectedProvider") ||
+            "groq";
 
-          // Realizar la petición a Groq con la misma configuración que en ChatContainer
-          const response = await axios.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-              model: modelToUse,
-              messages: [
-                {
-                  role: "user",
-                  content: promptToSend,
-                },
-              ],
-              temperature: 0.7,
-              max_tokens: 2048,
-              presence_penalty: 0.1,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
+          const providerConfig = getProviderConfig(provider);
+          if (!providerConfig) {
+            setIsMagicLoading(false);
+            alert(`Proveedor no configurado: ${provider}`);
+            return;
+          }
+
+          const apiKeyStorageKey = getApiKeyStorageKey(provider);
+          const apiKey = localStorage.getItem(apiKeyStorageKey);
+
+          // Validar que existe API key para el proveedor seleccionado
+          if (!apiKey || !apiKey.trim()) {
+            setIsMagicLoading(false);
+            alert(`Falta API key para ${providerConfig.name}`);
+            return;
+          }
+
+          // Construir payload según proveedor
+          const payload = providerConfig.payloadBuilder(
+            modelToUse,
+            [
+              {
+                role: "user",
+                content: promptToSend,
               },
-            },
-          ); // Extraer la respuesta mejorada
+            ],
+            2048,
+          );
+
+          // Construir headers
+          const headers = {
+            "Content-Type": "application/json",
+            ...providerConfig.headerAuth(apiKey),
+          };
+
+          // Log detallado de la petición de varita mágica
+          console.log("🪄 Enviando petición varita mágica:", {
+            proveedor: provider,
+            proveedorNombre: providerConfig.name,
+            modelo: modelToUse,
+            endpoint: providerConfig.endpoint,
+            apiKey: `${apiKey.substring(
+              0,
+              10,
+            )}...${apiKey.substring(apiKey.length - 4)}`,
+            headers: headers,
+            payload: payload,
+            textoOriginal:
+              message.substring(0, 100) + (message.length > 100 ? "..." : ""),
+            longitudPrompt: promptToSend.length,
+          });
+
+          // Realizar la petición al proveedor seleccionado
+          const response = await axios.post(providerConfig.endpoint, payload, {
+            headers: headers,
+          });
+
+          // Log de respuesta exitosa
+          console.log("✅ Respuesta varita mágica recibida:", {
+            proveedor: provider,
+            modelo: modelToUse,
+            status: response.status,
+            textoMejorado:
+              response.data.choices[0].message.content.substring(0, 150) +
+              "...",
+          }); // Extraer la respuesta mejorada
           let improvedText = response.data.choices[0].message.content.trim();
 
           // Filtrar el contenido entre etiquetas <think> </think>
@@ -182,6 +236,9 @@ ${message}`;
           // Actualizar el textarea con el texto mejorado filtrado
           setMessage(improvedText);
 
+          // Activar el color especial para indicar respuesta de varita
+          setShowMagicResponse(true);
+
           // Ajustar altura del textarea para el nuevo contenido
           setTimeout(adjustTextareaHeight, 0);
 
@@ -190,7 +247,28 @@ ${message}`;
             textareaRef.current.focus();
           }
         } catch (error) {
-          console.error("Error al mejorar el texto:", error);
+          // Log detallado del error en varita mágica
+          const provider =
+            selectedProvider ||
+            localStorage.getItem("selectedProvider") ||
+            "groq";
+          const providerConfig = getProviderConfig(provider);
+
+          console.error("❌ Error en varita mágica:", {
+            proveedor: provider,
+            modelo: selectedModel,
+            endpoint: providerConfig?.endpoint,
+            errorType: axios.isAxiosError(error) ? error.code : "Unknown",
+            errorMessage: axios.isAxiosError(error)
+              ? error.message
+              : String(error),
+            errorResponse: axios.isAxiosError(error)
+              ? error.response?.data
+              : undefined,
+            errorStatus: axios.isAxiosError(error)
+              ? error.response?.status
+              : undefined,
+          });
           // Opcionalmente, mostrar un mensaje de error al usuario
         } finally {
           setIsMagicLoading(false);
@@ -303,7 +381,13 @@ ${message}`;
                 placeholder="Escribe un Prompt ..."
                 className="flex-grow p-3 resize-none overflow-y-auto min-h-[48px] max-h-[120px] bg-transparent text-base touch-manipulation appearance-none rounded-none"
                 style={{
-                  color: isDarkTheme ? theme.input.text : theme.text,
+                  color: showMagicResponse
+                    ? isDarkTheme
+                      ? "#FFEB3B" // Yellow en tema oscuro
+                      : "#FF0000" // Red en tema claro
+                    : isDarkTheme
+                      ? theme.input.text
+                      : theme.text,
                   border: "none",
                   outline: "none",
                   scrollbarWidth: "thin",

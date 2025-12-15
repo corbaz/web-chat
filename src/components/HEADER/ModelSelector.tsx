@@ -2,12 +2,16 @@ import React, { useEffect } from "react";
 import Select, { GroupBase, StylesConfig } from "react-select";
 
 import { ColorPalette } from "../../interfaces/temas/temas";
-import { groqModels, GroqModel } from "./models/groqModels";
+import { groqModels } from "./models/groqModels";
+import { routellmModels } from "./models/routellmModels";
+import { openaiModels } from "./models/openaiModels";
+import { anthropicModels } from "./models/anthropicModels";
 
 interface ModelSelectorProps {
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   theme: ColorPalette;
+  providerFilter?: string;
 }
 
 // Interfaz para las opciones del selector
@@ -20,17 +24,30 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   selectedModel,
   onModelChange,
   theme,
+  providerFilter,
 }) => {
   // Obtener los desarrolladores únicos de modelos
+  const allModels = [
+    ...groqModels,
+    ...routellmModels,
+    ...openaiModels,
+    ...anthropicModels,
+  ];
+
+  // Filtrar modelos según el proveedor seleccionado
+  const filteredModels = providerFilter
+    ? allModels.filter((model) => model.provider === providerFilter)
+    : allModels;
+
   const modelDevelopers = [
-    ...new Set(groqModels.map((model: GroqModel) => model.developer)),
+    ...new Set(filteredModels.map((model) => model.developer)),
   ];
 
   // Preparar las opciones agrupadas para react-select
   const groupedOptions: GroupBase<ModelOption>[] = modelDevelopers.map(
     (developer) => ({
       label: developer.toUpperCase(),
-      options: groqModels
+      options: filteredModels
         .filter((model) => model.developer === developer)
         .map((model) => ({
           value: model.id,

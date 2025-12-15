@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { ChatMessageType } from "../../interfaces/chat/chatTypes.ts"; //../../interfaces/chat/chatTypes";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
+import { routellmModels } from "../../components/HEADER/models/routellmModels";
 import { getTokenUsageString } from "../../utils/tokenUtils";
 import "./markdown-styles.css";
 
@@ -41,7 +42,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const getModelShortName = (modelId?: string): string => {
     if (!modelId) return "modelo";
 
-    const model = groqModels.find((m) => m.id === modelId);
+    const model = [...groqModels, ...routellmModels].find(
+      (m) => m.id === modelId,
+    );
     if (model) return model.name;
 
     return modelId.split("/").pop()?.split("-")[0] || "modelo";
@@ -107,7 +110,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.tokensUsed !== undefined &&
               message.tokenLimit !== undefined && (
                 <div className="text-xs opacity-70 text-right">
-                  📊 Tokens: {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
+                  📊 Tokens:{" "}
+                  {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
                 </div>
               )}
           </div>

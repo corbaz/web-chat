@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas";
 
 interface ApiKeyInputProps {
@@ -7,26 +7,46 @@ interface ApiKeyInputProps {
 }
 
 const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
-  const [apiKey, setApiKey] = useState<string>("");
+  const [provider, setProvider] = useState<string>(
+    localStorage.getItem("selectedProvider") || "groq",
+  );
+  const [apiKey, setApiKey] = useState<string>(() => {
+    const initialProvider = localStorage.getItem("selectedProvider") || "groq";
+    return localStorage.getItem(`${initialProvider}ApiKey`) || "";
+  });
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(() => {
+    const initialProvider = localStorage.getItem("selectedProvider") || "groq";
+    const savedKey = localStorage.getItem(`${initialProvider}ApiKey`);
+    return !!savedKey;
+  });
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
+  const prevProviderRef = useRef<string>(provider);
 
-  // Cargar la API key guardada al montar el componente
+  // Actualizar apiKey cuando cambia el proveedor (de forma diferida)
   useEffect(() => {
-    const savedApiKey = localStorage.getItem("groqApiKey");
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-      setIsSaved(true);
+    // Solo ejecutar si el proveedor realmente cambió
+    if (prevProviderRef.current !== provider) {
+      prevProviderRef.current = provider;
+      // Usar queueMicrotask para diferir la actualización
+      queueMicrotask(() => {
+        const savedApiKey = localStorage.getItem(`${provider}ApiKey`);
+        setApiKey(savedApiKey || "");
+        setIsSaved(!!savedApiKey);
+      });
     }
-  }, []);
+  }, [provider]);
 
   // Guardar la API key en localStorage
   const handleSaveApiKey = () => {
     if (apiKey.trim()) {
-      localStorage.setItem("groqApiKey", apiKey.trim());
+      localStorage.setItem(`${provider}ApiKey`, apiKey.trim());
+      localStorage.setItem("selectedProvider", provider);
       setIsSaved(true);
       setShowFeedback(true);
+
+      // Notificar a otros componentes que cambió la lista de API keys
+      window.dispatchEvent(new Event("apikey-changed"));
 
       // Ocultar el mensaje de confirmación después de 3 segundos
       setTimeout(() => {
@@ -37,11 +57,14 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
 
   // Limpiar la API key
   const handleClearApiKey = () => {
-    localStorage.removeItem("groqApiKey");
+    localStorage.removeItem(`${provider}ApiKey`);
     setApiKey("");
     setIsSaved(false);
     setIsVisible(false);
     setShowFeedback(true);
+
+    // Notificar a otros componentes que cambió la lista de API keys
+    window.dispatchEvent(new Event("apikey-changed"));
 
     // Ocultar el mensaje de confirmación después de 3 segundos
     setTimeout(() => {
@@ -55,8 +78,28 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
         className="text-md font-semibold mb-2"
         style={{ color: theme.title.color }}
       >
-        API Key de Groq
+        API Key
       </h3>
+      <div className="mb-2">
+        <label className="text-xs mb-1 block" style={{ color: theme.text }}>
+          Proveedor
+        </label>
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          className="w-full p-2 rounded"
+          style={{
+            backgroundColor: theme.input.background,
+            color: theme.input.text,
+            border: `1px solid ${theme.accent}`,
+          }}
+        >
+          <option value="groq">Groq</option>
+          <option value="routellm">RouteLLM (Abacus.AI)</option>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+        </select>
+      </div>
       <div className="space-y-2">
         <div className="flex relative">
           <input
@@ -66,7 +109,15 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
               setApiKey(e.target.value);
               setIsSaved(false);
             }}
-            placeholder="Ingresa tu API Key de Groq"
+            placeholder={`Ingresa tu API Key de ${
+              provider === "groq"
+                ? "Groq"
+                : provider === "routellm"
+                  ? "RouteLLM"
+                  : provider === "openai"
+                    ? "OpenAI"
+                    : "Anthropic"
+            }`}
             className="w-full p-2 pr-8 rounded"
             style={{
               backgroundColor: theme.input.background,
@@ -164,9 +215,17 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
           </div>
         )}
         <p className="text-xs mt-1" style={{ color: theme.text }}>
-          Para obtener tu API Key, regístrate en{" "}
+          Para obtener tu API Key, visita{" "}
           <a
-            href="https://console.groq.com/keys"
+            href={
+              provider === "groq"
+                ? "https://console.groq.com/keys"
+                : provider === "routellm"
+                  ? "https://routellm.abacus.ai/"
+                  : provider === "openai"
+                    ? "https://platform.openai.com/api-keys"
+                    : "https://console.anthropic.com/settings/keys"
+            }
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -174,7 +233,13 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
               textDecoration: "underline",
             }}
           >
-            console.groq.com
+            {provider === "groq"
+              ? "console.groq.com"
+              : provider === "routellm"
+                ? "routellm.abacus.ai"
+                : provider === "openai"
+                  ? "platform.openai.com"
+                  : "console.anthropic.com"}
           </a>
         </p>
       </div>

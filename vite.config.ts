@@ -1,13 +1,15 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
     // Configura base como './' para generar rutas relativas en lugar de absolutas
-    base: "./",
+    base: './',
     plugins: [react(), tailwindcss()],
     build: {
+        // Directorio de salida para GitHub Pages
+        outDir: 'docs',
         // Límite de advertencia de tamaño de chunk a 500kB
         chunkSizeWarningLimit: 500,
         rollupOptions: {
@@ -15,18 +17,18 @@ export default defineConfig({
                 // Configuración de chunks manuales para optimizar el tamaño
                 manualChunks: {
                     // Chunk para React y React DOM
-                    vendor: ["react", "react-dom"],
+                    vendor: ['react', 'react-dom'],
                     // Chunk para utilidades como axios
-                    utils: ["axios"],
+                    utils: ['axios'],
                     // Chunk para markdown
-                    markdown: ["react-markdown", "remark-gfm"],
+                    markdown: ['react-markdown', 'remark-gfm'],
                 },
                 // Optimizar los nombres de los chunks
-                chunkFileNames: "assets/[name]-[hash].js",
+                chunkFileNames: 'assets/[name]-[hash].js',
                 // Optimizar los nombres de los archivos de salida
-                entryFileNames: "assets/[name]-[hash].js",
+                entryFileNames: 'assets/[name]-[hash].js',
                 // Optimizar los nombres de los archivos de assets
-                assetFileNames: "assets/[name]-[hash].[ext]",
+                assetFileNames: 'assets/[name]-[hash].[ext]',
             },
         },
     },

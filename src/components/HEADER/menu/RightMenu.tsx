@@ -1,6 +1,9 @@
 import React from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import { groqModels } from "../models/groqModels";
+import { routellmModels } from "../models/routellmModels";
+import { openaiModels } from "../models/openaiModels";
+import { anthropicModels } from "../models/anthropicModels";
 import LunaIcon from "../../../assets/luna.svg";
 
 import PieBrand from "./PieBrand.tsx";
@@ -14,6 +17,7 @@ interface RightMenuProps {
   toggleTheme: () => void;
   selectedModel: string;
   onModelChange: (modelId: string) => void;
+  selectedProvider?: string;
 }
 
 const RightMenu: React.FC<RightMenuProps> = ({
@@ -24,9 +28,21 @@ const RightMenu: React.FC<RightMenuProps> = ({
   toggleTheme,
   selectedModel,
   onModelChange,
+  selectedProvider,
 }) => {
   // Si no está abierto, no renderizar nada
   if (!isOpen) return null;
+
+  // Combinar modelos y filtrar según el proveedor seleccionado
+  const allModels = [
+    ...groqModels,
+    ...routellmModels,
+    ...openaiModels,
+    ...anthropicModels,
+  ];
+  const filteredModels = selectedProvider
+    ? allModels.filter((model) => model.provider === selectedProvider)
+    : allModels;
 
   return (
     <>
@@ -183,7 +199,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                 Modelo de IA
               </h3>
               <div className="space-y-2">
-                {groqModels.map((model) => (
+                {filteredModels.map((model) => (
                   <div key={model.id} className="flex items-center">
                     <input
                       type="radio"
