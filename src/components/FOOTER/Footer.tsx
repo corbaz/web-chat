@@ -285,6 +285,23 @@ ${message}`;
       }
     };
 
+    // Función para pegar desde el portapapeles
+    const handlePasteFromClipboard = async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        setMessage(text);
+        // Resetear color especial cuando se pega
+        if (showMagicResponse) {
+          setShowMagicResponse(false);
+        }
+        adjustTextareaHeight();
+        textareaRef.current?.focus();
+      } catch (err) {
+        console.error("Error al pegar desde portapapeles:", err);
+        alert("No se pudo acceder al portapapeles. Verifica los permisos.");
+      }
+    };
+
     // Manejar inicio de edición del título
     const handleTitleClick = () => {
       if (!isLoading && chatTitle && currentChatId && onUpdateChatTitle) {
@@ -397,6 +414,37 @@ ${message}`;
                 aria-label="Mensaje"
                 rows={1}
               />
+              {/* Botón de pegar portapapeles */}
+              <button
+                onClick={handlePasteFromClipboard}
+                title="Pegar del portapapeles"
+                aria-label="Pegar del portapapeles"
+                className="flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5"
+                style={{
+                  backgroundColor: theme.button.background,
+                  borderRight: `1px solid ${theme.accent}`,
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                  style={{
+                    filter: isDarkTheme
+                      ? "brightness(0) invert(1)"
+                      : "brightness(1) invert(0)",
+                  }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
               {/* Botón de varita mágica */}
               <button
                 onClick={handleMagicButton}
