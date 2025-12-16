@@ -35,6 +35,24 @@ const ApiKeyModal = ({
   onApiKeyProvided,
 }: ApiKeyModalProps) => {
   const [isModalLogicActive, setIsModalLogicActive] = useState(true);
+  const [forceShow, setForceShow] = useState(false);
+  const [forcedProvider, setForcedProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleRequestModal = (event: Event) => {
+      const detail = (event as CustomEvent<{ provider?: string }>).detail;
+      if (detail?.provider) {
+        setForcedProvider(detail.provider);
+      }
+      setForceShow(true);
+      setIsModalLogicActive(true);
+    };
+
+    window.addEventListener("request-apikey-modal", handleRequestModal);
+    return () => {
+      window.removeEventListener("request-apikey-modal", handleRequestModal);
+    };
+  }, []);
 
   useEffect(() => {
     const manageApiKeyModal = async () => {
@@ -43,8 +61,23 @@ const ApiKeyModal = ({
       const hasAnyKey = PROVIDERS.some((p) =>
         localStorage.getItem(`${p.id}ApiKey`),
       );
-      if (!hasAnyKey) {
+      if (!hasAnyKey || forceShow) {
         if (Swal.isVisible()) return;
+        const storedProvider = localStorage.getItem("selectedProvider");
+        const defaultProvider =
+          forcedProvider || storedProvider || PROVIDERS[0].id;
+        const defaultProviderLink =
+          PROVIDERS.find((p) => p.id === defaultProvider)?.link ||
+          PROVIDERS[0].link;
+        const defaultProviderName =
+          PROVIDERS.find((p) => p.id === defaultProvider)?.name ||
+          PROVIDERS[0].name;
+        const optionsHtml = PROVIDERS.map(
+          (p) =>
+            `<option value="${p.id}" ${
+              p.id === defaultProvider ? "selected" : ""
+            }>${p.name}</option>`,
+        ).join("");
         const TITULO = `PROMPTING  <span style="font-size: 12px">${APP_VERSION}</span>`;
 
         const result = await Swal.fire({
@@ -67,10 +100,7 @@ const ApiKeyModal = ({
                             }; color: ${theme.input.text}; border: 2px solid ${
                               theme.accent
                             }; border-radius: 8px; box-sizing: border-box; height: 3.1em; font-size: 1rem; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; letter-spacing: 0.01em; transition: all 0.2s ease; outline: none; appearance: none; box-shadow: 0 2px 5px rgba(0,0,0,0.08); text-align: left;">
-                              ${PROVIDERS.map(
-                                (p) =>
-                                  `<option value="${p.id}">${p.name}</option>`,
-                              ).join("")}
+                              ${optionsHtml}
                             </select>
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; right:12px; top:50%; transform: translateY(-50%); color:${
                               theme.input.text
@@ -117,15 +147,11 @@ const ApiKeyModal = ({
                           isDarkTheme ? "#b0b8c9" : "#444"
                         }; text-align: center; width: 100%;">
                             Puedes obtenerla en
-                            <a id="provider-link" href="${
-                              PROVIDERS[0].link
-                            }" target="_blank" rel="noopener noreferrer" style="color: ${
+                            <a id="provider-link" href="${defaultProviderLink}" target="_blank" rel="noopener noreferrer" style="color: ${
                               isDarkTheme ? "#8AB4F8" : "#0066CC"
                             }; font-weight: 600; border-bottom: 2px solid ${
                               isDarkTheme ? "#8AB4F8" : "#0066CC"
-                            }; padding-bottom: 1px; transition: border 0.2s;">${
-                              PROVIDERS[0].name
-                            }</a>
+                            }; padding-bottom: 1px; transition: border 0.2s;">${defaultProviderName}</a>
                           </p>
                           <span style="font-size: 0.85rem; color: ${
                             isDarkTheme ? "#8AB4F8" : theme.accent
@@ -137,6 +163,7 @@ const ApiKeyModal = ({
           focusConfirm: false,
           allowOutsideClick: false,
           allowEscapeKey: false,
+          showCloseButton: hasAnyKey,
           showCancelButton: false,
           confirmButtonText: "Guardar API Key",
           confirmButtonColor: theme.button.background,
@@ -206,17 +233,19 @@ const ApiKeyModal = ({
               "toggle-apikey-visibility-ue",
             );
             if (select && link && input) {
-              // Preseleccionar proveedor guardado y precargar API key si existe
-              const storedProvider =
-                localStorage.getItem("selectedProvider") || PROVIDERS[0].id;
-              select.value = storedProvider;
+              // Preseleccionar proveedor requerido o guardado y precargar API key si existe
+              const persistedProvider =
+                localStorage.getItem("selectedProvider");
+              const initialProvider =
+                forcedProvider || persistedProvider || PROVIDERS[0].id;
+              select.value = initialProvider;
               const providerMeta =
-                PROVIDERS.find((pr) => pr.id === storedProvider) ||
+                PROVIDERS.find((pr) => pr.id === initialProvider) ||
                 PROVIDERS[0];
               link.href = providerMeta.link;
               link.textContent = providerMeta.name;
               input.placeholder = `Ingresa tu API Key de ${providerMeta.name}`;
-              const savedKey = localStorage.getItem(`${storedProvider}ApiKey`);
+              const savedKey = localStorage.getItem(`${initialProvider}ApiKey`);
               if (savedKey) {
                 input.value = savedKey;
               }
@@ -343,6 +372,8 @@ const ApiKeyModal = ({
           localStorage.setItem(`${provider}ApiKey`, apiKey);
           localStorage.setItem("selectedProvider", provider);
           setIsModalLogicActive(false);
+          setForceShow(false);
+          setForcedProvider(null);
           Swal.fire({
             title: "¡Guardada!",
             text: `Tu API Key de ${
@@ -355,9 +386,15 @@ const ApiKeyModal = ({
             timer: 1500,
             timerProgressBar: true,
           });
+          // Notificar a otros componentes (p.ej. menú derecho) que hay cambios
+          window.dispatchEvent(new Event("apikey-changed"));
           if (onApiKeyProvided) {
             onApiKeyProvided();
           }
+        } else if (result.isDismissed) {
+          setIsModalLogicActive(false);
+          setForceShow(false);
+          setForcedProvider(null);
         }
       } else {
         setIsModalLogicActive(false);
@@ -368,7 +405,14 @@ const ApiKeyModal = ({
     };
 
     manageApiKeyModal();
-  }, [isModalLogicActive, onApiKeyProvided, theme, isDarkTheme]);
+  }, [
+    isModalLogicActive,
+    onApiKeyProvided,
+    theme,
+    isDarkTheme,
+    forceShow,
+    forcedProvider,
+  ]);
 
   return null;
 };

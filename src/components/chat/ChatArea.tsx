@@ -19,16 +19,54 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onRepeatMessage,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
 
-  // Hacer scroll al último mensaje cuando se añade uno nuevo
+  // Hacer scroll al fondo absoluto cuando cambian los mensajes
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = containerRef.current;
+    if (!el) return;
+
+    const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+      // Usar un valor grande para asegurar el bottom en casos con subpíxeles o contenido async
+      el.scrollTo({ top: el.scrollHeight + 1000, behavior });
+    };
+
+    if (isInitialMount.current) {
+      // Dos rAF para esperar layout + pintura
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToBottom("auto");
+          isInitialMount.current = false;
+        });
+      });
+    } else {
+      scrollToBottom("smooth");
+    }
+
+    // Observa cambios de tamaño que puedan ocurrir tras render diferido (e.g. imágenes/markdown)
+    const ro = new ResizeObserver(() => scrollToBottom("auto"));
+    ro.observe(el);
+    // Desactivar el observer poco después para evitar interferir con lectura manual
+    const timeout = setTimeout(() => {
+      ro.disconnect();
+    }, 800);
+
+    // Fallback adicional tras un breve tiempo
+    const t2 = setTimeout(() => scrollToBottom("auto"), 120);
+
+    return () => {
+      clearTimeout(timeout);
+      clearTimeout(t2);
+      ro.disconnect();
+    };
   }, [messages]);
 
   return (
     <div className="flex justify-center w-full h-full">
       <div
         className="w-full h-full overflow-y-auto px-3 pt-5 pb-6 space-y-4 sm:pt-3 sm:pb-0 sm:px-5 md:px-8 lg:px-10 xl:px-12"
+        ref={containerRef}
         style={{
           backgroundColor: theme.messages.ai.background,
         }}

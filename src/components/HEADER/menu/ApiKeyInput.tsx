@@ -30,15 +30,8 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     return localStorage.getItem(`${initialProvider}ApiKey`) || "";
   });
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [isSaved, setIsSaved] = useState<boolean>(() => {
-    const initialProvider = localStorage.getItem("selectedProvider") || "groq";
-    const savedKey = localStorage.getItem(`${initialProvider}ApiKey`);
-    return !!savedKey;
-  });
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const prevProviderRef = useRef<string>(provider);
-  // Nota: evitamos setState dentro de efectos para cumplir ESLint. No sincronizamos localProvider aquí.
-  // El valor mostrado sigue selectedProvider a menos que el usuario haya hecho override con el select.
 
   // Actualizar apiKey cuando cambia el proveedor (de forma diferida)
   useEffect(() => {
@@ -49,34 +42,26 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
       queueMicrotask(() => {
         const savedApiKey = localStorage.getItem(`${provider}ApiKey`);
         setApiKey(savedApiKey || "");
-        setIsSaved(!!savedApiKey);
       });
     }
   }, [provider]);
 
-  // Guardar la API key en localStorage
-  const handleSaveApiKey = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem(`${provider}ApiKey`, apiKey.trim());
-      localStorage.setItem("selectedProvider", provider);
-      setIsSaved(true);
-      setShowFeedback(true);
-
-      // Notificar a otros componentes que cambió la lista de API keys
-      window.dispatchEvent(new Event("apikey-changed"));
-
-      // Ocultar el mensaje de confirmación después de 3 segundos
-      setTimeout(() => {
-        setShowFeedback(false);
-      }, 3000);
-    }
-  };
+  // Escuchar cambios globales en API keys (guardar/borrar) para refrescar el campo
+  useEffect(() => {
+    const handleChange = () => {
+      const savedApiKey = localStorage.getItem(`${provider}ApiKey`);
+      setApiKey(savedApiKey || "");
+    };
+    window.addEventListener("apikey-changed", handleChange);
+    return () => {
+      window.removeEventListener("apikey-changed", handleChange);
+    };
+  }, [provider]);
 
   // Limpiar la API key
   const handleClearApiKey = () => {
     localStorage.removeItem(`${provider}ApiKey`);
     setApiKey("");
-    setIsSaved(false);
     setIsVisible(false);
     setShowFeedback(true);
 
@@ -95,7 +80,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         className="text-md font-semibold mb-2"
         style={{ color: theme.title.color }}
       >
-        API Key (Guardar o Borrar)
+        API Key (Ver o Borrar)
       </h3>
       <div className="mb-2">
         <label className="text-xs mb-1 block" style={{ color: theme.text }}>
@@ -112,7 +97,15 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             // Al cambiar de proveedor manualmente, cargar su API key guardada (sin efectos)
             const savedApiKey = localStorage.getItem(`${e.target.value}ApiKey`);
             setApiKey(savedApiKey || "");
-            setIsSaved(!!savedApiKey);
+
+            // Si no hay API key para este proveedor, disparar modal
+            if (!savedApiKey) {
+              window.dispatchEvent(
+                new CustomEvent("request-apikey-modal", {
+                  detail: { provider: e.target.value },
+                }),
+              );
+            }
           }}
           className="w-full p-2 rounded"
           style={{
@@ -132,25 +125,27 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
           <input
             type={isVisible ? "text" : "password"}
             value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-              setIsSaved(false);
-            }}
-            placeholder={`Ingresa tu API Key de ${
-              provider === "groq"
-                ? "Groq"
-                : provider === "routellm"
-                  ? "RouteLLM"
-                  : provider === "openai"
-                    ? "OpenAI"
-                    : "Anthropic"
-            }`}
-            className="w-full p-2 pr-8 rounded"
+            readOnly
+            placeholder={
+              apiKey
+                ? ""
+                : `No hay API Key de ${
+                    provider === "groq"
+                      ? "Groq"
+                      : provider === "routellm"
+                        ? "RouteLLM"
+                        : provider === "openai"
+                          ? "OpenAI"
+                          : "Anthropic"
+                  } guardada`
+            }
+            className="w-full p-2 pr-8 rounded cursor-default"
             style={{
               backgroundColor: theme.input.background,
               color: theme.input.text,
               borderColor: theme.accent,
               border: `1px solid ${theme.accent}`,
+              opacity: apiKey ? 1 : 0.6,
             }}
           />
           <button
@@ -199,46 +194,49 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             )}
           </button>
         </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={handleSaveApiKey}
-            className="px-3 py-1 rounded text-sm flex-1"
-            style={{
-              backgroundColor: theme.button.background,
-              color: theme.button.text,
-            }}
-          >
-            Guardar API Key
-          </button>
+        {apiKey && (
           <button
             onClick={handleClearApiKey}
-            className="px-3 py-1 rounded text-sm flex-1"
+            className="w-full px-3 py-2 rounded text-sm font-medium"
             style={{
               backgroundColor: isDarkTheme
                 ? "rgba(255, 59, 48, 0.2)"
                 : "rgba(255, 59, 48, 0.1)",
               color: "#FF3B30",
             }}
-            disabled={!apiKey}
           >
             Borrar API Key
           </button>
-        </div>
+        )}
+        {!apiKey && (
+          <button
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent("request-apikey-modal", {
+                  detail: { provider },
+                }),
+              );
+            }}
+            className="w-full px-3 py-2 rounded text-sm font-medium"
+            style={{
+              backgroundColor: theme.button.background,
+              color: theme.button.text,
+            }}
+          >
+            Cargar API Key
+          </button>
+        )}
         {showFeedback && (
           <div
             className="text-sm py-1 px-2 mt-1 rounded-md text-center"
             style={{
-              backgroundColor: isSaved
-                ? isDarkTheme
-                  ? "rgba(50, 200, 100, 0.2)"
-                  : "rgba(50, 200, 100, 0.1)"
-                : isDarkTheme
-                  ? "rgba(255, 59, 48, 0.2)"
-                  : "rgba(255, 59, 48, 0.1)",
-              color: isSaved ? "#32C864" : "#FF3B30",
+              backgroundColor: isDarkTheme
+                ? "rgba(255, 59, 48, 0.2)"
+                : "rgba(255, 59, 48, 0.1)",
+              color: "#FF3B30",
             }}
           >
-            {isSaved ? "API Key guardada correctamente." : "API Key eliminada."}
+            API Key eliminada.
           </div>
         )}
         <p className="text-xs mt-1" style={{ color: theme.text }}>
