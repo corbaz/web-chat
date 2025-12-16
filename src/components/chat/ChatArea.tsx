@@ -8,6 +8,7 @@ interface ChatAreaProps {
   isLoading: boolean;
   theme: ColorPalette;
   isDarkTheme: boolean;
+  onRepeatMessage?: (message: string) => void;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -15,6 +16,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   isLoading,
   theme,
   isDarkTheme,
+  onRepeatMessage,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +41,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             message={message}
             theme={theme}
             isDarkTheme={isDarkTheme}
+            onRepeatMessage={onRepeatMessage}
           />
         ))}
 

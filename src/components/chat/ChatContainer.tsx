@@ -52,6 +52,7 @@ interface ChatContainerProps {
   onUpdateChatTitle?: (chatId: string, newTitle: string) => void; // Para actualizar el título
   onDeleteChat?: (chatId: string) => void; // Para eliminar un chat
   selectedProvider?: string; // Proveedor seleccionado en el header
+  onRepeatMessage?: (message: string) => void; // Callback para repetir mensaje en footer
 }
 
 const ChatContainer = ({
@@ -78,6 +79,7 @@ const ChatContainer = ({
   onUpdateChatTitle,
   onDeleteChat,
   selectedProvider,
+  onRepeatMessage,
 }: ChatContainerProps) => {
   // Ref para almacenar tiempos de inicio de solicitudes
   const requestStartTimeRef = useRef<Record<string, number>>({});
@@ -634,6 +636,7 @@ const ChatContainer = ({
           isLoading={isLoading}
           theme={theme}
           isDarkTheme={isDarkTheme}
+          onRepeatMessage={onRepeatMessage}
         />
       </div>
 

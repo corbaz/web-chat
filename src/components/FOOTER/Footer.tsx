@@ -26,6 +26,7 @@ interface FooterProps {
 // Crear una interfaz para exponer el método focus
 export interface FooterRef {
   focusTextarea: () => void;
+  setMessage: (msg: string) => void;
 }
 
 const Footer = React.forwardRef<FooterRef, FooterProps>(
@@ -61,6 +62,14 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
         if (textareaRef.current && !mobileDevice) {
           textareaRef.current.focus();
         }
+      },
+      setMessage: (msg: string) => {
+        setMessage(msg);
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          }
+        }, 50);
       },
     }));
 

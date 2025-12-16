@@ -19,7 +19,7 @@ import ChatContainer from "./components/chat/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-export const APP_VERSION = "v.3.5";
+export const APP_VERSION = "v.3.6";
 
 export const App = () => {
   // Estados para la UI
@@ -587,6 +587,11 @@ export const App = () => {
             onUpdateChatTitle={handleUpdateChatTitle}
             onDeleteChat={handleDeleteChat}
             selectedProvider={selectedProvider}
+            onRepeatMessage={(message) => {
+              if (footerRef.current) {
+                footerRef.current.setMessage(message);
+              }
+            }}
           />
           {/* Footer con área de entrada y controles */}
           <Footer
