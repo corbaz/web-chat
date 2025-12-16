@@ -16,7 +16,7 @@ export const groqModels: GroqModel[] = [
   // Meta
   {
     id: "meta-llama/llama-4-maverick-17b-128e-instruct",
-    name: "Meta Llama 4 Maverick 17B 128E",
+    name: "Meta Llama 4 Maverick 17B 128E (Default)",
     developer: "Meta",
     contextWindow: "131072",
     provider: "groq",

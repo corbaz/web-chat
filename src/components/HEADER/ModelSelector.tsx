@@ -20,6 +20,27 @@ interface ModelOption {
   label: string;
 }
 
+// Función para calcular el ancho mínimo basado en el texto más largo
+const calculateMinWidth = (): string => {
+  const allModels = [
+    ...groqModels,
+    ...routellmModels,
+    ...openaiModels,
+    ...anthropicModels,
+  ];
+
+  // Encontrar el nombre más largo
+  const longestName = allModels.reduce((max, model) => {
+    return model.name.length > max.length ? model.name : max;
+  }, groqModels[0]?.name || "");
+
+  // Calcular aproximadamente (8px por carácter + padding)
+  const estimatedWidth = longestName.length * 8 + 40;
+  return `${Math.max(estimatedWidth, 280)}px`; // Mínimo 280px
+};
+
+const MIN_SELECTOR_WIDTH = calculateMinWidth();
+
 const ModelSelector: React.FC<ModelSelectorProps> = ({
   selectedModel,
   onModelChange,
@@ -61,7 +82,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     console.log("ModelSelector - Current selected model:", selectedModel);
   }, [selectedModel]);
 
-  // Estilos personalizados para react-select con tipos adecuados
   const customStyles: StylesConfig<
     ModelOption,
     false,
@@ -74,6 +94,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       padding: "1px",
       backgroundColor: theme.input.background,
       boxShadow: "none",
+      minWidth: MIN_SELECTOR_WIDTH,
       "&:hover": {
         border: `3px solid ${"theme.messages.ai.background"}`,
         cursor: "pointer",

@@ -12,6 +12,15 @@ export interface RouteLLMModel {
 }
 
 export const routellmModels: RouteLLMModel[] = [
+  // Anthropic - Default
+  {
+    id: "claude-haiku-4-5-20251001",
+    name: "Claude Haiku 4.5 (Default)",
+    developer: "Anthropic",
+    contextWindow: "128000",
+    provider: "routellm",
+  },
+
   // Auto-router
   {
     id: "route-llm",
@@ -158,6 +167,13 @@ export const routellmModels: RouteLLMModel[] = [
     provider: "routellm",
   },
   {
+    id: "claude-opus-4-5-20251101",
+    name: "Claude Opus 4.5",
+    developer: "Anthropic",
+    contextWindow: "128000",
+    provider: "routellm",
+  },
+  {
     id: "claude-opus-4-1-20250805",
     name: "Claude Opus 4.1",
     developer: "Anthropic",
@@ -167,20 +183,6 @@ export const routellmModels: RouteLLMModel[] = [
   {
     id: "claude-sonnet-4-5-20250929",
     name: "Claude Sonnet 4.5",
-    developer: "Anthropic",
-    contextWindow: "128000",
-    provider: "routellm",
-  },
-  {
-    id: "claude-haiku-4-5-20251001",
-    name: "Claude Haiku 4.5",
-    developer: "Anthropic",
-    contextWindow: "128000",
-    provider: "routellm",
-  },
-  {
-    id: "claude-opus-4-5-20251101",
-    name: "Claude Opus 4.5",
     developer: "Anthropic",
     contextWindow: "128000",
     provider: "routellm",

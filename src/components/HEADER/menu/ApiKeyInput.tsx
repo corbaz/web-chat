@@ -4,12 +4,27 @@ import { ColorPalette } from "../../../interfaces/temas/temas";
 interface ApiKeyInputProps {
   theme: ColorPalette;
   isDarkTheme: boolean;
+  selectedProvider?: string;
 }
 
-const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
-  const [provider, setProvider] = useState<string>(
-    localStorage.getItem("selectedProvider") || "groq",
-  );
+const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
+  theme,
+  isDarkTheme,
+  selectedProvider,
+}) => {
+  // Estado local del proveedor en el menú (permite alta de API keys de otros proveedores)
+  const [localProvider, setLocalProvider] = useState<string>(() => {
+    return (
+      selectedProvider || localStorage.getItem("selectedProvider") || "groq"
+    );
+  });
+  // Si el usuario cambia el select, priorizamos su elección local
+  const [userOverride, setUserOverride] = useState<boolean>(false);
+  // Derivar el provider actual: si hay override del usuario, usar local; de lo contrario seguir al header
+  const provider = userOverride
+    ? localProvider
+    : selectedProvider || localProvider;
+
   const [apiKey, setApiKey] = useState<string>(() => {
     const initialProvider = localStorage.getItem("selectedProvider") || "groq";
     return localStorage.getItem(`${initialProvider}ApiKey`) || "";
@@ -22,6 +37,8 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
   });
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const prevProviderRef = useRef<string>(provider);
+  // Nota: evitamos setState dentro de efectos para cumplir ESLint. No sincronizamos localProvider aquí.
+  // El valor mostrado sigue selectedProvider a menos que el usuario haya hecho override con el select.
 
   // Actualizar apiKey cuando cambia el proveedor (de forma diferida)
   useEffect(() => {
@@ -78,7 +95,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
         className="text-md font-semibold mb-2"
         style={{ color: theme.title.color }}
       >
-        API Key
+        API Key (Guardar o Borrar)
       </h3>
       <div className="mb-2">
         <label className="text-xs mb-1 block" style={{ color: theme.text }}>
@@ -86,7 +103,17 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ theme, isDarkTheme }) => {
         </label>
         <select
           value={provider}
-          onChange={(e) => setProvider(e.target.value)}
+          onChange={(e) => {
+            setLocalProvider(e.target.value);
+            // El usuario toma control manual del proveedor mostrado en el menú
+            if (!userOverride) {
+              setUserOverride(true);
+            }
+            // Al cambiar de proveedor manualmente, cargar su API key guardada (sin efectos)
+            const savedApiKey = localStorage.getItem(`${e.target.value}ApiKey`);
+            setApiKey(savedApiKey || "");
+            setIsSaved(!!savedApiKey);
+          }}
           className="w-full p-2 rounded"
           style={{
             backgroundColor: theme.input.background,

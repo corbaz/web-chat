@@ -20,6 +20,9 @@ const allProviders: ProviderOption[] = [
   { value: "anthropic", label: "Anthropic" },
 ];
 
+// Usar ancho reducido para proveedores (60% del ancho de modelos)
+const MIN_SELECTOR_WIDTH = "180px";
+
 const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   selectedProvider,
   onProviderChange,
@@ -56,7 +59,7 @@ const ProviderSelector: React.FC<ProviderSelectorProps> = ({
       padding: "1px",
       backgroundColor: theme.input.background,
       boxShadow: "none",
-      minWidth: "180px",
+      minWidth: MIN_SELECTOR_WIDTH,
       "&:hover": {
         border: `3px solid ${theme.messages.ai.background}`,
         cursor: "pointer",

@@ -19,7 +19,7 @@ import ChatContainer from "./components/chat/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 
 // Constante de versión
-export const APP_VERSION = "v.3.4";
+export const APP_VERSION = "v.3.5";
 
 export const App = () => {
   // Estados para la UI
@@ -42,9 +42,44 @@ export const App = () => {
     return "groq";
   };
 
-  const [selectedModel, setSelectedModel] = useState(groqModels[0].id);
+  const getInitialModel = (provider: string) => {
+    // Intentar cargar el modelo guardado en localStorage
+    const savedModel = localStorage.getItem("selectedModel");
+
+    // Verificar que el modelo guardado pertenece al provider actual
+    let allModels: { id: string }[] = [];
+    switch (provider) {
+      case "groq":
+        allModels = groqModels;
+        break;
+      case "routellm":
+        allModels = routellmModels;
+        break;
+      case "openai":
+        allModels = openaiModels;
+        break;
+      case "anthropic":
+        allModels = anthropicModels;
+        break;
+      default:
+        allModels = groqModels;
+    }
+
+    // Si el modelo guardado existe en el provider actual, usarlo
+    if (savedModel && allModels.some((m) => m.id === savedModel)) {
+      return savedModel;
+    }
+
+    // Si no, devolver el primer modelo del provider
+    return allModels[0]?.id || groqModels[0].id;
+  };
+
+  const initialProvider = getInitialProvider();
   const [selectedProvider, setSelectedProvider] =
-    useState<string>(getInitialProvider());
+    useState<string>(initialProvider);
+  const [selectedModel, setSelectedModel] = useState(() =>
+    getInitialModel(initialProvider),
+  );
 
   const getDefaultModelForProvider = (provider: string) => {
     switch (provider) {
@@ -64,7 +99,9 @@ export const App = () => {
   const handleProviderChange = (providerId: string) => {
     setSelectedProvider(providerId);
     localStorage.setItem("selectedProvider", providerId);
-    setSelectedModel(getDefaultModelForProvider(providerId));
+    const newModel = getDefaultModelForProvider(providerId);
+    setSelectedModel(newModel);
+    localStorage.setItem("selectedModel", newModel);
   };
 
   // Estados para los menús laterales
@@ -161,6 +198,7 @@ export const App = () => {
   // Manejador para cambiar el modelo
   const handleModelChange = (modelId: string) => {
     setSelectedModel(modelId);
+    localStorage.setItem("selectedModel", modelId);
 
     // Guardar el modelo seleccionado para el chat actual en el historial
     if (currentChatId) {

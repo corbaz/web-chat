@@ -73,8 +73,8 @@ export const PROVIDERS: Record<ProviderType, ProviderConfig> = {
     ) => ({
       model,
       messages,
-      temperature: 0.7,
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
+      service_tier: "priority",
     }),
     warning:
       "OpenAI requiere un servidor backend proxy para evitar problemas CORS. Se recomienda usar Groq o RouteLLM para ahora.",

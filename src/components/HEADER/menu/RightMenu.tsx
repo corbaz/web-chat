@@ -232,7 +232,11 @@ const RightMenu: React.FC<RightMenuProps> = ({
             </div>
 
             {/* Sección de API Key */}
-            <ApiKeyInput theme={theme} isDarkTheme={isDarkTheme} />
+            <ApiKeyInput
+              theme={theme}
+              isDarkTheme={isDarkTheme}
+              selectedProvider={selectedProvider}
+            />
 
             {/* Sección de información */}
             <div className="mb-6">

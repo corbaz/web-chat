@@ -127,9 +127,9 @@ const ChatContainer = ({
               // Si no hay historial en localStorage, pero sí hay mensajes,
               // creamos el historial a partir de los mensajes
               if (existingHistory.length === 0) {
-                const newChatHistory = chatIds.map((id) => ({
+                const newChatHistory = chatIds.map((id, idx) => ({
                   id,
-                  title: `Chat ${id.substring(0, 8)}`,
+                  title: `Chat ${idx + 1}`,
                   date: new Date(),
                 }));
                 setChatHistory(newChatHistory);
@@ -155,7 +155,7 @@ const ChatContainer = ({
       const newHistory = [
         {
           id: newChatId,
-          title: `Chat ${newChatId.substring(0, 8)}`,
+          title: "Nuevo Chat",
           date: new Date(),
         },
       ];
