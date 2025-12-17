@@ -27,39 +27,33 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     const el = containerRef.current;
     if (!el) return;
 
-    const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
-      // Usar un valor grande para asegurar el bottom en casos con subpíxeles o contenido async
-      el.scrollTo({ top: el.scrollHeight + 1000, behavior });
-    };
-
     if (isInitialMount.current) {
-      // Dos rAF para esperar layout + pintura
+      // Primer mount: esperar layout y llevar directo al fondo
+      // Luego estabilizar el fondo durante varios frames por si el contenido sigue creciendo
+      const stabilizeBottom = () => {
+        let frames = 0;
+        const maxFrames = 24; // ~400ms a 60fps
+        const step = () => {
+          const node = containerRef.current;
+          if (!node) return;
+          node.scrollTop = node.scrollHeight;
+          frames++;
+          if (frames < maxFrames) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      };
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          scrollToBottom("auto");
+          el.scrollTop = el.scrollHeight;
+          stabilizeBottom();
           isInitialMount.current = false;
         });
       });
     } else {
-      scrollToBottom("smooth");
+      // Nuevos mensajes: scroll suave
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }
-
-    // Observa cambios de tamaño que puedan ocurrir tras render diferido (e.g. imágenes/markdown)
-    const ro = new ResizeObserver(() => scrollToBottom("auto"));
-    ro.observe(el);
-    // Desactivar el observer poco después para evitar interferir con lectura manual
-    const timeout = setTimeout(() => {
-      ro.disconnect();
-    }, 800);
-
-    // Fallback adicional tras un breve tiempo
-    const t2 = setTimeout(() => scrollToBottom("auto"), 120);
-
-    return () => {
-      clearTimeout(timeout);
-      clearTimeout(t2);
-      ro.disconnect();
-    };
   }, [messages]);
 
   return (
