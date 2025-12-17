@@ -36,7 +36,7 @@ const calculateMinWidth = (): string => {
 
   // Calcular aproximadamente (8px por carácter + padding)
   const estimatedWidth = longestName.length * 8 + 40;
-  return `${Math.max(estimatedWidth, 280)}px`; // Mínimo 280px
+  return `${Math.min(Math.max(estimatedWidth, 200), 280)}px`; // Entre 200px y 280px
 };
 
 const MIN_SELECTOR_WIDTH = calculateMinWidth();

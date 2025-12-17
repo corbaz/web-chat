@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
       role="banner"
       aria-label="Encabezado de la aplicación"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         {/* Menú hamburguesa izquierdo historial */}
         <MenuButton
           onClick={onToggleLeftMenu}
@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
         />
 
         {/* Título y selectores */}
-        <div className="flex flex-col items-center mx-4">
+        <div className="flex flex-col items-center mx-2 sm:mx-4 flex-1 min-w-0">
           {/* Componente de título y versión */}
           <Title
             title={title}
@@ -90,9 +90,9 @@ const Header: React.FC<HeaderProps> = ({
           />
 
           {/* Selectores de modelo y proveedor */}
-          <div className="flex items-center gap-2 w-full mt-1">
+          <div className="flex gap-2 w-full mt-1 flex-col sm:flex-row sm:items-center sm:justify-center">
             {/* Selector de modelo */}
-            <div className="flex-1">
+            <div className="w-full sm:w-auto sm:max-w-[280px]">
               <ModelSelector
                 selectedModel={selectedModel}
                 onModelChange={onModelChange}
@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
               />
             </div>
             {/* Selector de proveedor */}
-            <div className="w-auto">
+            <div className="w-full sm:w-auto sm:max-w-[180px]">
               <ProviderSelector
                 selectedProvider={selectedProvider}
                 onProviderChange={handleProviderChange}
