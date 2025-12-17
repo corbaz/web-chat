@@ -29,6 +29,130 @@ const PROVIDERS = [
   },
 ] as const;
 
+// Función para validar la API key con el proveedor
+const validateApiKey = async (
+  apiKey: string,
+  provider: string,
+): Promise<boolean> => {
+  const timeout = 8000; // 8 segundos máximo
+
+  try {
+    if (provider === "groq") {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/models", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res.ok;
+      } catch {
+        clearTimeout(timeoutId);
+        return false;
+      }
+    } else if (provider === "openai") {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch("https://api.openai.com/v1/models", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res.ok;
+      } catch {
+        clearTimeout(timeoutId);
+        return false;
+      }
+    } else if (provider === "anthropic") {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/models", {
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res.ok;
+      } catch {
+        clearTimeout(timeoutId);
+        return false;
+      }
+    } else if (provider === "routellm") {
+      // RouteLLM/Abacus.AI: Enviar un prompt de prueba sin especificar modelo
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        console.log("RouteLLM: Enviando prompt de validación");
+        console.log(
+          "Endpoint:",
+          "https://routellm.abacus.ai/v1/chat/completions",
+        );
+        console.log("API Key:", apiKey.substring(0, 10) + "...");
+
+        const payload = {
+          messages: [
+            {
+              role: "user",
+              content: "test",
+            },
+          ],
+          max_tokens: 10,
+          stream: false,
+        };
+
+        console.log("Payload:", JSON.stringify(payload, null, 2));
+
+        const res = await fetch(
+          "https://routellm.abacus.ai/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          },
+        );
+
+        clearTimeout(timeoutId);
+        console.log("RouteLLM Response Status:", res.status);
+        console.log("RouteLLM Response OK:", res.ok);
+
+        const responseText = await res.text();
+        console.log("RouteLLM Response Body:", responseText);
+
+        // Solo acepta 200 (éxito) o 400 (modelo inválido pero autenticado)
+        // Rechaza 401 (credenciales inválidas), 403 (no autorizado)
+        const isValid = res.status === 200 || res.status === 400;
+        console.log(
+          "RouteLLM Validation Result:",
+          isValid,
+          "(Status:",
+          res.status,
+          ")",
+        );
+        return isValid;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.log(
+          "RouteLLM Error:",
+          error instanceof Error ? error.message : error,
+        );
+        return false;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
+
 const ApiKeyModal = ({
   theme,
   isDarkTheme,
@@ -180,6 +304,13 @@ const ApiKeyModal = ({
             container: "swal-container-no-scrollbar",
           },
           didOpen: () => {
+            // Fijar ancho y altura del modal para evitar que se expanda con mensajes
+            const modal = document.querySelector(".swal2-modal") as HTMLElement;
+            if (modal) {
+              modal.style.maxWidth = "520px";
+              modal.style.width = "520px";
+            }
+
             // Aplicar estilos directamente con CSS para ocultar scrollbars
             const styleEl = document.createElement("style");
             styleEl.innerHTML = `
@@ -194,9 +325,9 @@ const ApiKeyModal = ({
                             display: none !important;
                           }
                           .swal2-popup {
-                            width: auto !important;
-                            max-width: 90% !important;
-                            min-width: 300px !important;
+                            width: 520px !important;
+                            max-width: 520px !important;
+                            min-width: 520px !important;
                             padding: 0.5em 1em !important;
                           }
                           .swal2-html-container {
@@ -216,6 +347,10 @@ const ApiKeyModal = ({
                           }
                           .swal2-input {
                             margin: 0 auto !important;
+                          }
+                          .swal2-validation-message {
+                            word-wrap: break-word !important;
+                            white-space: normal !important;
                           }
                         `;
             document.head.appendChild(styleEl);
@@ -306,7 +441,43 @@ const ApiKeyModal = ({
               });
             }
           },
-          preConfirm: () => {
+          preConfirm: async () => {
+            // Función auxiliar para aplicar estilos al mensaje de error
+            const applyErrorStyles = () => {
+              setTimeout(() => {
+                const validationMessage = document.querySelector(
+                  ".swal2-validation-message",
+                );
+                if (validationMessage) {
+                  validationMessage.setAttribute(
+                    "style",
+                    `
+                      background: ${
+                        isDarkTheme
+                          ? "rgba(255, 60, 60, 0.1)"
+                          : "rgba(255, 0, 0, 0.05)"
+                      };
+                      color: ${isDarkTheme ? "#ff9999" : "#d32f2f"};
+                      border-color: ${
+                        isDarkTheme
+                          ? "rgba(255, 60, 60, 0.3)"
+                          : "rgba(255, 0, 0, 0.2)"
+                      };
+                      padding: 0.75em;
+                      margin-top: 0.75em;
+                      border-radius: 6px;
+                      font-weight: 500;
+                      letter-spacing: 0.01em;
+                      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                      font-size: 0.95rem;
+                      line-height: 1.4;
+                      text-align: center;
+                    `,
+                  );
+                }
+              }, 0);
+            };
+
             const apiKeyInput = document.getElementById(
               "swal-input-apikey-ue",
             ) as HTMLInputElement | null;
@@ -315,65 +486,65 @@ const ApiKeyModal = ({
             ) as HTMLSelectElement | null;
             const apiKey = apiKeyInput?.value;
             const provider = select?.value || PROVIDERS[0].id;
+
+            // Validar que no esté vacío
             if (!apiKey || apiKey.trim() === "") {
               Swal.showValidationMessage(
                 `Por favor, ingresa una API Key válida`,
               );
-              // Apply styles to the validation message
-              const validationMessage = document.querySelector(
-                ".swal2-validation-message",
-              );
-              if (validationMessage) {
-                validationMessage.setAttribute(
-                  "style",
-                  `
-                                background: ${
-                                  isDarkTheme
-                                    ? "rgba(255, 60, 60, 0.1)"
-                                    : "rgba(255, 0, 0, 0.05)"
-                                };
-                                color: ${isDarkTheme ? "#ff9999" : "#d32f2f"};
-                                border-color: ${
-                                  isDarkTheme
-                                    ? "rgba(255, 60, 60, 0.3)"
-                                    : "rgba(255, 0, 0, 0.2)"
-                                };
-                                padding: 0.75em;
-                                margin-top: 0.75em;
-                                border-radius: 6px;
-                                font-weight: 500;
-                                letter-spacing: 0.01em;
-                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-                              `,
-                );
-              }
+              applyErrorStyles();
               apiKeyInput?.focus();
               return false;
             }
 
-            // Validación adicional: verifica que la clave tenga al menos 20 caracteres (típico para API keys)
+            // Validar longitud mínima
             if (apiKey.trim().length < 20) {
               Swal.showValidationMessage(
                 `La API Key parece demasiado corta. Verifica que sea correcta`,
               );
+              applyErrorStyles();
               apiKeyInput?.focus();
               return false;
             }
+
+            // Mostrar loading mientras valida con el proveedor
+            Swal.showLoading();
+
+            // Validar con el proveedor
+            const isValid = await validateApiKey(apiKey.trim(), provider);
+
+            if (!isValid) {
+              Swal.hideLoading();
+              Swal.showValidationMessage(
+                `API Key inválida. Por favor, verifica e intenta de nuevo.`,
+              );
+              applyErrorStyles();
+              apiKeyInput!.value = "";
+              apiKeyInput?.focus();
+              return false;
+            }
+
+            // Si es válida, guardar
+            localStorage.setItem(`${provider}ApiKey`, apiKey.trim());
+            localStorage.setItem("selectedProvider", provider);
+            window.dispatchEvent(new Event("apikey-changed"));
 
             return { apiKey: apiKey.trim(), provider };
           },
         });
 
         if (result.isConfirmed && result.value) {
-          const { apiKey, provider } = result.value as {
+          const { provider } = result.value as {
             apiKey: string;
             provider: string;
           };
-          localStorage.setItem(`${provider}ApiKey`, apiKey);
-          localStorage.setItem("selectedProvider", provider);
+
+          // Limpiar estado
           setIsModalLogicActive(false);
           setForceShow(false);
           setForcedProvider(null);
+
+          // Mostrar confirmación de guardado
           Swal.fire({
             title: "¡Guardada!",
             text: `Tu API Key de ${
@@ -386,8 +557,7 @@ const ApiKeyModal = ({
             timer: 1500,
             timerProgressBar: true,
           });
-          // Notificar a otros componentes (p.ej. menú derecho) que hay cambios
-          window.dispatchEvent(new Event("apikey-changed"));
+
           if (onApiKeyProvided) {
             onApiKeyProvided();
           }
