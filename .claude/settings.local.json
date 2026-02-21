@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp list:*)",
+      "Bash(python:*)",
+      "Bash(claude mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /c/www/web-chat)",
+      "Bash(claude mcp add:*)"
+    ]
+  }
+}

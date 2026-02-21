@@ -19,7 +19,7 @@ import ChatContainer from "./components/chat/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 const PROVIDER_IDS = ["groq", "routellm", "openai", "anthropic"] as const;
 // Constante de versión
-export const APP_VERSION = "v.4.0";
+export const APP_VERSION = "v.5.0";
 
 export const App = () => {
   // Estados para la UI
@@ -153,12 +153,15 @@ export const App = () => {
     };
   }, [hasAnyApiKey]);
 
-  // Inyectar las variables CSS de layout
+  // Inyectar las variables CSS de layout y actualizar el título del documento
   useEffect(() => {
     const styleElement = document.createElement("style");
     styleElement.setAttribute("id", "layout-constants-css");
     styleElement.textContent = generateLayoutCSS();
     document.head.appendChild(styleElement);
+
+    // Actualizar el título con la versión
+    document.title = `PROMPTING ${APP_VERSION}`;
 
     return () => {
       const existingStyle = document.getElementById("layout-constants-css");

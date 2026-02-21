@@ -22,17 +22,17 @@ export default function PieBrand({
       {(() => {
         // 1. Creamos un objeto Date con la fecha actual
         const fecha = new Date();
-        // 2. Extraemos el nombre del mes en español
-        const mes = fecha.toLocaleString("es-AR", {
-          month: "long",
-        });
-        // 3. Capitalizamos sólo la primera letra y dejamos el resto en minúsculas
-        const mesCapitalizado =
-          mes.charAt(0).toUpperCase() + mes.slice(1).toLowerCase();
+        // 2. Extraemos el día
+        const dia = fecha.getDate().toString().padStart(2, "0");
+        // 3. Extraemos las primeras 3 letras del mes en mayúsculas
+        const mesCorto = fecha
+          .toLocaleString("es-AR", { month: "short" })
+          .toUpperCase()
+          .replace(".", "");
         // 4. Obtenemos el año numérico
         const año = fecha.getFullYear();
         // 5. Devolvemos la cadena formateada
-        return `${mesCapitalizado} ${año}`;
+        return `${dia}-${mesCorto}-${año}`;
       })()}
     </div>
   );
