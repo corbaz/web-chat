@@ -87,6 +87,8 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
           Proveedor
         </label>
         <select
+          title="Proveedor"
+          aria-label="Proveedor"
           value={provider}
           onChange={(e) => {
             setLocalProvider(e.target.value);

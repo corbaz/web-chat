@@ -501,10 +501,22 @@ const ChatContainer = ({
         const endTime = Date.now();
         const responseTime =
           endTime - (requestStartTimeRef.current[requestId] || endTime);
-        const formattedTime = formatResponseTime(responseTime); // Filtrar respuesta del asistente para eliminar contenido entre <think></think>
-        const filteredResponse = response.data.choices[0].message.content
+        const formattedTime = formatResponseTime(responseTime);
+
+        // Extraer texto según formato del proveedor (Anthropic usa content[0].text, el resto choices[0].message.content)
+        const rawResponse = providerConfig.parseResponse
+          ? providerConfig.parseResponse(response.data as Record<string, unknown>)
+          : (response.data.choices[0].message.content as string);
+
+        // Filtrar contenido entre <think></think>
+        const filteredResponse = rawResponse
           .replace(/<think>[\s\S]*?<\/think>/g, "")
           .trim();
+
+        // Usar el modelo real que devuelve la API (más preciso que el seleccionado)
+        const actualModel = providerConfig.parseActualModel
+          ? providerConfig.parseActualModel(response.data as Record<string, unknown>) || selectedModel
+          : selectedModel;
 
         // Añadir respuesta del asistente con info de tokens
         const assistantMessage: ChatMessageType = {
@@ -517,7 +529,7 @@ const ChatContainer = ({
           responseTime: formattedTime,
           tokensUsed: totalTokensUsed,
           tokenLimit: modelTokenLimit,
-          modelName: selectedModel, // Guardar el modelo usado
+          modelName: actualModel, // Modelo real confirmado por la API
         };
 
         setMessages((prevMessages: ChatMessageType[]) => [
@@ -553,9 +565,17 @@ const ChatContainer = ({
               errorMessage = `Error de red: No se pudo conectar con ${providerConfig?.name}. Verifica tu conexión y que el API Key sea válido.`;
             }
           } else if (error.response) {
-            errorMessage = `Error del servidor (${error.response.status}): ${
-              error.response.data.error?.message || "Error desconocido"
-            }`;
+            if (error.response.status === 529) {
+              errorMessage = `${providerConfig?.name || "El servidor"} está temporalmente sobrecargado. Por favor, intenta de nuevo en unos segundos.`;
+            } else if (error.response.status === 401 || error.response.status === 403) {
+              errorMessage = `API Key inválida o sin permisos para ${providerConfig?.name}. Verifica tu clave en el menú de configuración.`;
+            } else if (error.response.status === 429) {
+              errorMessage = `Límite de solicitudes alcanzado en ${providerConfig?.name}. Espera un momento antes de intentar de nuevo.`;
+            } else {
+              errorMessage = `Error del servidor (${error.response.status}): ${
+                error.response.data.error?.message || "Error desconocido"
+              }`;
+            }
           }
         }
 

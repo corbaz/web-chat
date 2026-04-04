@@ -390,7 +390,7 @@ ${message}`;
                 onClick={handleClearText}
                 title="Eliminar Prompt"
                 aria-label="Eliminar Prompt"
-                className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
+                className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 ${
                   message.trim() && !isLoading
                     ? "opacity-100"
                     : "opacity-50 cursor-not-allowed"
@@ -419,7 +419,7 @@ ${message}`;
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Escribe un Prompt ..."
-                className="flex-grow p-3 resize-none overflow-y-auto min-h-[48px] max-h-[120px] bg-transparent text-base touch-manipulation appearance-none rounded-none"
+                className="grow p-3 resize-none overflow-y-auto min-h-12 max-h-30 bg-transparent text-base touch-manipulation appearance-none rounded-none"
                 style={{
                   color: showMagicResponse
                     ? isDarkTheme
@@ -449,7 +449,7 @@ ${message}`;
                 onClick={handlePasteFromClipboard}
                 title="Pegar del portapapeles"
                 aria-label="Pegar del portapapeles"
-                className="flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5"
+                className="flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5"
                 style={{
                   backgroundColor: theme.button.background,
                   borderRight: `1px solid ${theme.accent}`,
@@ -480,7 +480,7 @@ ${message}`;
                 onClick={handleMagicButton}
                 title="Mejorar Prompt"
                 aria-label="Mejorar Prompt"
-                className={`flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 pr-3 ${
+                className={`flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 pr-3 ${
                   message.trim() && !isLoading && !isMagicLoading
                     ? "opacity-100"
                     : "opacity-50 cursor-not-allowed"
@@ -523,7 +523,7 @@ ${message}`;
                 onClick={handleSendMessage}
                 title="Enviar Prompt"
                 aria-label="Enviar Prompt"
-                className={`rounded-r-md flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
+                className={`rounded-r-md flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 ${
                   message.trim() && !isLoading
                     ? "opacity-100"
                     : "opacity-50 cursor-not-allowed"
@@ -570,7 +570,7 @@ ${message}`;
                     title="Eliminar contexto del Chat"
                     aria-label="Eliminar contexto del Chat"
                     onClick={clearContext}
-                    className={`rounded-l-md flex items-center justify-center text-base touch-manipulation min-w-[48px] min-h-[48px] p-2.5 ${
+                    className={`rounded-l-md flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 ${
                       hasContext
                         ? "opacity-100"
                         : "opacity-50 cursor-not-allowed"
@@ -594,12 +594,14 @@ ${message}`;
               </div>
 
               {/* Título del chat - Columna central */}
-              <div className="flex items-center justify-center flex-grow">
+              <div className="flex items-center justify-center grow">
                 {isEditingTitle ? (
                   <input
                     ref={titleInputRef}
                     value={editTitleValue}
                     onChange={handleTitleChange}
+                    aria-label="Título del chat"
+                    title="Título del chat"
                     onBlur={handleTitleBlur}
                     onKeyDown={(e) => {
                       // Evitar que la barra espaciadora haga perder el foco
@@ -626,7 +628,7 @@ ${message}`;
                 ) : (
                   chatTitle && (
                     <span
-                      className="text-base font-medium cursor-pointer truncate max-w-[240px]"
+                      className="text-base font-medium cursor-pointer truncate max-w-60"
                       style={{
                         color: theme.text,
                       }}
@@ -653,7 +655,7 @@ ${message}`;
                 {/* Switch de tema con clases Tailwind */}
                 <button
                   onClick={toggleTheme}
-                  className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full mr-2"
+                  className="relative inline-block w-14 h-7 overflow-hidden rounded-full mr-2"
                   title="Cambiar Tema"
                   aria-label="Cambiar entre tema claro y oscuro"
                 >
@@ -680,7 +682,7 @@ ${message}`;
                     {/* Icono de sol (visible en tema claro) */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="absolute h-3.5 w-3.5 right-2 text-yellow-400 z-[2]"
+                      className="absolute h-3.5 w-3.5 right-2 text-yellow-400 z-2"
                       style={{
                         top: "7px",
                         opacity: isDarkTheme ? 0 : 1,
@@ -701,7 +703,7 @@ ${message}`;
                     <img
                       src={LunaIcon}
                       alt="Tema oscuro"
-                      className="absolute h-3.5 w-3.5 left-2 z-[2] text-yellow-400"
+                      className="absolute h-3.5 w-3.5 left-2 z-2 text-yellow-400"
                       style={{
                         top: "7px",
                         opacity: isDarkTheme ? 1 : 0,

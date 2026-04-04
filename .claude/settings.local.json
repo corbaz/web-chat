@@ -4,7 +4,10 @@
       "Bash(claude mcp list:*)",
       "Bash(python:*)",
       "Bash(claude mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /c/www/web-chat)",
-      "Bash(claude mcp add:*)"
+      "Bash(claude mcp add:*)",
+      "mcp__claude_ai_Hugging_Face__hf_doc_search",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:console.groq.com)"
     ]
   }
 }

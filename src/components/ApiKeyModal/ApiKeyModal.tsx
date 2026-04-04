@@ -66,22 +66,10 @@ const validateApiKey = async (
         return false;
       }
     } else if (provider === "anthropic") {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      try {
-        const res = await fetch("https://api.anthropic.com/v1/models", {
-          headers: {
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-          },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        return res.ok;
-      } catch {
-        clearTimeout(timeoutId);
-        return false;
-      }
+      // Anthropic bloquea peticiones CORS desde el navegador,
+      // por lo que validamos solo el formato de la clave.
+      // Las claves de Anthropic siempre comienzan con "sk-ant-"
+      return apiKey.startsWith("sk-ant-") && apiKey.length >= 40;
     } else if (provider === "routellm") {
       // RouteLLM/Abacus.AI: Enviar un prompt de prueba sin especificar modelo
       const controller = new AbortController();
@@ -515,9 +503,11 @@ const ApiKeyModal = ({
 
             if (!isValid) {
               Swal.hideLoading();
-              Swal.showValidationMessage(
-                `API Key inválida. Por favor, verifica e intenta de nuevo.`,
-              );
+              const errorMsg =
+                provider === "anthropic"
+                  ? `API Key de Anthropic inválida. Debe comenzar con "sk-ant-". Por favor, verifica e intenta de nuevo.`
+                  : `API Key inválida. Por favor, verifica e intenta de nuevo.`;
+              Swal.showValidationMessage(errorMsg);
               applyErrorStyles();
               apiKeyInput!.value = "";
               apiKeyInput?.focus();

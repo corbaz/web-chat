@@ -48,7 +48,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
     <>
       {/* Overlay - ocupa toda la pantalla */}
       <div
-        className="fixed inset-0 z-[60] transition-opacity duration-300"
+        className="fixed inset-0 z-60 transition-opacity duration-300"
         style={{
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? "auto" : "none",
@@ -111,7 +111,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
           </div>
 
           {/* Contenido del menú */}
-          <div className="flex-grow overflow-y-auto p-4">
+          <div className="grow overflow-y-auto p-4">
             {/* Sección de tema */}
             <div className="mb-6">
               <h3
@@ -130,7 +130,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                 </span>
                 <button
                   onClick={toggleTheme}
-                  className="relative inline-block w-[56px] h-[28px] overflow-hidden rounded-full"
+                  className="relative inline-block w-14 h-7 overflow-hidden rounded-full"
                   title="Cambiar Tema"
                   aria-label="Cambiar entre tema claro y oscuro"
                 >
@@ -158,7 +158,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                     {/* Icono de sol (visible en tema claro) */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="absolute h-3.5 w-3.5 right-2 text-yellow-400 z-[2]"
+                      className="absolute h-3.5 w-3.5 right-2 text-yellow-400 z-2"
                       style={{
                         top: "7px",
                         opacity: isDarkTheme ? 0 : 1,
@@ -179,7 +179,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                     <img
                       src={LunaIcon}
                       alt="Tema oscuro"
-                      className="absolute h-3.5 w-3.5 left-2 z-[2] text-yellow-400"
+                      className="absolute h-3.5 w-3.5 left-2 z-2 text-yellow-400"
                       style={{
                         top: "7px",
                         opacity: isDarkTheme ? 1 : 0,

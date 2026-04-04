@@ -15,6 +15,8 @@ export interface ProviderConfig {
     messages: Message[],
     maxTokens: number,
   ) => Record<string, unknown>;
+  parseResponse?: (data: Record<string, unknown>) => string;
+  parseActualModel?: (data: Record<string, unknown>) => string;
   warning?: string; // Mensaje de advertencia si el proveedor no es recomendado
 }
 
@@ -81,11 +83,11 @@ export const PROVIDERS: Record<ProviderType, ProviderConfig> = {
   },
   anthropic: {
     name: "Anthropic",
-    // Anthropic también requiere un backend proxy
     endpoint: "https://api.anthropic.com/v1/messages",
     headerAuth: (apiKey: string) => ({
       "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
     }),
     payloadBuilder: (model: string, messages: Message[], maxTokens: number) => {
       // Convertir formato OpenAI a formato Anthropic
@@ -103,8 +105,15 @@ export const PROVIDERS: Record<ProviderType, ProviderConfig> = {
         messages: contentMessages,
       };
     },
-    warning:
-      "Anthropic requiere un servidor backend proxy para evitar problemas CORS. Se recomienda usar Groq o RouteLLM para ahora.",
+    // Anthropic devuelve content[0].text en lugar de choices[0].message.content
+    parseResponse: (data: Record<string, unknown>) => {
+      const content = data.content as Array<{ type: string; text: string }>;
+      return content[0]?.text ?? "";
+    },
+    // Anthropic devuelve el modelo exacto usado en el campo "model" de la respuesta
+    parseActualModel: (data: Record<string, unknown>) => {
+      return (data.model as string) ?? "";
+    },
   },
 };
 
