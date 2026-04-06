@@ -81,7 +81,7 @@ export const getModelTokenLimit = (modelId: string): number => {
       .replace(/,/g, "") // Eliminar comas de formato
       .toLowerCase();
 
-    let limit = 8192; // Valor por defecto
+    let limit: number;
 
     if (contextWindow.includes("k")) {
       limit = parseFloat(contextWindow) * 1000;

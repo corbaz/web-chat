@@ -1,34 +1,95 @@
 @import "tailwindcss";
 @import "./components/CHAT/markdown-styles.css";
 
+/* ─── Neumorphic Design System — Global Styles ───────────────────────────────
+   Palette: "Midnight Cosmos" (dark) · "Pearl Cloud" (light)
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Smooth global transitions ─────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  transition-property: box-shadow, background-color, border-color, opacity, color, filter;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Custom scrollbars ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 133, 245, 0.35);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 133, 245, 0.60);
+}
+
+/* ── Typing indicator animation ─────────────────────────────────────────────── */
 @keyframes typing {
-  0% {
-    opacity: 0.2;
-  }
-  50% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0.2;
-  }
+  0%   { opacity: 0.2; transform: translateY(0px);  }
+  50%  { opacity: 0.9; transform: translateY(-4px); }
+  100% { opacity: 0.2; transform: translateY(0px);  }
 }
 
 .animate-typing {
-  animation: typing 1.5s infinite ease-in-out;
+  animation: typing 1.4s infinite ease-in-out;
+}
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-800 { animation-delay: 0.8s; }
+
+/* ── Neumorphic accent pulse (focus glow) ───────────────────────────────────── */
+@keyframes nm-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
 }
 
-.animation-delay-200 {
-  animation-delay: 0.2s;
+/* ── SweetAlert2 — Neumorphic overrides ─────────────────────────────────────── */
+.swal2-popup {
+  border-radius: 20px !important;
+  padding: 2rem !important;
+}
+.swal2-confirm {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  padding: 0.7em 1.8em !important;
+  transition: box-shadow 200ms ease, transform 100ms ease !important;
+}
+.swal2-confirm:active {
+  transform: scale(0.97) !important;
+}
+.swal2-cancel {
+  border-radius: 12px !important;
+}
+.swal2-title {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
 }
 
-.animation-delay-400 {
-  animation-delay: 0.4s;
+/* ── Neumorphic utility — convex (raised) button active press ───────────────── */
+.nm-press:active {
+  transform: scale(0.96);
 }
 
-.animation-delay-600 {
-  animation-delay: 0.6s;
+/* ── Input / textarea focus remove default outline ──────────────────────────── */
+textarea:focus,
+input:focus,
+select:focus {
+  outline: none;
 }
 
-.animation-delay-800 {
-  animation-delay: 0.8s;
+/* ── Smooth theme transition on body ────────────────────────────────────────── */
+body {
+  transition: background-color 350ms ease, color 350ms ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

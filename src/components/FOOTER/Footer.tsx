@@ -6,7 +6,7 @@ import EscobaIcon from "../../assets/escoba.svg";
 import TrashIcon from "../../assets/trash.svg";
 import VaritaIcon from "../../assets/varita_magica.svg";
 import { getProviderConfig, getApiKeyStorageKey } from "../../config/providers";
-import axios from "axios"; // Importamos axios para las peticiones HTTP
+import axios from "axios";
 
 interface FooterProps {
   onSendMessage: (message: string) => void;
@@ -16,15 +16,14 @@ interface FooterProps {
   theme: ColorPalette;
   isDarkTheme: boolean;
   isLoading: boolean;
-  chatTitle?: string; // Título del chat
-  onUpdateChatTitle?: (newTitle: string) => void; // Nueva prop para actualizar el título
-  currentChatId?: string; // Necesario para saber qué chat se está editando
-  selectedModel?: string; // Modelo actualmente seleccionado
-  selectedProvider?: string; // Proveedor actualmente seleccionado
-  onCloseMenus?: () => void; // Cerrar menús laterales si están abiertos
+  chatTitle?: string;
+  onUpdateChatTitle?: (newTitle: string) => void;
+  currentChatId?: string;
+  selectedModel?: string;
+  selectedProvider?: string;
+  onCloseMenus?: () => void;
 }
 
-// Crear una interfaz para exponer el método focus
 export interface FooterRef {
   focusTextarea: () => void;
   setMessage: (msg: string) => void;
@@ -52,80 +51,53 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
     const [message, setMessage] = useState("");
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState("");
-    const [isMagicLoading, setIsMagicLoading] = useState(false); // Estado para controlar la carga de la varita mágica
-    const [showMagicResponse, setShowMagicResponse] = useState(false); // Estado para mostrar color especial cuando la varita responde
+    const [isMagicLoading, setIsMagicLoading] = useState(false);
+    const [showMagicResponse, setShowMagicResponse] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
     const mobileDevice = typeof window !== "undefined" && isMobile();
 
-    // Exponer el método focusTextarea al componente padre
     React.useImperativeHandle(ref, () => ({
       focusTextarea: () => {
-        if (textareaRef.current && !mobileDevice) {
-          textareaRef.current.focus();
-        }
+        if (textareaRef.current && !mobileDevice) textareaRef.current.focus();
       },
       setMessage: (msg: string) => {
         setMessage(msg);
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-          }
-        }, 50);
+        setTimeout(() => { if (textareaRef.current) textareaRef.current.focus(); }, 50);
       },
     }));
 
-    // Actualizar el valor de edición cuando cambia el título
     useEffect(() => {
-      if (chatTitle) {
-        setEditTitleValue(chatTitle);
-      }
+      if (chatTitle) setEditTitleValue(chatTitle);
     }, [chatTitle]);
 
-    // Enfocar el input de título cuando se activa el modo de edición
     useEffect(() => {
-      if (isEditingTitle && titleInputRef.current) {
-        titleInputRef.current.focus();
-      }
+      if (isEditingTitle && titleInputRef.current) titleInputRef.current.focus();
     }, [isEditingTitle]);
 
-    // Ajustar el tamaño del textarea según el contenido
     const adjustTextareaHeight = () => {
-      const textarea = textareaRef.current;
-      if (textarea) {
-        textarea.style.height = "auto";
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+      const el = textareaRef.current;
+      if (el) {
+        el.style.height = "auto";
+        el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
       }
     };
 
-    // Resetear el tamaño del textarea cuando se envía un mensaje
     useEffect(() => {
-      if (message === "" && textareaRef.current) {
+      if (message === "" && textareaRef.current)
         textareaRef.current.style.height = "auto";
-      }
     }, [message]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setMessage(e.target.value);
-      // Resetear el color especial cuando el usuario empieza a escribir
-      if (showMagicResponse) {
-        setShowMagicResponse(false);
-      }
+      if (showMagicResponse) setShowMagicResponse(false);
       adjustTextareaHeight();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // Si el usuario comienza a tipear, cerrar menús laterales abiertos
       const isTypingKey =
-        e.key.length === 1 ||
-        e.key === "Backspace" ||
-        e.key === "Delete" ||
-        e.key === "Enter" ||
-        e.key === "Space";
-      if (isTypingKey && onCloseMenus) {
-        onCloseMenus();
-      }
-      // Enviar mensaje al presionar Enter (sin Shift)
+        e.key.length === 1 || ["Backspace","Delete","Enter","Space"].includes(e.key);
+      if (isTypingKey && onCloseMenus) onCloseMenus();
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSendMessage();
@@ -137,168 +109,62 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
         onSendMessage(message);
         setMessage("");
         setShowMagicResponse(false);
-
-        // Cerrar el teclado en dispositivos móviles
-        if (mobileDevice && document.activeElement instanceof HTMLElement) {
+        if (mobileDevice && document.activeElement instanceof HTMLElement)
           document.activeElement.blur();
-        }
       }
     };
 
-    // Nueva función para manejar la varita mágica
     const handleMagicButton = async () => {
       if (message.trim() && !isLoading && !isMagicLoading) {
         try {
-          setIsMagicLoading(true); // Usar el modelo proporcionado como prop o buscar en el historial de chat si no está disponible
-          let modelToUse: string = selectedModel || "llama-3.3-70b-versatile"; // Usar el prop si está disponible, o el valor por defecto
+          setIsMagicLoading(true);
+          let modelToUse: string = selectedModel || "llama-3.3-70b-versatile";
 
-          // Si no se proporcionó el modelo como prop, intentar obtenerlo del historial de chat
           if (!selectedModel && currentChatId) {
             try {
-              const chatHistoryRaw = localStorage.getItem("chat-history");
-              if (chatHistoryRaw) {
-                const chatHistoryArr = JSON.parse(chatHistoryRaw);
-                const currentChat = chatHistoryArr.find(
-                  (chat: { id: string }) => chat.id === currentChatId,
-                );
-                if (currentChat && currentChat.model) {
-                  modelToUse = currentChat.model;
-                }
+              const raw = localStorage.getItem("chat-history");
+              if (raw) {
+                const arr = JSON.parse(raw);
+                const chat = arr.find((c: { id: string }) => c.id === currentChatId);
+                if (chat?.model) modelToUse = chat.model;
               }
             } catch (e) {
               console.error("Error al obtener modelo del chat:", e);
             }
           }
 
-          // Construir el prompt para mejorar el texto
           const promptToSend = `Corrige y mejora la expresión en español del siguiente texto,
 asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
 
 Texto a mejorar:
 ${message}`;
-          // Seleccionar proveedor y obtener API key
-          const provider =
-            selectedProvider ||
-            localStorage.getItem("selectedProvider") ||
-            "groq";
 
+          const provider = selectedProvider || localStorage.getItem("selectedProvider") || "groq";
           const providerConfig = getProviderConfig(provider);
-          if (!providerConfig) {
-            setIsMagicLoading(false);
-            alert(`Proveedor no configurado: ${provider}`);
-            return;
-          }
+          if (!providerConfig) { setIsMagicLoading(false); alert(`Proveedor no configurado: ${provider}`); return; }
 
-          const apiKeyStorageKey = getApiKeyStorageKey(provider);
-          const apiKey = localStorage.getItem(apiKeyStorageKey);
+          const apiKey = localStorage.getItem(getApiKeyStorageKey(provider));
+          if (!apiKey?.trim()) { setIsMagicLoading(false); alert(`Falta API key para ${providerConfig.name}`); return; }
 
-          // Validar que existe API key para el proveedor seleccionado
-          if (!apiKey || !apiKey.trim()) {
-            setIsMagicLoading(false);
-            alert(`Falta API key para ${providerConfig.name}`);
-            return;
-          }
-
-          // Construir payload según proveedor
-          const payload = providerConfig.payloadBuilder(
-            modelToUse,
-            [
-              {
-                role: "user",
-                content: promptToSend,
-              },
-            ],
-            2048,
-          );
-
-          // Construir headers
-          const headers = {
-            "Content-Type": "application/json",
-            ...providerConfig.headerAuth(apiKey),
-          };
-
-          // Log detallado de la petición de varita mágica
-          console.log("🪄 Enviando petición varita mágica:", {
-            proveedor: provider,
-            proveedorNombre: providerConfig.name,
-            modelo: modelToUse,
-            endpoint: providerConfig.endpoint,
-            apiKey: `${apiKey.substring(
-              0,
-              10,
-            )}...${apiKey.substring(apiKey.length - 4)}`,
-            headers: headers,
-            payload: payload,
-            textoOriginal:
-              message.substring(0, 100) + (message.length > 100 ? "..." : ""),
-            longitudPrompt: promptToSend.length,
-          });
-
-          // Realizar la petición al proveedor seleccionado
+          const payload = providerConfig.payloadBuilder(modelToUse, [{ role: "user", content: promptToSend }], 2048);
           const response = await axios.post(providerConfig.endpoint, payload, {
-            headers: headers,
+            headers: { "Content-Type": "application/json", ...providerConfig.headerAuth(apiKey) },
           });
 
-          // Log de respuesta exitosa
-          console.log("✅ Respuesta varita mágica recibida:", {
-            proveedor: provider,
-            modelo: modelToUse,
-            status: response.status,
-            textoMejorado:
-              response.data.choices[0].message.content.substring(0, 150) +
-              "...",
-          }); // Extraer la respuesta mejorada
-          let improvedText = response.data.choices[0].message.content.trim();
-
-          // Filtrar el contenido entre etiquetas <think> </think>
-          improvedText = improvedText
-            .replace(/<think>[\s\S]*?<\/think>/g, "")
-            .trim();
-
-          // Actualizar el textarea con el texto mejorado filtrado
-          setMessage(improvedText);
-
-          // Activar el color especial para indicar respuesta de varita
+          let improved = response.data.choices[0].message.content.trim();
+          improved = improved.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+          setMessage(improved);
           setShowMagicResponse(true);
-
-          // Ajustar altura del textarea para el nuevo contenido
           setTimeout(adjustTextareaHeight, 0);
-
-          // Dar foco al textarea
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-          }
+          textareaRef.current?.focus();
         } catch (error) {
-          // Log detallado del error en varita mágica
-          const provider =
-            selectedProvider ||
-            localStorage.getItem("selectedProvider") ||
-            "groq";
-          const providerConfig = getProviderConfig(provider);
-
-          console.error("❌ Error en varita mágica:", {
-            proveedor: provider,
-            modelo: selectedModel,
-            endpoint: providerConfig?.endpoint,
-            errorType: axios.isAxiosError(error) ? error.code : "Unknown",
-            errorMessage: axios.isAxiosError(error)
-              ? error.message
-              : String(error),
-            errorResponse: axios.isAxiosError(error)
-              ? error.response?.data
-              : undefined,
-            errorStatus: axios.isAxiosError(error)
-              ? error.response?.status
-              : undefined,
-          });
-          // Opcionalmente, mostrar un mensaje de error al usuario
+          console.error("Error en varita mágica:", error);
         } finally {
           setIsMagicLoading(false);
         }
       }
     };
 
-    // Función para limpiar el texto del textarea
     const handleClearText = () => {
       setMessage("");
       setShowMagicResponse(false);
@@ -308,15 +174,11 @@ ${message}`;
       }
     };
 
-    // Función para pegar desde el portapapeles
     const handlePasteFromClipboard = async () => {
       try {
         const text = await navigator.clipboard.readText();
         setMessage(text);
-        // Resetear color especial cuando se pega
-        if (showMagicResponse) {
-          setShowMagicResponse(false);
-        }
+        if (showMagicResponse) setShowMagicResponse(false);
         adjustTextareaHeight();
         textareaRef.current?.focus();
       } catch (err) {
@@ -325,7 +187,6 @@ ${message}`;
       }
     };
 
-    // Manejar inicio de edición del título
     const handleTitleClick = () => {
       if (!isLoading && chatTitle && currentChatId && onUpdateChatTitle) {
         setIsEditingTitle(true);
@@ -333,268 +194,222 @@ ${message}`;
       }
     };
 
-    // Manejar cambios en el input de título
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setEditTitleValue(e.target.value);
     };
 
-    // Manejar la finalización de la edición del título
     const handleTitleBlur = () => {
       if (editTitleValue.trim() && onUpdateChatTitle && currentChatId) {
-        // Actualizar el título en el contexto del chat
         onUpdateChatTitle(editTitleValue);
-
-        // También actualizamos en localStorage para persistencia
         try {
-          const chatHistoryRaw = localStorage.getItem("chat-history");
-          if (chatHistoryRaw) {
-            let chatHistoryArr = JSON.parse(chatHistoryRaw);
-            chatHistoryArr = chatHistoryArr.map(
-              (c: { id: string; title: string; date: Date; model?: string }) =>
-                c.id === currentChatId ? { ...c, title: editTitleValue } : c,
+          const raw = localStorage.getItem("chat-history");
+          if (raw) {
+            let arr = JSON.parse(raw);
+            arr = arr.map((c: { id: string; title: string; date: Date; model?: string }) =>
+              c.id === currentChatId ? { ...c, title: editTitleValue } : c,
             );
-            localStorage.setItem(
-              "chat-history",
-              JSON.stringify(chatHistoryArr),
-            );
+            localStorage.setItem("chat-history", JSON.stringify(arr));
           }
         } catch (error) {
-          console.error("Error al actualizar título en localStorage:", error);
+          console.error("Error al actualizar título:", error);
         }
       }
       setIsEditingTitle(false);
     };
+
+    // ── Shared style helpers ─────────────────────────────────────────────────
+    const iconFilter = isDarkTheme ? "brightness(0) invert(1)" : "brightness(0.35)";
+
+    const nmBtnBase: React.CSSProperties = {
+      backgroundColor: theme.background,
+      boxShadow: theme.shadow.outer,
+      color: theme.text,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: "44px",
+      minHeight: "44px",
+      padding: "10px",
+      borderRadius: "12px",
+      border: "none",
+      cursor: "pointer",
+      flexShrink: 0,
+    };
+
+    const nmBtnDisabled: React.CSSProperties = {
+      ...nmBtnBase,
+      opacity: 0.4,
+      cursor: "not-allowed",
+    };
+
+    const nmBtnAccent: React.CSSProperties = {
+      ...nmBtnBase,
+      background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentAlt})`,
+      boxShadow: `${theme.shadow.sm}, ${theme.shadow.accent}`,
+      color: "#fff",
+    };
+
+    const nmBtnAccentDisabled: React.CSSProperties = {
+      ...nmBtnBase,
+      opacity: 0.4,
+      cursor: "not-allowed",
+      background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentAlt})`,
+      color: "#fff",
+    };
+
+    const canSend = message.trim() && !isLoading;
+    const canMagic = message.trim() && !isLoading && !isMagicLoading;
 
     return (
       <footer
         className="fixed bottom-0 left-0 right-0 z-50 w-full"
         style={{
           backgroundColor: theme.background,
-          borderTop: `1px solid ${theme.accent}`,
+          boxShadow: `0 -4px 24px ${
+            isDarkTheme ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.10)"
+          }`,
         }}
         role="contentinfo"
         aria-label="Entrada de mensajes"
       >
         <div className="flex justify-center w-full">
-          <div className="px-4 py-2 w-full md:max-w-3xl lg:max-w-4xl xl:max-w-6xl">
-            {/* Barra de entrada de texto */}
+          <div className="px-4 py-3 w-full md:max-w-3xl lg:max-w-4xl xl:max-w-6xl space-y-2">
+
+            {/* ── Input bar ─────────────────────────────────────────────────── */}
             <div
-              className="flex items-stretch rounded-lg border"
+              className="flex items-center gap-2 px-2 py-2 rounded-2xl"
               style={{
-                border: `1px solid ${theme.accent}`,
                 backgroundColor: theme.background,
+                boxShadow: theme.shadow.inset,
               }}
             >
-              {/* Botón de papelera para limpiar el mensaje actual */}
+              {/* Clear text button */}
               <button
+                type="button"
                 onClick={handleClearText}
                 title="Eliminar Prompt"
                 aria-label="Eliminar Prompt"
-                className={`rounded-l-lg flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 ${
-                  message.trim() && !isLoading
-                    ? "opacity-100"
-                    : "opacity-50 cursor-not-allowed"
-                }`}
-                style={{
-                  backgroundColor: theme.button.background,
-                  borderRight: `1px solid ${theme.accent}`,
-                }}
+                className="nm-press"
+                style={canSend ? nmBtnBase : nmBtnDisabled}
+                disabled={!canSend}
               >
-                <img
-                  src={TrashIcon}
-                  alt="Eliminar Prompt"
-                  className="w-5 h-5"
-                  style={{
-                    filter: isDarkTheme
-                      ? "brightness(0) invert(1)"
-                      : "brightness(1) invert(0)",
-                  }}
-                />
+                <img src={TrashIcon} alt="Eliminar" className="w-5 h-5" style={{ filter: iconFilter }} />
               </button>
-              {/* Área de texto para escribir mensajes */}
-              {/* Usar textarea para permitir múltiples líneas */}{" "}
+
+              {/* Textarea */}
               <textarea
                 ref={textareaRef}
                 value={message}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Escribe un Prompt ..."
-                className="grow p-3 resize-none overflow-y-auto min-h-12 max-h-30 bg-transparent text-base touch-manipulation appearance-none rounded-none"
+                className="grow py-2 px-1 resize-none overflow-y-auto min-h-12 max-h-30 bg-transparent text-sm touch-manipulation appearance-none"
                 style={{
                   color: showMagicResponse
-                    ? isDarkTheme
-                      ? "#FFEB3B" // Yellow en tema oscuro
-                      : "#FF0000" // Red en tema claro
-                    : isDarkTheme
-                      ? theme.input.text
-                      : theme.text,
-                  caretColor: isDarkTheme ? theme.input.text : theme.text,
-                  // El placeholder siempre sigue el color de tema, no el color de varita
+                    ? isDarkTheme ? "#fbbf24" : "#dc2626"
+                    : theme.input.text,
+                  caretColor: theme.accent,
                   border: "none",
                   outline: "none",
                   scrollbarWidth: "thin",
                   scrollbarColor: `${theme.accent} transparent`,
+                  lineHeight: "1.6",
                 }}
                 disabled={isLoading || isMagicLoading}
                 aria-label="Mensaje"
                 rows={1}
-                onFocus={() => {
-                  if (!message.trim() && showMagicResponse) {
-                    setShowMagicResponse(false);
-                  }
-                }}
+                onFocus={() => { if (!message.trim() && showMagicResponse) setShowMagicResponse(false); }}
               />
-              {/* Botón de pegar portapapeles */}
+
+              {/* Paste button */}
               <button
+                type="button"
                 onClick={handlePasteFromClipboard}
                 title="Pegar del portapapeles"
                 aria-label="Pegar del portapapeles"
-                className="flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5"
-                style={{
-                  backgroundColor: theme.button.background,
-                  borderRight: `1px solid ${theme.accent}`,
-                }}
+                className="nm-press"
+                style={nmBtnBase}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                  style={{
-                    filter: isDarkTheme
-                      ? "brightness(0) invert(1)"
-                      : "brightness(1) invert(0)",
-                  }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                  strokeWidth="1.5" stroke="currentColor" className="w-5 h-5"
+                  style={{ color: theme.textMuted }}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </button>
-              {/* Botón de varita mágica */}
+
+              {/* Magic wand button */}
               <button
+                type="button"
                 onClick={handleMagicButton}
                 title="Mejorar Prompt"
                 aria-label="Mejorar Prompt"
-                className={`flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 pr-3 ${
-                  message.trim() && !isLoading && !isMagicLoading
-                    ? "opacity-100"
-                    : "opacity-50 cursor-not-allowed"
-                }`}
-                style={{
-                  backgroundColor: theme.button.background,
-                  borderRight: `1px solid ${theme.background}`,
-                }}
+                className="nm-press"
+                style={canMagic ? nmBtnBase : nmBtnDisabled}
+                disabled={!canMagic}
               >
                 {isMagicLoading ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6 animate-spin"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 4.5v15m7.5-7.5h-15"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 animate-spin"
+                    style={{ color: theme.accent }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                   </svg>
                 ) : (
-                  <img
-                    src={VaritaIcon}
-                    alt="Mejorar Prompt"
-                    className="w-5 h-5"
-                    style={{
-                      filter: isDarkTheme
-                        ? "brightness(0) invert(1)"
-                        : "brightness(1) invert(0)",
-                    }}
-                  />
+                  <img src={VaritaIcon} alt="Mejorar Prompt" className="w-5 h-5" style={{ filter: iconFilter }} />
                 )}
               </button>
-              {/* Botón de enviar mensaje */}
+
+              {/* Send button — accent gradient */}
               <button
+                type="button"
                 onClick={handleSendMessage}
                 title="Enviar Prompt"
                 aria-label="Enviar Prompt"
-                className={`rounded-r-md flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 ${
-                  message.trim() && !isLoading
-                    ? "opacity-100"
-                    : "opacity-50 cursor-not-allowed"
-                }`}
-                style={{
-                  backgroundColor: theme.button.background,
-                }}
+                className="nm-press"
+                style={canSend ? nmBtnAccent : nmBtnAccentDisabled}
+                disabled={!canSend}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="w-6 h-6"
-                  style={{
-                    filter: isDarkTheme
-                      ? "brightness(0) invert(1)"
-                      : "brightness(1) invert(0)",
-                  }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-                  ></path>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                  strokeWidth="1.8" stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               </button>
             </div>
 
-            {/* Barra de herramientas */}
+            {/* ── Toolbar ───────────────────────────────────────────────────── */}
             <div
-              className="flex items-stretch justify-between rounded-lg border mt-2 mb-2"
+              className="flex items-center justify-between px-3 rounded-2xl"
               style={{
-                border: `1px solid ${theme.accent}`,
                 backgroundColor: theme.background,
-                height: "48px", // Misma altura que la barra de mensajes
+                boxShadow: theme.shadow.sm,
+                height: "48px",
               }}
             >
-              {/* Botón de escoba a la izquierda - Limpia Contexto */}
+              {/* Clear context (broom) */}
               <div className="flex items-center">
                 {clearContext && (
                   <button
+                    type="button"
                     title="Eliminar contexto del Chat"
                     aria-label="Eliminar contexto del Chat"
                     onClick={clearContext}
-                    className={`rounded-l-md flex items-center justify-center text-base touch-manipulation min-w-12 min-h-12 p-2.5 ${
-                      hasContext
-                        ? "opacity-100"
-                        : "opacity-50 cursor-not-allowed"
-                    }`}
+                    className="nm-press p-2 rounded-xl"
                     style={{
-                      backgroundColor: theme.button.background,
+                      backgroundColor: theme.background,
+                      boxShadow: hasContext ? theme.shadow.sm : "none",
+                      opacity: hasContext ? 1 : 0.35,
+                      cursor: hasContext ? "pointer" : "not-allowed",
                     }}
                   >
-                    <img
-                      src={EscobaIcon}
-                      alt="Eliminar contexto del Chat"
-                      className="w-6 h-6"
-                      style={{
-                        filter: isDarkTheme
-                          ? "brightness(0) invert(1)"
-                          : "brightness(1) invert(0)",
-                      }}
-                    />
+                    <img src={EscobaIcon} alt="Limpiar contexto" className="w-5 h-5"
+                      style={{ filter: iconFilter }} />
                   </button>
                 )}
               </div>
 
-              {/* Título del chat - Columna central */}
-              <div className="flex items-center justify-center grow">
+              {/* Chat title — center */}
+              <div className="flex items-center justify-center grow px-2">
                 {isEditingTitle ? (
                   <input
                     ref={titleInputRef}
@@ -604,115 +419,108 @@ ${message}`;
                     title="Título del chat"
                     onBlur={handleTitleBlur}
                     onKeyDown={(e) => {
-                      // Evitar que la barra espaciadora haga perder el foco
                       e.stopPropagation();
-
-                      if (e.key === "Enter") {
-                        handleTitleBlur();
-                      } else if (e.key === "Escape") {
+                      if (e.key === "Enter") handleTitleBlur();
+                      else if (e.key === "Escape") {
                         setIsEditingTitle(false);
                         setEditTitleValue(chatTitle || "");
                       }
                     }}
-                    onFocus={(e) => {
-                      // Seleccionar texto al enfocar
-                      e.target.select();
-                    }}
-                    className="text-base font-medium bg-transparent text-left border-b outline-none p-2 mb-2"
+                    onFocus={(e) => e.target.select()}
+                    className="text-sm font-semibold bg-transparent text-center border-b-2 outline-none px-2 py-0.5"
                     style={{
-                      borderColor: theme.text,
-                      color: theme.text,
+                      borderColor: theme.accent,
+                      color: theme.accent,
+                      maxWidth: "200px",
                     }}
-                    maxLength={30} // Límite máximo
+                    maxLength={30}
                   />
                 ) : (
                   chatTitle && (
                     <span
-                      className="text-base font-medium cursor-pointer truncate max-w-60"
-                      style={{
-                        color: theme.text,
-                      }}
+                      className="text-sm font-semibold cursor-pointer truncate max-w-60 select-none"
+                      style={{ color: theme.textMuted }}
                       onClick={handleTitleClick}
+                      title="Editar título"
                     >
                       {chatTitle.length > 25
                         ? chatTitle.split(" ")[0] +
                           (chatTitle.split(" ")[0].length < 25
-                            ? " " +
-                              chatTitle.substring(
-                                chatTitle.split(" ")[0].length + 1,
-                                25,
-                              ) +
-                              "..."
-                            : "...")
+                            ? " " + chatTitle.substring(chatTitle.split(" ")[0].length + 1, 25) + "…"
+                            : "…")
                         : chatTitle}
                     </span>
                   )
                 )}
               </div>
 
-              {/* Switch de tema - Columna derecha */}
+              {/* Theme toggle — neumorphic */}
               <div className="flex items-center">
-                {/* Switch de tema con clases Tailwind */}
                 <button
+                  type="button"
                   onClick={toggleTheme}
-                  className="relative inline-block w-14 h-7 overflow-hidden rounded-full mr-2"
+                  className="nm-press relative inline-flex items-center w-16 h-8 rounded-full cursor-pointer"
                   title="Cambiar Tema"
                   aria-label="Cambiar entre tema claro y oscuro"
+                  style={{
+                    backgroundColor: theme.background,
+                    boxShadow: theme.shadow.inset,
+                  }}
                 >
-                  <div
-                    className="absolute cursor-pointer inset-0 rounded-full transition-all duration-300"
+                  {/* Knob — neumorphic raised circle */}
+                  <span
+                    className="absolute flex items-center justify-center h-6 w-6 rounded-full transition-transform duration-300"
                     style={{
-                      backgroundColor: isDarkTheme
-                        ? theme.accent
-                        : theme.secondary,
+                      left: "4px",
+                      transform: isDarkTheme ? "translateX(30px)" : "translateX(0)",
+                      backgroundColor: theme.background,
+                      boxShadow: theme.shadow.sm,
                     }}
                   >
-                    {/* Círculo del switch */}
-                    <span
-                      className="absolute h-5 w-5 bg-white rounded-full z-10 transition-transform duration-300 transform"
-                      style={{
-                        top: "4px",
-                        left: "4px",
-                        transform: isDarkTheme
-                          ? "translateX(24px)"
-                          : "translateX(0)",
-                      }}
-                    />
-
-                    {/* Icono de sol (visible en tema claro) */}
+                    {/* Sun icon (light theme) */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="absolute h-3.5 w-3.5 right-2 text-yellow-400 z-2"
+                      className="h-3.5 w-3.5 transition-opacity duration-300"
                       style={{
-                        top: "7px",
                         opacity: isDarkTheme ? 0 : 1,
+                        position: "absolute",
+                        color: theme.accent,
                       }}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
                       />
                     </svg>
-
-                    {/* Icono de luna (visible en tema oscuro) */}
+                    {/* Moon icon (dark theme) */}
                     <img
                       src={LunaIcon}
                       alt="Tema oscuro"
-                      className="absolute h-3.5 w-3.5 left-2 z-2 text-yellow-400"
+                      className="h-3.5 w-3.5 transition-opacity duration-300"
                       style={{
-                        top: "7px",
                         opacity: isDarkTheme ? 1 : 0,
+                        position: "absolute",
+                        filter: "brightness(0) invert(1)",
                       }}
                     />
-                  </div>
+                  </span>
+
+                  {/* Accent indicator dot */}
+                  <span
+                    className="absolute rounded-full transition-opacity duration-300"
+                    style={{
+                      width: "4px",
+                      height: "4px",
+                      backgroundColor: theme.accent,
+                      opacity: 0.6,
+                      left: isDarkTheme ? "10px" : "auto",
+                      right: isDarkTheme ? "auto" : "10px",
+                    }}
+                  />
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </footer>

@@ -1,69 +1,39 @@
 import React, { lazy, Suspense } from "react";
-import { ChatMessageType } from "../../interfaces/chat/chatTypes.ts"; //../../interfaces/chat/chatTypes";
+import { ChatMessageType } from "../../interfaces/chat/chatTypes.ts";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
 import { routellmModels } from "../../components/HEADER/models/routellmModels";
 import { getTokenUsageString } from "../../utils/tokenUtils";
 import "./markdown-styles.css";
 
-// Componente de markdown cargado dinámicamente
 const MarkdownRenderer = lazy(() => import("../chat/MarkdownRenderer.tsx"));
 
-// Tipos para los props
 interface ChatMessageProps {
   message: ChatMessageType;
   theme: ColorPalette;
-  isDarkTheme: boolean;
-  onRepeatMessage?: (message: string) => void; // Función para repetir mensaje
+  isDarkTheme?: boolean;
+  onRepeatMessage?: (message: string) => void;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   theme,
-  isDarkTheme,
   onRepeatMessage,
 }) => {
   const isUser = message.role === "user";
 
-  // Determinar el tema a usar según el modo claro/oscuro
-  const userTheme = isDarkTheme
-    ? theme.messages.user
-    : {
-        background: theme.messages.user.background,
-        text: theme.messages.user.text,
-      };
-
-  const aiTheme = isDarkTheme
-    ? theme.messages.ai
-    : {
-        background: theme.messages.ai.background,
-        text: theme.messages.ai.text,
-      };
-
-  // Obtener el nombre corto del modelo
   const getModelShortName = (modelId?: string): string => {
     if (!modelId) return "modelo";
-
-    const model = [...groqModels, ...routellmModels].find(
-      (m) => m.id === modelId,
-    );
+    const model = [...groqModels, ...routellmModels].find((m) => m.id === modelId);
     if (model) return model.name;
-
     return modelId.split("/").pop()?.split("-")[0] || "modelo";
   };
 
-  // Formatear el tiempo de respuesta
   const formatResponseTimeToMs = (responseTime: string): string => {
-    const timeInSeconds = parseFloat(responseTime.replace("s", ""));
-
-    if (timeInSeconds < 1) {
-      return `${Math.round(timeInSeconds * 1000)}ms`;
-    } else {
-      return responseTime;
-    }
+    const t = parseFloat(responseTime.replace("s", ""));
+    return t < 1 ? `${Math.round(t * 1000)}ms` : responseTime;
   };
 
-  // Función para copiar mensaje al portapapeles
   const handleCopyMessage = async () => {
     try {
       await navigator.clipboard.writeText(message.content);
@@ -72,111 +42,117 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     }
   };
 
-  // Función para repetir mensaje (pega en el input)
   const handleRepeatMessage = () => {
-    if (onRepeatMessage) {
-      onRepeatMessage(message.content);
-    }
+    if (onRepeatMessage) onRepeatMessage(message.content);
   };
 
-  // Estilos base para los mensajes
-  const messageStyles = {
-    backgroundColor: isUser ? userTheme.background : aiTheme.background,
-    color: isUser ? userTheme.text : aiTheme.text,
-    boxShadow: isUser
-      ? "0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)"
-      : "",
-    overflowWrap: "break-word" as const,
-    wordWrap: "break-word" as const,
-    wordBreak: "break-word" as const,
-    hyphens: "auto" as const,
+  // ── Neumorphic message styles ────────────────────────────────────────────
+  const userMsgStyle: React.CSSProperties = {
+    backgroundColor: theme.messages.user.background,
+    color: theme.messages.user.text,
+    boxShadow: theme.shadow.outer,
+    borderLeft: `3px solid ${theme.accent}`,
+    borderRadius: "16px 4px 16px 16px",
+    overflowWrap: "break-word",
+    wordBreak: "break-word",
+    hyphens: "auto",
+  };
+
+  const aiMsgStyle: React.CSSProperties = {
+    backgroundColor: theme.messages.ai.background,
+    color: theme.messages.ai.text,
+    boxShadow: theme.shadow.inset,
+    borderLeft: `3px solid ${theme.accentAlt}`,
+    borderRadius: "4px 16px 16px 16px",
+    overflowWrap: "break-word",
+    wordBreak: "break-word",
+    hyphens: "auto",
+  };
+
+  // Neumorphic action button
+  const actionBtnStyle: React.CSSProperties = {
+    backgroundColor: theme.background,
+    color: theme.textMuted,
+    boxShadow: theme.shadow.sm,
+    borderRadius: "8px",
+    border: "none",
+    cursor: "pointer",
   };
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div
-        className={`max-w-[80%] md:max-w-[70%] rounded-lg px-4 py-3 ${
-          isUser ? "rounded-tr-none" : "rounded-tl-none"
-        }`}
-        style={messageStyles}
+        className="max-w-[82%] md:max-w-[72%] px-4 py-3"
+        style={isUser ? userMsgStyle : aiMsgStyle}
       >
-        {" "}
-        {/* Contenido del mensaje - markdown para todos los mensajes */}
-        {isUser ? ( // Markdown para mensajes del usuario
-          <div className="whitespace-pre-wrap text-left overflow-hidden markdown-content user-markdown">
-            <Suspense fallback={<div className="p-2">{message.content}</div>}>
-              <MarkdownRenderer content={message.content} />
-            </Suspense>
-          </div> // Markdown para mensajes del usuario
-        ) : (
-          <div className="markdown-content">
-            <Suspense fallback={<div className="p-2">{message.content}</div>}>
-              <MarkdownRenderer content={message.content} />
-            </Suspense>
-          </div>
-        )}
-        {/* Metadatos para mensajes de IA */}
+        {/* Message content */}
+        <div
+          className={`text-sm leading-relaxed overflow-hidden ${
+            isUser ? "whitespace-pre-wrap text-left user-markdown" : "markdown-content"
+          }`}
+        >
+          <Suspense fallback={<div className="p-2 opacity-60">{message.content}</div>}>
+            <MarkdownRenderer content={message.content} />
+          </Suspense>
+        </div>
+
+        {/* AI metadata */}
         {!isUser && (
-          <div className="flex flex-col space-y-1 mt-2">
+          <div className="flex flex-col gap-0.5 mt-2.5">
             {message.responseTime && (
-              <div className="text-xs opacity-70 text-right">
-                ⏱️ Respuesta de {getModelShortName(message.modelName)} en{" "}
+              <div
+                className="text-xs text-right"
+                style={{ color: theme.textMuted }}
+              >
+                ⏱ {getModelShortName(message.modelName)} ·{" "}
                 {formatResponseTimeToMs(message.responseTime)}
               </div>
             )}
-
             {message.tokensUsed !== undefined &&
               message.tokenLimit !== undefined && (
-                <div className="text-xs opacity-70 text-right">
-                  📊 Tokens:{" "}
-                  {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
+                <div
+                  className="text-xs text-right"
+                  style={{ color: theme.textMuted }}
+                >
+                  📊 {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
                 </div>
               )}
           </div>
         )}
-        {/* Botones de acciones para mensajes del usuario */}
-        {isUser && (
-          <div className="flex gap-2 mt-2 justify-end">
-            {/* Botón copiar */}
-            <button
-              onClick={handleCopyMessage}
-              title="Copiar pregunta"
-              className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-              style={{
-                backgroundColor: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "rgba(0, 0, 0, 0.1)",
-                color: isUser ? userTheme.text : aiTheme.text,
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-                className="w-3.5 h-3.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              Copiar
-            </button>
 
-            {/* Botón repetir */}
+        {/* Action buttons */}
+        <div className="flex gap-1.5 mt-2.5 justify-end">
+          <button
+            type="button"
+            onClick={handleCopyMessage}
+            title="Copiar"
+            className="nm-press inline-flex items-center gap-1 text-xs px-2 py-1"
+            style={actionBtnStyle}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+              stroke="currentColor"
+              className="w-3.5 h-3.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+            Copiar
+          </button>
+
+          {isUser && (
             <button
+              type="button"
               onClick={handleRepeatMessage}
               title="Repetir pregunta"
-              className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-              style={{
-                backgroundColor: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "rgba(0, 0, 0, 0.1)",
-                color: isUser ? userTheme.text : aiTheme.text,
-              }}
+              className="nm-press inline-flex items-center gap-1 text-xs px-2 py-1"
+              style={actionBtnStyle}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -194,41 +170,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               </svg>
               Repetir
             </button>
-          </div>
-        )}
-        {/* Botón copiar para mensajes de IA */}
-        {!isUser && (
-          <div className="flex gap-2 mt-2 justify-end">
-            {/* Botón copiar */}
-            <button
-              onClick={handleCopyMessage}
-              title="Copiar respuesta"
-              className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-              style={{
-                backgroundColor: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "rgba(0, 0, 0, 0.1)",
-                color: isUser ? userTheme.text : aiTheme.text,
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-                className="w-3.5 h-3.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              Copiar
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

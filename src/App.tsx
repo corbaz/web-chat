@@ -55,23 +55,12 @@ export const App = () => {
     const savedModel = localStorage.getItem("selectedModel");
 
     // Verificar que el modelo guardado pertenece al provider actual
-    let allModels: { id: string }[] = [];
-    switch (provider) {
-      case "groq":
-        allModels = groqModels;
-        break;
-      case "routellm":
-        allModels = routellmModels;
-        break;
-      case "openai":
-        allModels = openaiModels;
-        break;
-      case "anthropic":
-        allModels = anthropicModels;
-        break;
-      default:
-        allModels = groqModels;
-    }
+    const allModels: { id: string }[] =
+      provider === "groq"      ? groqModels
+      : provider === "routellm" ? routellmModels
+      : provider === "openai"   ? openaiModels
+      : provider === "anthropic"? anthropicModels
+      : groqModels;
 
     // Si el modelo guardado existe en el provider actual, usarlo
     if (savedModel && allModels.some((m) => m.id === savedModel)) {

@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Dw2cE7zH.js";import{a as e,n as t,t as n}from"./vendor-D04r_y6_.js";import{t as r}from"./markdown-FZ89Pdra.js";e();var i=t(),a=({content:e})=>(0,i.jsx)(n,{remarkPlugins:[r],children:e});export{a as default};

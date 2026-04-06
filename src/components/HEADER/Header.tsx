@@ -36,50 +36,47 @@ const Header: React.FC<HeaderProps> = ({
   onProviderChange: externalOnProviderChange,
 }) => {
   const [internalProvider, setInternalProvider] = useState<string>(() => {
-    // Inicializar con el primer proveedor que tenga API key
     if (!externalProvider) {
       const providers = ["groq", "routellm", "openai", "anthropic"];
       for (const provider of providers) {
         const apiKey = localStorage.getItem(`${provider}ApiKey`);
-        if (apiKey && apiKey.trim() !== "") {
-          return provider;
-        }
+        if (apiKey && apiKey.trim() !== "") return provider;
       }
     }
     return "groq";
   });
 
-  // Usar el proveedor externo si está disponible, sino el interno
   const selectedProvider = externalProvider || internalProvider;
 
   const handleProviderChange = (providerId: string) => {
     setInternalProvider(providerId);
-    if (externalOnProviderChange) {
-      externalOnProviderChange(providerId);
-    }
+    if (externalOnProviderChange) externalOnProviderChange(providerId);
   };
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 w-full py-2 px-4"
+      className="fixed top-0 left-0 right-0 z-50 w-full px-4 py-3"
       style={{
         backgroundColor: theme.background,
-        borderBottom: `1px solid ${theme.accent}`,
+        boxShadow: `0 4px 16px ${
+          theme.background === "#1e2235"
+            ? "rgba(0,0,0,0.45)"
+            : "rgba(0,0,0,0.12)"
+        }, ${theme.shadow.sm}`,
       }}
       role="banner"
       aria-label="Encabezado de la aplicación"
     >
-      <div className="flex items-center justify-between gap-2">
-        {/* Menú hamburguesa izquierdo historial */}
+      <div className="flex items-center justify-between gap-3">
+        {/* Menú hamburguesa — historial */}
         <MenuButton
           onClick={onToggleLeftMenu}
           ariaLabel="Abrir menú de historial"
           theme={theme}
         />
 
-        {/* Título y selectores */}
-        <div className="flex flex-col items-center mx-2 sm:mx-4 flex-1 min-w-0">
-          {/* Componente de título y versión */}
+        {/* Título + selectores */}
+        <div className="flex flex-col items-center flex-1 min-w-0 gap-1.5">
           <Title
             title={title}
             version={version}
@@ -89,10 +86,8 @@ const Header: React.FC<HeaderProps> = ({
             editable={editable}
           />
 
-          {/* Selectores de modelo y proveedor */}
-          <div className="flex gap-2 w-full mt-1 flex-col sm:flex-row sm:items-center sm:justify-center">
-            {/* Selector de modelo */}
-            <div className="w-full sm:w-auto sm:max-w-[280px]">
+          <div className="flex gap-2 w-full flex-col sm:flex-row sm:items-center sm:justify-center">
+            <div className="w-full sm:w-auto sm:max-w-70">
               <ModelSelector
                 selectedModel={selectedModel}
                 onModelChange={onModelChange}
@@ -100,8 +95,7 @@ const Header: React.FC<HeaderProps> = ({
                 providerFilter={selectedProvider}
               />
             </div>
-            {/* Selector de proveedor */}
-            <div className="w-full sm:w-auto sm:max-w-[180px]">
+            <div className="w-full sm:w-auto sm:max-w-45">
               <ProviderSelector
                 selectedProvider={selectedProvider}
                 onProviderChange={handleProviderChange}
@@ -111,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Menú hamburguesa derecho configuración */}
+        {/* Menú hamburguesa — configuración */}
         <MenuButton
           onClick={onToggleRightMenu}
           ariaLabel="Abrir menú de configuración"

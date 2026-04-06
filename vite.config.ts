@@ -15,13 +15,10 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 // Configuración de chunks manuales para optimizar el tamaño
-                manualChunks: {
-                    // Chunk para React y React DOM
-                    vendor: ['react', 'react-dom'],
-                    // Chunk para utilidades como axios
-                    utils: ['axios'],
-                    // Chunk para markdown
-                    markdown: ['react-markdown', 'remark-gfm'],
+                manualChunks: (id: string) => {
+                    if (id.includes('react') || id.includes('react-dom')) return 'vendor';
+                    if (id.includes('axios')) return 'utils';
+                    if (id.includes('react-markdown') || id.includes('remark-gfm')) return 'markdown';
                 },
                 // Optimizar los nombres de los chunks
                 chunkFileNames: 'assets/[name]-[hash].js',

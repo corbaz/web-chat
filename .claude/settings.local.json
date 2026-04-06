@@ -7,7 +7,9 @@
       "Bash(claude mcp add:*)",
       "mcp__claude_ai_Hugging_Face__hf_doc_search",
       "WebFetch(domain:docs.anthropic.com)",
-      "WebFetch(domain:console.groq.com)"
+      "WebFetch(domain:console.groq.com)",
+      "Bash(bun pm:*)",
+      "Bash(bunx npm:*)"
     ]
   }
 }

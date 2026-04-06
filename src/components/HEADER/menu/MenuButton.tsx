@@ -7,18 +7,19 @@ interface MenuButtonProps {
   theme: ColorPalette;
 }
 
-const MenuButton: React.FC<MenuButtonProps> = ({
-  onClick,
-  ariaLabel,
-  theme,
-}) => {
+const MenuButton: React.FC<MenuButtonProps> = ({ onClick, ariaLabel, theme }) => {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="p-2.5 rounded-lg hover:opacity-60 transition-opacity duration-150"
+      className="nm-press p-2.5 rounded-xl flex items-center justify-center"
       style={{
-        backgroundColor: theme.button.background,
+        backgroundColor: theme.background,
+        boxShadow: theme.shadow.outer,
+        color: theme.text,
+        minWidth: "44px",
+        minHeight: "44px",
       }}
     >
       <svg
@@ -29,14 +30,12 @@ const MenuButton: React.FC<MenuButtonProps> = ({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="w-6 h-6"
-        style={{
-          color: theme.title.color,
-        }}
+        className="w-5 h-5"
+        style={{ color: theme.title.color }}
       >
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="6"  x2="21" y2="6"  />
+        <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
     </button>
   );
