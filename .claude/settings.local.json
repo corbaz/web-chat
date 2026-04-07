@@ -9,7 +9,9 @@
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:console.groq.com)",
       "Bash(bun pm:*)",
-      "Bash(bunx npm:*)"
+      "Bash(bunx npm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit --pretty)"
     ]
   }
 }

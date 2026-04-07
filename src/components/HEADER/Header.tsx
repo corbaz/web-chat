@@ -86,8 +86,8 @@ const Header: React.FC<HeaderProps> = ({
             editable={editable}
           />
 
-          <div className="flex gap-2 w-full flex-col sm:flex-row sm:items-center sm:justify-center">
-            <div className="w-full sm:w-auto sm:max-w-70">
+          <div className="flex gap-4 w-full flex-col items-center sm:flex-row sm:justify-center">
+            <div className="w-auto">
               <ModelSelector
                 selectedModel={selectedModel}
                 onModelChange={onModelChange}
@@ -95,7 +95,7 @@ const Header: React.FC<HeaderProps> = ({
                 providerFilter={selectedProvider}
               />
             </div>
-            <div className="w-full sm:w-auto sm:max-w-45">
+            <div className="w-auto">
               <ProviderSelector
                 selectedProvider={selectedProvider}
                 onProviderChange={handleProviderChange}

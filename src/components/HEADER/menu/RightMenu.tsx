@@ -55,7 +55,10 @@ const RightMenu: React.FC<RightMenuProps> = ({
       {/* Overlay */}
       <div
         className="fixed inset-0 z-60 transition-opacity duration-300"
-        style={{ opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? "auto" : "none" }}
+        style={{
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? "auto" : "none",
+        }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -81,9 +84,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
             className="px-4 py-4 flex justify-between items-center"
             style={{
               borderBottom: `1px solid ${
-                isDarkTheme
-                  ? "rgba(124,133,245,0.12)"
-                  : "rgba(91,110,245,0.12)"
+                isDarkTheme ? "rgba(124,133,245,0.12)" : "rgba(91,110,245,0.12)"
               }`,
             }}
           >
@@ -105,23 +106,32 @@ const RightMenu: React.FC<RightMenuProps> = ({
                 color: theme.title.color,
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                <line x1="18" y1="6"  x2="6"  y2="18" />
-                <line x1="6"  y1="6"  x2="18" y2="18" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-5 h-5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
 
           {/* Scrollable content */}
           <div className="grow overflow-y-auto px-4 py-4 space-y-6">
-
             {/* ── Tema ─────────────────────────────────────────────────────── */}
             <div>
               <p style={sectionHeadingStyle}>Apariencia</p>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium" style={{ color: theme.text }}>
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: theme.text }}
+                >
                   {isDarkTheme ? "Tema Oscuro" : "Tema Claro"}
                 </span>
 
@@ -142,7 +152,9 @@ const RightMenu: React.FC<RightMenuProps> = ({
                     className="absolute flex items-center justify-center h-6 w-6 rounded-full transition-transform duration-300"
                     style={{
                       left: "4px",
-                      transform: isDarkTheme ? "translateX(30px)" : "translateX(0)",
+                      transform: isDarkTheme
+                        ? "translateX(30px)"
+                        : "translateX(0)",
                       backgroundColor: theme.background,
                       boxShadow: theme.shadow.sm,
                     }}
@@ -156,9 +168,14 @@ const RightMenu: React.FC<RightMenuProps> = ({
                         position: "absolute",
                         color: theme.accent,
                       }}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
                       />
                     </svg>
@@ -265,11 +282,17 @@ const RightMenu: React.FC<RightMenuProps> = ({
             {/* ── Acerca de ─────────────────────────────────────────────────── */}
             <div>
               <p style={sectionHeadingStyle}>Acerca de</p>
-              <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: theme.textMuted }}
+              >
                 PROMPTING es una herramienta para interactuar con modelos de
                 lenguaje de última generación.
               </p>
-              <p className="text-sm leading-relaxed mt-2" style={{ color: theme.textMuted }}>
+              <p
+                className="text-sm leading-relaxed mt-2"
+                style={{ color: theme.textMuted }}
+              >
                 Desarrollado con Groq para respuestas ultrarrápidas.
               </p>
             </div>

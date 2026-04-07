@@ -13,6 +13,18 @@ export interface GroqModel {
 }
 
 export const groqModels: GroqModel[] = [
+  // Alibaba Cloud — Preview (Default)
+  {
+    id: "qwen/qwen3-32b",
+    name: "Alibaba Cloud Qwen3 32B (Default)",
+    developer: "Alibaba Cloud",
+    contextWindow: "131072",
+    provider: "groq",
+    maxCompletionTokens: "40960",
+    velocidad: "400",
+    precio: "0.20",
+  },
+
   // Meta — Production
   {
     id: "llama-3.3-70b-versatile",
@@ -101,18 +113,6 @@ export const groqModels: GroqModel[] = [
     maxCompletionTokens: "65536",
     velocidad: "1000",
     precio: "0.075",
-  },
-
-  // Alibaba Cloud — Preview
-  {
-    id: "qwen/qwen3-32b",
-    name: "Alibaba Cloud Qwen3 32B",
-    developer: "Alibaba Cloud",
-    contextWindow: "131072",
-    provider: "groq",
-    maxCompletionTokens: "40960",
-    velocidad: "400",
-    precio: "0.20",
   },
 
   // Audio — Speech to Text (Production)

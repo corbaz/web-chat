@@ -505,7 +505,9 @@ const ChatContainer = ({
 
         // Extraer texto según formato del proveedor (Anthropic usa content[0].text, el resto choices[0].message.content)
         const rawResponse = providerConfig.parseResponse
-          ? providerConfig.parseResponse(response.data as Record<string, unknown>)
+          ? providerConfig.parseResponse(
+              response.data as Record<string, unknown>,
+            )
           : (response.data.choices[0].message.content as string);
 
         // Filtrar contenido entre <think></think>
@@ -515,7 +517,9 @@ const ChatContainer = ({
 
         // Usar el modelo real que devuelve la API (más preciso que el seleccionado)
         const actualModel = providerConfig.parseActualModel
-          ? providerConfig.parseActualModel(response.data as Record<string, unknown>) || selectedModel
+          ? providerConfig.parseActualModel(
+              response.data as Record<string, unknown>,
+            ) || selectedModel
           : selectedModel;
 
         // Añadir respuesta del asistente con info de tokens
@@ -567,7 +571,10 @@ const ChatContainer = ({
           } else if (error.response) {
             if (error.response.status === 529) {
               errorMessage = `${providerConfig?.name || "El servidor"} está temporalmente sobrecargado. Por favor, intenta de nuevo en unos segundos.`;
-            } else if (error.response.status === 401 || error.response.status === 403) {
+            } else if (
+              error.response.status === 401 ||
+              error.response.status === 403
+            ) {
               errorMessage = `API Key inválida o sin permisos para ${providerConfig?.name}. Verifica tu clave en el menú de configuración.`;
             } else if (error.response.status === 429) {
               errorMessage = `Límite de solicitudes alcanzado en ${providerConfig?.name}. Espera un momento antes de intentar de nuevo.`;

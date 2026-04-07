@@ -195,79 +195,65 @@ const ApiKeyModal = ({
         const result = await Swal.fire({
           title: TITULO,
           html: `
-                      <div style="display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 420px; margin: 0 auto; padding: 0; overflow: hidden;">
+                      <div style="display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 420px; margin: 0 auto; padding: 0; overflow: visible;">
                         <div style="width: 100%; text-align: center; display: grid; place-items: center;">
-                          <p style="margin-bottom: 1.5rem; font-size: 1rem; line-height: 1.6; font-weight: 500; letter-spacing: 0.01em; text-align: center; width: 100%;">
+                          <p style="margin-bottom: 1.5rem; font-size: 0.85rem; line-height: 1.6; font-weight: 500; letter-spacing: 0.04em; color: ${theme.textMuted}; text-align: center; width: 100%;">
                             Selecciona un proveedor de IA e ingresa tu API Key
                           </p>
-
                         </div>
-                        <div style="width: 100%; position: relative; margin-bottom: 1.2rem; display: grid; place-items: center;">
-                          <label style="display:block; margin-bottom: 0.4rem; font-size: 1.9rem; font-weight:600; color:${
-                            theme.text
-                          }; width: 100%; text-align: center;">Proveedor</label>
-                          <div style="position: relative; width: 100%;">
-                            <select id="swal-select-provider" class="swal2-select" style="width: 100%; padding: 0.8em 3.8em 0.8em 1.2em; background: ${
-                              theme.input.background
-                            }; color: ${theme.input.text}; border: 2px solid ${
-                              theme.accent
-                            }; border-radius: 8px; box-sizing: border-box; height: 3.1em; font-size: 1rem; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; letter-spacing: 0.01em; transition: all 0.2s ease; outline: none; appearance: none; box-shadow: 0 2px 5px rgba(0,0,0,0.08); text-align: left;">
-                              ${optionsHtml}
-                            </select>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; right:12px; top:50%; transform: translateY(-50%); color:${
-                              theme.input.text
-                            }; pointer-events: none; opacity:0.7;">
+                        <div style="width: 100%; position: relative; margin-bottom: 3rem; display: grid; place-items: center;">
+                          <label style="display:block; margin-bottom: 1.2rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${theme.accent}; width: 100%; text-align: left;">Proveedor</label>
+                          <!-- Hidden native select for form value -->
+                          <select id="swal-select-provider" style="display:none;">
+                            ${optionsHtml}
+                          </select>
+                          <!-- Custom neumorphic dropdown (react-select style) -->
+                          <div id="nm-provider-dropdown" style="position: relative; width: 100%;">
+                            <div id="nm-provider-trigger" style="width: 100%; padding: 4px 8px; background: ${theme.background}; color: ${theme.text}; border: none; border-radius: 12px; box-sizing: border-box; font-size: 0.85rem; font-family: inherit; font-weight: 500; letter-spacing: 0.01em; transition: box-shadow 0.25s ease; outline: none; box-shadow: ${theme.shadow.sm}; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; min-height: 36px;">
+                              <span id="nm-provider-label" style="flex: 1;">${defaultProviderName}</span>
+                            </div>
+                            <svg id="nm-provider-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; right:12px; top:50%; transform: translateY(-50%); color:${theme.textMuted}; pointer-events: none; transition: transform 0.25s ease, color 0.25s ease;">
                               <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
+                            <div id="nm-provider-menu" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: ${theme.background}; border-radius: 14px; border: 1px solid ${theme.accent}30; box-shadow: ${theme.shadow.outer}; padding: 10px 0; z-index: 999999; overflow: visible;">
+                              <div style="padding: 10px 14px 10px 14px;">
+                                ${PROVIDERS.map(
+                                  (p) =>
+                                    `<div class="nm-provider-option" data-value="${p.id}" style="padding: 8px 12px; margin: 6px auto; width: calc(100% - 4px); border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 400; color: ${theme.text}; background: ${theme.background}; transition: box-shadow 0.2s ease, color 0.2s ease, font-weight 0.2s ease; box-shadow: none; white-space: nowrap;">${p.name}</div>`,
+                                ).join("")}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div style="width: 100%; position: relative; margin-bottom: 1.2rem; display: grid; place-items: center;">
+                        <div style="width: 100%; position: relative; margin-bottom: 2rem; display: grid; place-items: center;">
                           <input
                             type="password"
                             id="swal-input-apikey-ue"
                             class="swal2-input"
                             placeholder="Ingresa tu API Key"
-                            style="width: 100%; padding: 0.8em 3.8em 0.8em 1.2em; background: ${
-                              theme.input.background
-                            }; color: ${theme.input.text}; border: 2px solid ${
-                              theme.accent
-                            }; border-radius: 8px; box-sizing: border-box; height: 3.1em; font-size: 1rem; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; letter-spacing: 0.01em; transition: all 0.2s ease; outline: none; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.08);"
+                            style="width: 100%; padding: 0.75em 3em 0.75em 1.2em; background: ${theme.background}; color: ${theme.text}; border: none; border-radius: 12px; box-sizing: border-box; height: 3.1em; font-size: 0.9rem; font-family: inherit; font-weight: 500; letter-spacing: 0.01em; transition: box-shadow 0.25s ease; outline: none; text-align: left; box-shadow: ${theme.shadow.inset};"
                             autocomplete="off"
                             spellcheck="false"
                             required
                           />
                           <div
                             id="toggle-apikey-visibility-ue"
-                            style="position: absolute; right: 10px; top: 0; bottom: 0; margin: auto 0; height: 32px; background: ${
-                              isDarkTheme
-                                ? "rgba(255,255,255,0.08)"
-                                : "rgba(0,0,0,0.03)"
-                            }; border: none; cursor: pointer; color: ${
-                              theme.text
-                            }; width: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s ease;"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); height: 30px; width: 30px; background: ${theme.background}; border: none; cursor: pointer; color: ${theme.textMuted}; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: box-shadow 0.25s ease, color 0.25s ease; box-shadow: ${theme.shadow.sm};"
                             aria-label="Mostrar/Ocultar API Key"
                             tabindex="-1"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" viewBox="0 0 16 16">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                               <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
                               <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
                             </svg>
                           </div>
                         </div>
-                        <div style="width: 100%; text-align: center; margin-bottom: 0.2rem; display: grid; place-items: center;">
-                        <p style="margin-bottom: 1.5rem; font-size: 0.92rem; line-height: 1.6; color: ${
-                          isDarkTheme ? "#b0b8c9" : "#444"
-                        }; text-align: center; width: 100%;">
+                        <div style="width: 100%; text-align: center; margin-bottom: 1rem; display: grid; place-items: center;">
+                          <p style="margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.6; color: ${theme.textMuted}; text-align: center; width: 100%;">
                             Puedes obtenerla en
-                            <a id="provider-link" href="${defaultProviderLink}" target="_blank" rel="noopener noreferrer" style="color: ${
-                              isDarkTheme ? "#8AB4F8" : "#0066CC"
-                            }; font-weight: 600; border-bottom: 2px solid ${
-                              isDarkTheme ? "#8AB4F8" : "#0066CC"
-                            }; padding-bottom: 1px; transition: border 0.2s;">${defaultProviderName}</a>
+                            <a id="provider-link" href="${defaultProviderLink}" target="_blank" rel="noopener noreferrer" style="color: ${theme.accent}; font-weight: 600; border-bottom: 1px solid ${theme.accent}; padding-bottom: 1px; transition: opacity 0.2s;">${defaultProviderName}</a>
                           </p>
-                          <span style="font-size: 0.85rem; color: ${
-                            isDarkTheme ? "#8AB4F8" : theme.accent
-                          }; font-weight: 400; letter-spacing: 0.01em; text-align: center; width: 100%;">Tu clave nunca se envía a ningún servidor, solo se almacena localmente.</span>
+                          <span style="font-size: 0.8rem; color: ${theme.accent}; font-weight: 400; letter-spacing: 0.01em; text-align: center; width: 100%; opacity: 0.7;">Tu clave nunca se envía a ningún servidor, solo se almacena localmente.</span>
                         </div>
                       </div>
                     `,
@@ -292,18 +278,20 @@ const ApiKeyModal = ({
             container: "swal-container-no-scrollbar",
           },
           didOpen: () => {
-            // Fijar ancho y altura del modal para evitar que se expanda con mensajes
             const modal = document.querySelector(".swal2-modal") as HTMLElement;
             if (modal) {
               modal.style.maxWidth = "520px";
               modal.style.width = "520px";
             }
 
-            // Aplicar estilos directamente con CSS para ocultar scrollbars
             const styleEl = document.createElement("style");
             styleEl.innerHTML = `
-                          .swal2-container, .swal2-html-container, .swal2-popup {
+                          .swal2-container {
                             overflow: hidden !important;
+                            max-width: 100% !important;
+                          }
+                          .swal2-html-container, .swal2-popup {
+                            overflow: visible !important;
                             max-width: 100% !important;
                           }
                           .swal2-container::-webkit-scrollbar {
@@ -316,7 +304,10 @@ const ApiKeyModal = ({
                             width: 520px !important;
                             max-width: 520px !important;
                             min-width: 520px !important;
-                            padding: 0.5em 1em !important;
+                            padding: 1.5em 2em !important;
+                            border-radius: 20px !important;
+                            border: none !important;
+                            box-shadow: ${theme.shadow.outer} !important;
                           }
                           .swal2-html-container {
                             padding: 0.5em 0.2em !important;
@@ -326,19 +317,103 @@ const ApiKeyModal = ({
                             place-items: center !important;
                           }
                           .swal2-title {
-                            padding: 0.8em 0 0 !important;
-                            margin-bottom: 0.3em !important;
+                            padding: 0.5em 0 0 !important;
+                            margin-bottom: 0.2em !important;
                             text-align: center !important;
+                            font-weight: 800 !important;
+                            letter-spacing: 0.04em !important;
+                            color: ${theme.title.color} !important;
                           }
                           .swal2-actions {
-                            margin: 1em auto 0.5em !important;
+                            margin: 2em auto 0.8em !important;
+                          }
+                          .swal2-confirm {
+                            background: ${theme.background} !important;
+                            color: ${theme.text} !important;
+                            border: none !important;
+                            border-radius: 12px !important;
+                            box-shadow: ${theme.shadow.outer} !important;
+                            font-weight: 600 !important;
+                            font-size: 0.9rem !important;
+                            padding: 0.75em 2em !important;
+                            transition: box-shadow 0.25s ease, transform 0.15s ease !important;
+                            letter-spacing: 0.02em !important;
+                          }
+                          .swal2-confirm:hover {
+                            box-shadow: ${theme.shadow.sm} !important;
+                          }
+                          .swal2-confirm:active {
+                            box-shadow: ${theme.shadow.inset} !important;
+                            transform: scale(0.97) !important;
+                          }
+                          .swal2-close {
+                            color: ${theme.textMuted} !important;
+                            background: ${theme.background} !important;
+                            border-radius: 10px !important;
+                            box-shadow: ${theme.shadow.sm} !important;
+                            width: 32px !important;
+                            height: 32px !important;
+                            font-size: 1.2rem !important;
+                            top: 12px !important;
+                            right: 12px !important;
+                            transition: box-shadow 0.25s ease !important;
+                          }
+                          .swal2-close:hover {
+                            color: ${theme.accent} !important;
+                            box-shadow: ${theme.shadow.inset} !important;
                           }
                           .swal2-input {
                             margin: 0 auto !important;
                           }
-                          .swal2-validation-message {
-                            word-wrap: break-word !important;
-                            white-space: normal !important;
+                          #swal-input-apikey-ue {
+                            background: ${theme.background} !important;
+                            color: ${theme.text} !important;
+                            border: none !important;
+                            outline: none !important;
+                            box-shadow: ${theme.shadow.inset}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            caret-color: ${theme.text} !important;
+                            transition-delay: 5000s !important;
+                            border-radius: 12px !important;
+                          }
+                          #swal-input-apikey-ue:hover:not(:focus) {
+                            box-shadow: ${theme.shadow.sm}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                          }
+                          #swal-input-apikey-ue::placeholder {
+                            color: ${theme.textMuted} !important;
+                          }
+                          /* Prevent browser autofill background override - aggressive approach */
+                          #swal-input-apikey-ue:-webkit-autofill {
+                            -webkit-box-shadow: 0 0 0 1000px ${theme.background} inset, ${theme.shadow.inset}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            -webkit-text-fill-color: ${theme.text} !important;
+                            box-shadow: 0 0 0 1000px ${theme.background} inset, ${theme.shadow.inset}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            color: ${theme.text} !important;
+                            background-color: ${theme.background} !important;
+                            border: none !important;
+                            outline: none !important;
+                            border-radius: 12px !important;
+                          }
+                          #swal-input-apikey-ue:-webkit-autofill:hover {
+                            -webkit-box-shadow: 0 0 0 1000px ${theme.background} inset, ${theme.shadow.outer}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            -webkit-text-fill-color: ${theme.text} !important;
+                            box-shadow: 0 0 0 1000px ${theme.background} inset, ${theme.shadow.outer}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            color: ${theme.text} !important;
+                            background-color: ${theme.background} !important;
+                            border: none !important;
+                            outline: none !important;
+                          }
+                          #swal-input-apikey-ue:-webkit-autofill:focus {
+                            -webkit-box-shadow: 0 0 0 1000px ${theme.background} inset, ${theme.shadow.outer}, 0 0 0 2px ${theme.accent}40, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            -webkit-text-fill-color: ${theme.text} !important;
+                            box-shadow: 0 0 0 1000px ${theme.background} inset, ${theme.shadow.outer}, 0 0 0 2px ${theme.accent}40, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            color: ${theme.text} !important;
+                            background-color: ${theme.background} !important;
+                            border: none !important;
+                            outline: none !important;
+                          }
+                          #swal-input-apikey-ue:focus {
+                            box-shadow: ${theme.shadow.outer}, 0 0 0 2px ${theme.accent}40, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1) !important;
+                            border: none !important;
+                            outline: none !important;
                           }
                         `;
             document.head.appendChild(styleEl);
@@ -355,8 +430,28 @@ const ApiKeyModal = ({
             const toggleButton = document.getElementById(
               "toggle-apikey-visibility-ue",
             );
-            if (select && link && input) {
-              // Preseleccionar proveedor requerido o guardado y precargar API key si existe
+            const trigger = document.getElementById("nm-provider-trigger");
+            const menu = document.getElementById("nm-provider-menu");
+            const labelEl = document.getElementById("nm-provider-label");
+            const arrow = document.getElementById("nm-provider-arrow");
+            const options = document.querySelectorAll(".nm-provider-option");
+
+            // Shadow values cached for DOM manipulation
+            const nmShadowInset = theme.shadow.inset;
+            const nmShadowSm = theme.shadow.sm;
+            const nmAccent = theme.accent;
+            const nmText = theme.text;
+            const nmTextMuted = theme.textMuted;
+
+            if (
+              select &&
+              link &&
+              input &&
+              trigger &&
+              menu &&
+              labelEl &&
+              arrow
+            ) {
               const persistedProvider =
                 localStorage.getItem("selectedProvider");
               const initialProvider =
@@ -365,30 +460,89 @@ const ApiKeyModal = ({
               const providerMeta =
                 PROVIDERS.find((pr) => pr.id === initialProvider) ||
                 PROVIDERS[0];
+              labelEl.textContent = providerMeta.name;
               link.href = providerMeta.link;
               link.textContent = providerMeta.name;
-              input.placeholder = `Ingresa tu API Key de ${providerMeta.name}`;
-              const savedKey = localStorage.getItem(`${initialProvider}ApiKey`);
+              input.placeholder = "Ingresa tu API Key de " + providerMeta.name;
+              const savedKey = localStorage.getItem(initialProvider + "ApiKey");
               if (savedKey) {
                 input.value = savedKey;
               }
-              select.addEventListener("change", () => {
-                const p =
-                  PROVIDERS.find((pr) => pr.id === select.value) ||
-                  PROVIDERS[0];
-                link.href = p.link;
-                link.textContent = p.name;
-                input.placeholder = `Ingresa tu API Key de ${p.name}`;
-                const existing = localStorage.getItem(`${p.id}ApiKey`);
-                input.value = existing || "";
+
+              // Highlight selected option
+              const updateOptionStyles = () => {
+                options.forEach((opt) => {
+                  const el = opt as HTMLElement;
+                  if (el.dataset.value === select.value) {
+                    el.style.boxShadow = nmShadowInset;
+                    el.style.color = nmAccent;
+                    el.style.fontWeight = "600";
+                  } else {
+                    el.style.boxShadow = "none";
+                    el.style.color = nmText;
+                    el.style.fontWeight = "400";
+                  }
+                });
+              };
+              updateOptionStyles();
+
+              let isOpen = false;
+              const toggleMenu = () => {
+                isOpen = !isOpen;
+                menu.style.display = isOpen ? "block" : "none";
+                trigger.style.boxShadow = isOpen ? nmShadowInset : nmShadowSm;
+                arrow.style.transform = isOpen
+                  ? "translateY(-50%) rotate(180deg)"
+                  : "translateY(-50%) rotate(0deg)";
+                arrow.style.color = isOpen ? nmAccent : nmTextMuted;
+              };
+
+              trigger.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleMenu();
+              });
+
+              // Option click
+              options.forEach((opt) => {
+                const el = opt as HTMLElement;
+                el.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  const val = el.dataset.value || PROVIDERS[0].id;
+                  select.value = val;
+                  const p =
+                    PROVIDERS.find((pr) => pr.id === val) || PROVIDERS[0];
+                  labelEl.textContent = p.name;
+                  link.href = p.link;
+                  link.textContent = p.name;
+                  input.placeholder = "Ingresa tu API Key de " + p.name;
+                  const existing = localStorage.getItem(p.id + "ApiKey");
+                  input.value = existing || "";
+                  updateOptionStyles();
+                  toggleMenu();
+                });
+                // Hover effects (react-select style)
+                el.addEventListener("mouseenter", () => {
+                  if (el.dataset.value !== select.value) {
+                    el.style.boxShadow = nmShadowSm;
+                    el.style.color = nmAccent;
+                  }
+                });
+                el.addEventListener("mouseleave", () => {
+                  if (el.dataset.value !== select.value) {
+                    el.style.boxShadow = "none";
+                    el.style.color = nmText;
+                  }
+                });
+              });
+
+              // Close on click outside
+              document.addEventListener("click", () => {
+                if (isOpen) toggleMenu();
               });
             }
             if (input && toggleButton) {
-              // Posicionar el cursor al inicio del campo y asegurar alineación izquierda
               setTimeout(() => {
                 input.focus();
-                // No es necesario setSelectionRange aquí ya que el campo está vacío
-                // y el cursor aparecerá naturalmente al inicio con text-align: left
               }, 100);
 
               toggleButton.addEventListener("click", () => {
@@ -398,34 +552,80 @@ const ApiKeyModal = ({
                     : "password";
                 input.setAttribute("type", type);
 
-                // Actualizar el icono SVG según el estado
-                if (type === "password") {
-                  toggleButton.innerHTML = `
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" viewBox="0 0 16 16">
-                                          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
-                                          <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
-                                        </svg>
-                                    `;
-                } else {
-                  toggleButton.innerHTML = `
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" viewBox="0 0 16 16">
-                                          <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z"/>
-                                          <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z"/>
-                                        </svg>
-                                    `;
+                const eyeOpen =
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>';
+                const eyeClosed =
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z"/><path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z"/></svg>';
+                toggleButton.innerHTML =
+                  type === "password" ? eyeOpen : eyeClosed;
+
+                // Reapply all styling including shadows after type change
+                setTimeout(() => {
+                  forceInputStyling();
+                }, 0);
+              });
+
+              toggleButton.addEventListener("mouseenter", () => {
+                toggleButton.style.boxShadow = nmShadowInset;
+                toggleButton.style.color = nmAccent;
+              });
+              toggleButton.addEventListener("mouseleave", () => {
+                toggleButton.style.boxShadow = nmShadowSm;
+                toggleButton.style.color = nmTextMuted;
+              });
+
+              // Force autofill styling - watch for changes and apply theme
+              const forceInputStyling = () => {
+                input.style.backgroundColor = theme.background;
+                input.style.color = theme.text;
+                input.style.boxShadow = `${theme.shadow.inset}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`;
+              };
+
+              input.addEventListener("change", forceInputStyling);
+              input.addEventListener("input", forceInputStyling);
+              input.addEventListener("autofill", forceInputStyling);
+              input.addEventListener("blur", forceInputStyling);
+
+              // Hover effect - raised but with depth
+              input.addEventListener("mouseenter", () => {
+                if (document.activeElement !== input) {
+                  input.style.boxShadow = `${theme.shadow.sm}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`;
                 }
               });
 
-              // Efecto hover para el botón
-              toggleButton.addEventListener("mouseenter", () => {
-                toggleButton.style.background = isDarkTheme
-                  ? "rgba(255,255,255,0.15)"
-                  : "rgba(0,0,0,0.08)";
+              input.addEventListener("mouseleave", () => {
+                if (document.activeElement !== input) {
+                  forceInputStyling();
+                }
               });
-              toggleButton.addEventListener("mouseleave", () => {
-                toggleButton.style.background = isDarkTheme
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.03)";
+
+              // On focus, enhance the shadow
+              input.addEventListener("focus", () => {
+                input.style.boxShadow = `${theme.shadow.outer}, 0 0 0 2px ${theme.accent}40, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`;
+              });
+
+              // Monitor for autofill with interval
+              const autofillChecker = setInterval(() => {
+                const computed = window.getComputedStyle(input);
+                if (
+                  computed.boxShadow &&
+                  computed.boxShadow.includes("rgb(255")
+                ) {
+                  // Autofill detected, force styling
+                  forceInputStyling();
+                }
+              }, 100);
+
+              // Clean up on modal close
+              const observer = new MutationObserver(() => {
+                if (!document.body.contains(input)) {
+                  clearInterval(autofillChecker);
+                  observer.disconnect();
+                }
+              });
+              observer.observe(document.body, {
+                childList: true,
+                subtree: true,
               });
             }
           },

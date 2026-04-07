@@ -24,7 +24,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const getModelShortName = (modelId?: string): string => {
     if (!modelId) return "modelo";
-    const model = [...groqModels, ...routellmModels].find((m) => m.id === modelId);
+    const model = [...groqModels, ...routellmModels].find(
+      (m) => m.id === modelId,
+    );
     if (model) return model.name;
     return modelId.split("/").pop()?.split("-")[0] || "modelo";
   };
@@ -88,10 +90,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Message content */}
         <div
           className={`text-sm leading-relaxed overflow-hidden ${
-            isUser ? "whitespace-pre-wrap text-left user-markdown" : "markdown-content"
+            isUser
+              ? "whitespace-pre-wrap text-left user-markdown"
+              : "markdown-content"
           }`}
         >
-          <Suspense fallback={<div className="p-2 opacity-60">{message.content}</div>}>
+          <Suspense
+            fallback={<div className="p-2 opacity-60">{message.content}</div>}
+          >
             <MarkdownRenderer content={message.content} />
           </Suspense>
         </div>
@@ -114,7 +120,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   className="text-xs text-right"
                   style={{ color: theme.textMuted }}
                 >
-                  📊 {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
+                  📊{" "}
+                  {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
                 </div>
               )}
           </div>

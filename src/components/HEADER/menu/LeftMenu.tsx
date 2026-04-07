@@ -54,8 +54,9 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
     if (editValue.trim()) {
       const raw = localStorage.getItem("chat-history");
       let arr = raw ? JSON.parse(raw) : [];
-      arr = arr.map((c: { id: string; title: string; date: Date; model?: string }) =>
-        c.id === chat.id ? { ...c, title: editValue } : c,
+      arr = arr.map(
+        (c: { id: string; title: string; date: Date; model?: string }) =>
+          c.id === chat.id ? { ...c, title: editValue } : c,
       );
       localStorage.setItem("chat-history", JSON.stringify(arr));
       if (onUpdateChatTitle) onUpdateChatTitle(chat.id, editValue);
@@ -76,9 +77,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
   const handleDeleteChat = (chatId: string) => {
     const raw = localStorage.getItem("chat-history");
     let arr = raw ? JSON.parse(raw) : [];
-    arr = arr.filter(
-      (c: { id: string }) => c.id !== chatId,
-    );
+    arr = arr.filter((c: { id: string }) => c.id !== chatId);
     localStorage.setItem("chat-history", JSON.stringify(arr));
     if (onDeleteChat) onDeleteChat(chatId);
   };
@@ -168,7 +167,10 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
       {/* Overlay */}
       <div
         className="fixed inset-0 z-60 transition-opacity duration-300"
-        style={{ opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? "auto" : "none" }}
+        style={{
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? "auto" : "none",
+        }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -194,9 +196,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             className="px-4 py-4 flex justify-between items-center"
             style={{
               borderBottom: `1px solid ${
-                isDarkTheme
-                  ? "rgba(124,133,245,0.12)"
-                  : "rgba(91,110,245,0.12)"
+                isDarkTheme ? "rgba(124,133,245,0.12)" : "rgba(91,110,245,0.12)"
               }`,
             }}
           >
@@ -218,11 +218,18 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                 color: theme.title.color,
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                <line x1="18" y1="6" x2="6"  y2="18" />
-                <line x1="6"  y1="6" x2="18" y2="18" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-5 h-5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
@@ -239,11 +246,19 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
               }}
               onClick={handleNewChat}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5"  y1="12" x2="19" y2="12" />
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               Nuevo Chat
             </button>
@@ -280,17 +295,23 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                   ) : (
                     <div
                       className="w-full p-2.5 cursor-pointer"
-                      style={currentChatId === chat.id ? itemActiveStyle : itemStyle}
-                      onClick={() => { onSelectChat(chat.id); onClose(); }}
+                      style={
+                        currentChatId === chat.id ? itemActiveStyle : itemStyle
+                      }
+                      onClick={() => {
+                        onSelectChat(chat.id);
+                        onClose();
+                      }}
                     >
                       <div className="flex items-center justify-between gap-1">
                         {/* Title */}
                         <span
                           className="truncate text-sm font-medium flex-1 min-w-0"
                           style={{
-                            color: currentChatId === chat.id
-                              ? theme.accent
-                              : theme.text,
+                            color:
+                              currentChatId === chat.id
+                                ? theme.accent
+                                : theme.text,
                           }}
                         >
                           {truncateTitle(chat.title)}
@@ -303,7 +324,10 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                           aria-label="Editar nombre del Chat"
                           className="nm-press"
                           style={iconBtnStyle}
-                          onClick={(e) => { e.stopPropagation(); handleEditClick(chat); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClick(chat);
+                          }}
                         >
                           <img
                             src={PenIcon}
@@ -325,7 +349,10 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                           aria-label="Eliminar Chat"
                           className="nm-press"
                           style={iconBtnStyle}
-                          onClick={(e) => { e.stopPropagation(); showDeleteConfirmation(chat.id, chat.title); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showDeleteConfirmation(chat.id, chat.title);
+                          }}
                         >
                           <img
                             src={TrashIcon}
@@ -348,12 +375,24 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                       >
                         {(() => {
                           const d = new Date(chat.date);
-                          const dias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+                          const dias = [
+                            "Dom",
+                            "Lun",
+                            "Mar",
+                            "Mié",
+                            "Jue",
+                            "Vie",
+                            "Sáb",
+                          ];
                           const fecha = d.toLocaleDateString("es-AR", {
-                            day: "2-digit", month: "2-digit", year: "numeric",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
                           });
                           const hora = d.toLocaleTimeString("es-AR", {
-                            hour: "2-digit", minute: "2-digit", hour12: false,
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
                           });
                           return `${dias[d.getDay()]} ${fecha} · ${hora}`;
                         })()}

@@ -19,7 +19,7 @@ import ChatContainer from "./components/chat/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 const PROVIDER_IDS = ["groq", "routellm", "openai", "anthropic"] as const;
 // Constante de versión
-export const APP_VERSION = "v.5.0";
+export const APP_VERSION = "v.6.0";
 
 export const App = () => {
   // Estados para la UI
@@ -56,11 +56,15 @@ export const App = () => {
 
     // Verificar que el modelo guardado pertenece al provider actual
     const allModels: { id: string }[] =
-      provider === "groq"      ? groqModels
-      : provider === "routellm" ? routellmModels
-      : provider === "openai"   ? openaiModels
-      : provider === "anthropic"? anthropicModels
-      : groqModels;
+      provider === "groq"
+        ? groqModels
+        : provider === "routellm"
+          ? routellmModels
+          : provider === "openai"
+            ? openaiModels
+            : provider === "anthropic"
+              ? anthropicModels
+              : groqModels;
 
     // Si el modelo guardado existe en el provider actual, usarlo
     if (savedModel && allModels.some((m) => m.id === savedModel)) {

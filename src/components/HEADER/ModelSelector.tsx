@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import Select, { GroupBase, StylesConfig } from "react-select";
 
 import { ColorPalette } from "../../interfaces/temas/temas";
@@ -14,32 +14,10 @@ interface ModelSelectorProps {
   providerFilter?: string;
 }
 
-// Interfaz para las opciones del selector
 interface ModelOption {
   value: string;
   label: string;
 }
-
-// Función para calcular el ancho mínimo basado en el texto más largo
-const calculateMinWidth = (): string => {
-  const allModels = [
-    ...groqModels,
-    ...routellmModels,
-    ...openaiModels,
-    ...anthropicModels,
-  ];
-
-  // Encontrar el nombre más largo
-  const longestName = allModels.reduce((max, model) => {
-    return model.name.length > max.length ? model.name : max;
-  }, groqModels[0]?.name || "");
-
-  // Calcular aproximadamente (8px por carácter + padding)
-  const estimatedWidth = longestName.length * 8 + 40;
-  return `${Math.min(Math.max(estimatedWidth, 200), 280)}px`; // Entre 200px y 280px
-};
-
-const MIN_SELECTOR_WIDTH = calculateMinWidth();
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
   selectedModel,
@@ -47,7 +25,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   theme,
   providerFilter,
 }) => {
-  // Obtener los desarrolladores únicos de modelos
   const allModels = [
     ...groqModels,
     ...routellmModels,
@@ -55,7 +32,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     ...anthropicModels,
   ];
 
-  // Filtrar modelos según el proveedor seleccionado
   const filteredModels = providerFilter
     ? allModels.filter((model) => model.provider === providerFilter)
     : allModels;
@@ -64,7 +40,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     ...new Set(filteredModels.map((model) => model.developer)),
   ];
 
-  // Preparar las opciones agrupadas para react-select
   const groupedOptions: GroupBase<ModelOption>[] = modelDevelopers.map(
     (developer) => ({
       label: developer.toUpperCase(),
@@ -77,7 +52,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     }),
   );
 
-  // Log when selectedModel changes to help debug
+  // Calcular ancho basado en la opción más larga + 20% (10% cada lado)
+  const selectorWidth = useMemo(() => {
+    const longestLabel = filteredModels.reduce(
+      (max, m) => (m.name.length > max.length ? m.name : max),
+      "",
+    );
+    // ~7.5px por carácter a 0.85rem + padding para indicador
+    const baseWidth = longestLabel.length * 7.5 + 52;
+    const withPadding = Math.round(baseWidth * 1.2);
+    return `${Math.max(withPadding, 180)}px`;
+  }, [filteredModels]);
+
   useEffect(() => {
     console.log("ModelSelector - Current selected model:", selectedModel);
   }, [selectedModel]);
@@ -87,41 +73,61 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     false,
     GroupBase<ModelOption>
   > = {
-    control: (provided) => ({
+    control: (provided, state) => ({
       ...provided,
-      border: `3px solid ${theme.messages.ai.background}`,
-      borderRadius: "6px",
-      padding: "1px",
-      backgroundColor: theme.input.background,
-      boxShadow: "none",
-      minWidth: MIN_SELECTOR_WIDTH,
+      border: "none",
+      borderRadius: "12px",
+      padding: "4px 8px",
+      backgroundColor: theme.background,
+      boxShadow: state.menuIsOpen ? theme.shadow.inset : theme.shadow.sm,
+      width: selectorWidth,
+      maxWidth: "100%",
+      transition: "box-shadow 0.25s ease",
       "&:hover": {
-        border: `3px solid ${"theme.messages.ai.background"}`,
+        boxShadow: theme.shadow.outer,
         cursor: "pointer",
       },
     }),
     option: (provided, state) => ({
       ...provided,
-      backgroundColor: state.isSelected
-        ? theme.selectModel.isSelectedBackground
-        : theme.selectModel.modelBackground,
-      color: state.isSelected
-        ? theme.selectModel.isSelectedText
-        : theme.selectModel.modelText,
+      backgroundColor: theme.background,
+      color: state.isSelected ? theme.accent : theme.text,
       cursor: "pointer",
+      borderRadius: "10px",
+      margin: "4px auto",
+      width: "calc(100% - 4px)",
+      padding: "8px 12px",
+      fontWeight: state.isSelected ? 600 : 400,
+      boxShadow: state.isSelected ? theme.shadow.inset : "none",
+      whiteSpace: "nowrap" as const,
+      transition: "box-shadow 0.2s ease, color 0.2s ease",
       "&:hover": {
-        backgroundColor: theme.selectModel.hoverBackground,
-        color: theme.selectModel.hoverText,
+        boxShadow: theme.shadow.sm,
+        color: theme.accent,
       },
     }),
     singleValue: (provided) => ({
       ...provided,
-      color: theme.selectModel.text,
+      color: theme.text,
+      fontWeight: 500,
+      fontSize: "0.85rem",
     }),
     menu: (provided) => ({
       ...provided,
-      backgroundColor: theme.selectModel.empresaBackground,
+      backgroundColor: theme.background,
+      borderRadius: "14px",
+      boxShadow: theme.shadow.outer,
+      border: "none",
+      overflow: "hidden",
+      padding: "6px 0",
+      width: selectorWidth,
       zIndex: 9999,
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      padding: "8px 15px 8px 14px",
+      maxHeight: "320px",
+      overflowX: "hidden" as const,
     }),
     group: (provided) => ({
       ...provided,
@@ -130,15 +136,32 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     }),
     groupHeading: (provided) => ({
       ...provided,
-      color: theme.selectModel.empresaText,
-      fontWeight: "bold",
-      fontSize: "0.85em",
-      marginBottom: "14px",
-      textAlign: "center",
-      backgroundColor: theme.selectModel.empresaBackground,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
+      color: theme.accent,
+      fontWeight: 700,
+      fontSize: "0.7rem",
+      letterSpacing: "0.08em",
+      textTransform: "uppercase" as const,
+      marginBottom: "6px",
+      paddingLeft: "14px",
+    }),
+    indicatorSeparator: () => ({
+      display: "none",
+    }),
+    dropdownIndicator: (provided, state) => ({
+      ...provided,
+      color: theme.textMuted,
+      transition: "transform 0.25s ease, color 0.25s ease",
+      transform: state.selectProps.menuIsOpen
+        ? "rotate(180deg)"
+        : "rotate(0deg)",
+      "&:hover": {
+        color: theme.accent,
+      },
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: theme.textMuted,
+      fontSize: "0.85rem",
     }),
   };
 
