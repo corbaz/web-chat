@@ -87,19 +87,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     >
                         <div className="flex items-center gap-2 p-2">
                             <span
-                                className="h-2.5 w-2.5 rounded-full inline-block opacity-60 animate-typing"
+                                className="size-2.5 rounded-full inline-block opacity-60 animate-typing"
                                 style={{
                                     backgroundColor: theme.messages.user.text,
                                 }}
                             ></span>
                             <span
-                                className="h-2.5 w-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]"
+                                className="size-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]"
                                 style={{
                                     backgroundColor: theme.messages.user.text,
                                 }}
                             ></span>
                             <span
-                                className="h-2.5 w-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]"
+                                className="size-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]"
                                 style={{
                                     backgroundColor: theme.messages.user.text,
                                 }}
