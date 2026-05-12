@@ -1,7 +1,7 @@
 {
   "name": "prompting",
   "private": true,
-  "version": "v.3.2",
+  "version": "v.7.0",
   "type": "module",
   "packageManager": "bun@1.3.13",
   "homepage": "https://corbaz.github.io/web-chat",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import { ColorPalette } from '../../../interfaces/temas/temas';
 
 interface ApiKeyInputProps {
@@ -7,28 +7,71 @@ interface ApiKeyInputProps {
     selectedProvider?: string;
 }
 
+type State = {
+    localProvider: string;
+    userOverride: boolean;
+    apiKey: string;
+    isVisible: boolean;
+    showFeedback: boolean;
+};
+
+type Action =
+    | { type: 'SET_PROVIDER'; provider: string; apiKey: string }
+    | { type: 'SET_API_KEY'; apiKey: string }
+    | { type: 'TOGGLE_VISIBLE' }
+    | { type: 'CLEAR_KEY' }
+    | { type: 'SET_FEEDBACK'; show: boolean };
+
+function reducer(state: State, action: Action): State {
+    switch (action.type) {
+        case 'SET_PROVIDER':
+            return {
+                ...state,
+                localProvider: action.provider,
+                userOverride: true,
+                apiKey: action.apiKey,
+            };
+        case 'SET_API_KEY':
+            return { ...state, apiKey: action.apiKey };
+        case 'TOGGLE_VISIBLE':
+            return { ...state, isVisible: !state.isVisible };
+        case 'CLEAR_KEY':
+            return {
+                ...state,
+                apiKey: '',
+                isVisible: false,
+                showFeedback: true,
+            };
+        case 'SET_FEEDBACK':
+            return { ...state, showFeedback: action.show };
+        default:
+            return state;
+    }
+}
+
 const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     theme,
     isDarkTheme,
     selectedProvider,
 }) => {
-    const [localProvider, setLocalProvider] = useState<string>(() => {
-        return (
+    const [state, dispatch] = useReducer(reducer, undefined, () => {
+        const initialProvider =
             selectedProvider ||
             localStorage.getItem('selectedProvider') ||
-            'groq'
-        );
+            'groq';
+        return {
+            localProvider: initialProvider,
+            userOverride: false,
+            apiKey: localStorage.getItem(`${initialProvider}ApiKey`) || '',
+            isVisible: false,
+            showFeedback: false,
+        };
     });
-    const [userOverride, setUserOverride] = useState<boolean>(false);
-    const provider = userOverride
-        ? localProvider
-        : selectedProvider || localProvider;
 
-    const [apiKey, setApiKey] = useState<string>(() => {
-        return localStorage.getItem(`${localProvider}ApiKey`) || '';
-    });
-    const [isVisible, setIsVisible] = useState<boolean>(false);
-    const [showFeedback, setShowFeedback] = useState<boolean>(false);
+    const provider = state.userOverride
+        ? state.localProvider
+        : selectedProvider || state.localProvider;
+
     const prevProviderRef = useRef<string>(provider);
 
     useEffect(() => {
@@ -36,7 +79,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             prevProviderRef.current = provider;
             queueMicrotask(() => {
                 const savedApiKey = localStorage.getItem(`${provider}ApiKey`);
-                setApiKey(savedApiKey || '');
+                dispatch({ type: 'SET_API_KEY', apiKey: savedApiKey || '' });
             });
         }
     }, [provider]);
@@ -44,7 +87,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     useEffect(() => {
         const handleChange = () => {
             const savedApiKey = localStorage.getItem(`${provider}ApiKey`);
-            setApiKey(savedApiKey || '');
+            dispatch({ type: 'SET_API_KEY', apiKey: savedApiKey || '' });
         };
         window.addEventListener('apikey-changed', handleChange);
         return () => window.removeEventListener('apikey-changed', handleChange);
@@ -52,11 +95,9 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
 
     const handleClearApiKey = () => {
         localStorage.removeItem(`${provider}ApiKey`);
-        setApiKey('');
-        setIsVisible(false);
-        setShowFeedback(true);
+        dispatch({ type: 'CLEAR_KEY' });
         window.dispatchEvent(new Event('apikey-changed'));
-        setTimeout(() => setShowFeedback(false), 3000);
+        setTimeout(() => dispatch({ type: 'SET_FEEDBACK', show: false }), 3000);
     };
 
     // Shared input style
@@ -116,12 +157,14 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                         aria-label="Proveedor"
                         value={provider}
                         onChange={(e) => {
-                            setLocalProvider(e.target.value);
-                            if (!userOverride) setUserOverride(true);
                             const saved = localStorage.getItem(
                                 `${e.target.value}ApiKey`
                             );
-                            setApiKey(saved || '');
+                            dispatch({
+                                type: 'SET_PROVIDER',
+                                provider: e.target.value,
+                                apiKey: saved || '',
+                            });
                             if (!saved) {
                                 window.dispatchEvent(
                                     new CustomEvent('request-apikey-modal', {
@@ -157,34 +200,36 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <div className="space-y-2">
                 <div className="relative">
                     <input
-                        type={isVisible ? 'text' : 'password'}
-                        value={apiKey}
+                        type={state.isVisible ? 'text' : 'password'}
+                        value={state.apiKey}
                         readOnly
                         placeholder={
-                            apiKey
+                            state.apiKey
                                 ? ''
                                 : `Sin API Key de ${providerName(provider)}`
                         }
                         className="w-full px-3 py-2.5 pr-10 text-sm cursor-default"
                         style={{
                             ...nmInputStyle,
-                            opacity: apiKey ? 1 : 0.55,
+                            opacity: state.apiKey ? 1 : 0.55,
                             color: theme.input.text,
                         }}
                     />
                     <button
                         type="button"
-                        onClick={() => setIsVisible(!isVisible)}
+                        onClick={() => dispatch({ type: 'TOGGLE_VISIBLE' })}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg nm-press"
                         style={{
                             color: theme.textMuted,
                             backgroundColor: 'transparent',
                         }}
                         title={
-                            isVisible ? 'Ocultar API Key' : 'Mostrar API Key'
+                            state.isVisible
+                                ? 'Ocultar API Key'
+                                : 'Mostrar API Key'
                         }
                     >
-                        {isVisible ? (
+                        {state.isVisible ? (
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
@@ -224,7 +269,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                 </div>
 
                 {/* Action buttons */}
-                {apiKey ? (
+                {state.apiKey ? (
                     <button
                         type="button"
                         onClick={handleClearApiKey}
@@ -261,7 +306,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                 )}
 
                 {/* Feedback */}
-                {showFeedback && (
+                {state.showFeedback && (
                     <div
                         className="text-xs py-1.5 px-3 rounded-lg text-center font-medium"
                         style={{

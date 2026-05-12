@@ -19,7 +19,7 @@ import ChatContainer from "./components/chat/ChatContainer";
 import { ChatMessageType } from "./interfaces/chat/chatTypes";
 const PROVIDER_IDS = ["groq", "routellm", "openai", "anthropic"] as const;
 // Constante de versión
-export const APP_VERSION = "v.6.0";
+export const APP_VERSION = "v.7.0";
 
 export const App = () => {
   // Estados para la UI

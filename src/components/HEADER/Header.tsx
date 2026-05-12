@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({
 
     return (
         <header
-            className="fixed top-0 left-0 right-0 z-50 w-full px-4 py-3"
+            className="fixed top-0 left-0 right-0 z-65 w-full px-4 py-3"
             style={{
                 backgroundColor: theme.background,
                 boxShadow: `0 4px 16px ${

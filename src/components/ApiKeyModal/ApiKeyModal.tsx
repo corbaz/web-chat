@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { ColorPalette } from '../../interfaces/temas/temas';
 import { APP_VERSION } from '../../App';
@@ -144,22 +144,44 @@ const validateApiKey = async (
     }
 };
 
+type ModalState = {
+    forceShow: boolean;
+    forcedProvider: string | null;
+};
+
+type ModalAction =
+    | { type: 'REQUEST_SHOW'; provider?: string }
+    | { type: 'RESET' };
+
+function modalReducer(state: ModalState, action: ModalAction): ModalState {
+    switch (action.type) {
+        case 'REQUEST_SHOW':
+            return {
+                forceShow: true,
+                forcedProvider: action.provider ?? state.forcedProvider,
+            };
+        case 'RESET':
+            return { forceShow: false, forcedProvider: null };
+        default:
+            return state;
+    }
+}
+
 const ApiKeyModal = ({
     theme,
     isDarkTheme,
     onApiKeyProvided,
 }: ApiKeyModalProps) => {
     const isModalLogicActiveRef = useRef(true);
-    const [forceShow, setForceShow] = useState(false);
-    const [forcedProvider, setForcedProvider] = useState<string | null>(null);
+    const [modalState, dispatchModal] = useReducer(modalReducer, {
+        forceShow: false,
+        forcedProvider: null,
+    });
 
     useEffect(() => {
         const handleRequestModal = (event: Event) => {
             const detail = (event as CustomEvent<{ provider?: string }>).detail;
-            if (detail?.provider) {
-                setForcedProvider(detail.provider);
-            }
-            setForceShow(true);
+            dispatchModal({ type: 'REQUEST_SHOW', provider: detail?.provider });
             isModalLogicActiveRef.current = true;
         };
 
@@ -181,11 +203,13 @@ const ApiKeyModal = ({
             const hasAnyKey = PROVIDERS.some((p) =>
                 localStorage.getItem(`${p.id}ApiKey`)
             );
-            if (!hasAnyKey || forceShow) {
+            if (!hasAnyKey || modalState.forceShow) {
                 if (Swal.isVisible()) return;
                 const storedProvider = localStorage.getItem('selectedProvider');
                 const defaultProvider =
-                    forcedProvider || storedProvider || PROVIDERS[0].id;
+                    modalState.forcedProvider ||
+                    storedProvider ||
+                    PROVIDERS[0].id;
                 const defaultProviderLink =
                     PROVIDERS.find((p) => p.id === defaultProvider)?.link ||
                     PROVIDERS[0].link;
@@ -475,7 +499,7 @@ const ApiKeyModal = ({
                             const persistedProvider =
                                 localStorage.getItem('selectedProvider');
                             const initialProvider =
-                                forcedProvider ||
+                                modalState.forcedProvider ||
                                 persistedProvider ||
                                 PROVIDERS[0].id;
                             select.value = initialProvider;
@@ -800,8 +824,7 @@ const ApiKeyModal = ({
 
                     // Limpiar estado
                     isModalLogicActiveRef.current = false;
-                    setForceShow(false);
-                    setForcedProvider(null);
+                    dispatchModal({ type: 'RESET' });
 
                     // Mostrar confirmación de guardado
                     Swal.fire({
@@ -823,8 +846,7 @@ const ApiKeyModal = ({
                     }
                 } else if (result.isDismissed) {
                     isModalLogicActiveRef.current = false;
-                    setForceShow(false);
-                    setForcedProvider(null);
+                    dispatchModal({ type: 'RESET' });
                 }
             } else {
                 isModalLogicActiveRef.current = false;
@@ -841,7 +863,13 @@ const ApiKeyModal = ({
                 document.removeEventListener('click', closeOnOutsideClickRef);
             }
         };
-    }, [onApiKeyProvided, theme, isDarkTheme, forceShow, forcedProvider]);
+    }, [
+        onApiKeyProvided,
+        theme,
+        isDarkTheme,
+        modalState.forceShow,
+        modalState.forcedProvider,
+    ]);
 
     return null;
 };
