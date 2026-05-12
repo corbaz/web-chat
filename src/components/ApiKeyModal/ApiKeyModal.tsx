@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { ColorPalette } from '../../interfaces/temas/temas';
 import { APP_VERSION } from '../../App';
@@ -149,7 +149,7 @@ const ApiKeyModal = ({
     isDarkTheme,
     onApiKeyProvided,
 }: ApiKeyModalProps) => {
-    const [isModalLogicActive, setIsModalLogicActive] = useState(true);
+    const isModalLogicActiveRef = useRef(true);
     const [forceShow, setForceShow] = useState(false);
     const [forcedProvider, setForcedProvider] = useState<string | null>(null);
 
@@ -160,7 +160,7 @@ const ApiKeyModal = ({
                 setForcedProvider(detail.provider);
             }
             setForceShow(true);
-            setIsModalLogicActive(true);
+            isModalLogicActiveRef.current = true;
         };
 
         window.addEventListener('request-apikey-modal', handleRequestModal);
@@ -173,8 +173,10 @@ const ApiKeyModal = ({
     }, []);
 
     useEffect(() => {
+        let closeOnOutsideClickRef: (() => void) | null = null;
+
         const manageApiKeyModal = async () => {
-            if (!isModalLogicActive) return;
+            if (!isModalLogicActiveRef.current) return;
 
             const hasAnyKey = PROVIDERS.some((p) =>
                 localStorage.getItem(`${p.id}ApiKey`)
@@ -573,9 +575,14 @@ const ApiKeyModal = ({
                             });
 
                             // Close on click outside
-                            document.addEventListener('click', () => {
+                            const closeOnOutsideClick = () => {
                                 if (isOpen) toggleMenu();
-                            });
+                            };
+                            closeOnOutsideClickRef = closeOnOutsideClick;
+                            document.addEventListener(
+                                'click',
+                                closeOnOutsideClick
+                            );
                         }
                         if (input && toggleButton) {
                             setTimeout(() => {
@@ -673,6 +680,15 @@ const ApiKeyModal = ({
                                 childList: true,
                                 subtree: true,
                             });
+                        }
+                    },
+                    willClose: () => {
+                        if (closeOnOutsideClickRef) {
+                            document.removeEventListener(
+                                'click',
+                                closeOnOutsideClickRef
+                            );
+                            closeOnOutsideClickRef = null;
                         }
                     },
                     preConfirm: async () => {
@@ -783,7 +799,7 @@ const ApiKeyModal = ({
                     };
 
                     // Limpiar estado
-                    setIsModalLogicActive(false);
+                    isModalLogicActiveRef.current = false;
                     setForceShow(false);
                     setForcedProvider(null);
 
@@ -806,12 +822,12 @@ const ApiKeyModal = ({
                         onApiKeyProvided();
                     }
                 } else if (result.isDismissed) {
-                    setIsModalLogicActive(false);
+                    isModalLogicActiveRef.current = false;
                     setForceShow(false);
                     setForcedProvider(null);
                 }
             } else {
-                setIsModalLogicActive(false);
+                isModalLogicActiveRef.current = false;
                 if (onApiKeyProvided) {
                     onApiKeyProvided();
                 }
@@ -821,15 +837,11 @@ const ApiKeyModal = ({
         manageApiKeyModal();
         return () => {
             Swal.close();
+            if (closeOnOutsideClickRef) {
+                document.removeEventListener('click', closeOnOutsideClickRef);
+            }
         };
-    }, [
-        isModalLogicActive,
-        onApiKeyProvided,
-        theme,
-        isDarkTheme,
-        forceShow,
-        forcedProvider,
-    ]);
+    }, [onApiKeyProvided, theme, isDarkTheme, forceShow, forcedProvider]);
 
     return null;
 };

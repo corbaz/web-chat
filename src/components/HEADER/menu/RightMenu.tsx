@@ -91,7 +91,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                         }}
                     >
                         <h2
-                            className="text-base font-bold tracking-wide"
+                            className="text-base font-semibold tracking-wide"
                             style={{ color: theme.title.color }}
                         >
                             Configuración
@@ -116,7 +116,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="w-5 h-5"
+                                className="size-5"
                             >
                                 <line x1="18" y1="6" x2="6" y2="18" />
                                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -125,7 +125,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                     </div>
 
                     {/* Scrollable content */}
-                    <div className="grow overflow-y-auto px-4 py-4 space-y-6">
+                    <div className="grow overflow-y-auto p-4 space-y-6">
                         {/* ── Tema ─────────────────────────────────────────────────────── */}
                         <div>
                             <p style={sectionHeadingStyle}>Apariencia</p>
@@ -151,7 +151,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                 >
                                     {/* Knob — neumorphic raised circle */}
                                     <span
-                                        className="absolute flex items-center justify-center h-6 w-6 rounded-full transition-transform duration-300"
+                                        className="absolute flex items-center justify-center size-6 rounded-full transition-transform duration-300"
                                         style={{
                                             left: '4px',
                                             transform: isDarkTheme
@@ -164,7 +164,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                         {/* Sun icon (light theme) */}
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
-                                            className="h-3.5 w-3.5 transition-opacity duration-300"
+                                            className="size-3.5 transition-opacity duration-300"
                                             style={{
                                                 opacity: isDarkTheme ? 0 : 1,
                                                 position: 'absolute',
@@ -185,7 +185,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                         <img
                                             src={LunaIcon}
                                             alt="Tema oscuro"
-                                            className="h-3.5 w-3.5 transition-opacity duration-300"
+                                            className="size-3.5 transition-opacity duration-300"
                                             style={{
                                                 opacity: isDarkTheme ? 1 : 0,
                                                 position: 'absolute',
@@ -245,7 +245,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                             />
                                             {/* Custom radio dot */}
                                             <span
-                                                className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                                                className="size-4 rounded-full flex items-center justify-center shrink-0"
                                                 style={{
                                                     backgroundColor:
                                                         theme.background,
@@ -254,7 +254,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                                             >
                                                 {isSelected && (
                                                     <span
-                                                        className="w-2 h-2 rounded-full"
+                                                        className="size-2 rounded-full"
                                                         style={{
                                                             backgroundColor:
                                                                 theme.accent,

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { ChatMessageType } from '../../interfaces/chat/chatTypes.ts';
 import { ColorPalette } from '../../interfaces/temas/temas.tsx';
 import { groqModels } from '../../components/HEADER/models/groqModels';
@@ -36,12 +36,34 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         return t < 1 ? `${Math.round(t * 1000)}ms` : responseTime;
     };
 
+    const [copied, setCopied] = useState(false);
+
     const handleCopyMessage = async () => {
-        try {
-            await navigator.clipboard.writeText(message.content);
-        } catch (err) {
-            console.error('Error al copiar mensaje:', err);
-        }
+        const copy = async () => {
+            try {
+                await navigator.clipboard.writeText(message.content);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch {
+                const textarea = document.createElement('textarea');
+                textarea.value = message.content;
+                textarea.style.position = 'fixed';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                } catch (e) {
+                    console.error('Error al copiar mensaje:', e);
+                } finally {
+                    document.body.removeChild(textarea);
+                }
+            }
+        };
+        await copy();
     };
 
     const handleRepeatMessage = () => {
@@ -141,7 +163,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     <button
                         type="button"
                         onClick={handleCopyMessage}
-                        title="Copiar"
+                        title={copied ? '¡Copiado!' : 'Copiar'}
                         className="nm-press inline-flex items-center gap-1 text-xs px-2 py-1"
                         style={actionBtnStyle}
                     >
@@ -159,7 +181,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                             />
                         </svg>
-                        Copiar
+                        {copied ? '¡Copiado!' : 'Copiar'}
                     </button>
 
                     {isUser && (

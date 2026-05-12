@@ -141,7 +141,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                     {/* Chevron */}
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -191,7 +191,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                                 viewBox="0 0 24 24"
                                 strokeWidth={1.5}
                                 stroke="currentColor"
-                                className="w-4 h-4"
+                                className="size-4"
                             >
                                 <path
                                     strokeLinecap="round"
@@ -206,7 +206,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                                 viewBox="0 0 24 24"
                                 strokeWidth={1.5}
                                 stroke="currentColor"
-                                className="w-4 h-4"
+                                className="size-4"
                             >
                                 <path
                                     strokeLinecap="round"

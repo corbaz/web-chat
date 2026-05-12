@@ -88,6 +88,9 @@ const Title: React.FC<TitleProps> = ({
           }`}
           style={{ color: theme.title.color }}
           onClick={handleEditClick}
+          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && editable && chatId) handleEditClick(); }}
+          role={editable && chatId ? "button" : undefined}
+          tabIndex={editable && chatId ? 0 : undefined}
           title={editable ? "Haz clic para editar el título" : undefined}
         >
           {truncateTitle(title, TITLE_LIMITS.TOOLBAR)}

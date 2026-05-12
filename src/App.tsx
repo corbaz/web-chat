@@ -118,7 +118,7 @@ export const App = () => {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(
     undefined,
   );
-  const [isApiKeySet, setIsApiKeySet] = useState(hasAnyApiKey());
+  const [isApiKeySet, setIsApiKeySet] = useState(() => hasAnyApiKey());
   const [apiKeyModalReset, setApiKeyModalReset] = useState(0);
 
   const footerRef = useRef<FooterRef>(null);
@@ -485,7 +485,7 @@ export const App = () => {
 
           // Si hay chats más recientes, ir al más antiguo de ellos
           if (newerChats.length > 0) {
-            const sortedNewer = [...newerChats].sort(
+            const sortedNewer = newerChats.toSorted(
               (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
             );
             setCurrentChatId(sortedNewer[0].id);

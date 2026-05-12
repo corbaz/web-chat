@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ColorPalette } from '../../../interfaces/temas/temas.tsx';
 import Swal from 'sweetalert2';
 import { createTitleEditHandlers } from '../../../utils/titleUtils';
@@ -19,6 +19,40 @@ interface LeftMenuProps {
     onDeleteChat?: (chatId: string) => void;
 }
 
+const CHAT_HISTORY_KEY = 'chat-history';
+
+const readStoredHistory = (): {
+    id: string;
+    title: string;
+    date: Date | string;
+    model?: string;
+}[] => {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+};
+
+const writeStoredHistory = (
+    arr: { id: string; title: string; date: Date | string; model?: string }[]
+): void => {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(arr));
+};
+
+const formatChatDate = (date: Date): string => {
+    const d = new Date(date);
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const fecha = d.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
+    const hora = d.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+    return `${dias[d.getDay()]} ${fecha} · ${hora}`;
+};
+
 const LeftMenu: React.FC<LeftMenuProps> = ({
     isOpen,
     onClose,
@@ -33,6 +67,13 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState<string>('');
+    const editInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editingId !== null) {
+            editInputRef.current?.focus();
+        }
+    }, [editingId]);
 
     const { handleEditKeyDown, truncateTitle } = createTitleEditHandlers({
         maxLength: 40,
@@ -52,17 +93,11 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
 
     const handleEditBlur = (chat: { id: string; title: string }) => {
         if (editValue.trim()) {
-            const raw = localStorage.getItem('chat-history');
-            let arr = raw ? JSON.parse(raw) : [];
-            arr = arr.map(
-                (c: {
-                    id: string;
-                    title: string;
-                    date: Date;
-                    model?: string;
-                }) => (c.id === chat.id ? { ...c, title: editValue } : c)
+            const arr = readStoredHistory();
+            const updated = arr.map((c) =>
+                c.id === chat.id ? { ...c, title: editValue } : c
             );
-            localStorage.setItem('chat-history', JSON.stringify(arr));
+            writeStoredHistory(updated);
             if (onUpdateChatTitle) onUpdateChatTitle(chat.id, editValue);
         }
         setEditingId(null);
@@ -79,10 +114,9 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
     };
 
     const handleDeleteChat = (chatId: string) => {
-        const raw = localStorage.getItem('chat-history');
-        let arr = raw ? JSON.parse(raw) : [];
-        arr = arr.filter((c: { id: string }) => c.id !== chatId);
-        localStorage.setItem('chat-history', JSON.stringify(arr));
+        const arr = readStoredHistory();
+        const filtered = arr.filter((c) => c.id !== chatId);
+        writeStoredHistory(filtered);
         if (onDeleteChat) onDeleteChat(chatId);
     };
 
@@ -210,7 +244,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                         }}
                     >
                         <h2
-                            className="text-base font-bold tracking-wide"
+                            className="text-base font-semibold tracking-wide"
                             style={{ color: theme.title.color }}
                         >
                             Historial
@@ -235,7 +269,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="w-5 h-5"
+                                className="size-5"
                             >
                                 <line x1="18" y1="6" x2="6" y2="18" />
                                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -288,17 +322,17 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                     {editingId === chat.id ? (
                                         <div className="w-full p-2">
                                             <input
+                                                ref={editInputRef}
                                                 value={editValue}
                                                 onChange={handleEditChange}
                                                 onBlur={() =>
                                                     handleEditBlur(chat)
                                                 }
-                                                className="w-full bg-transparent border-b-2 outline-none px-1 py-1 text-sm"
+                                                className="w-full bg-transparent border-b-2 outline-none p-1 text-sm"
                                                 style={{
                                                     borderColor: theme.accent,
                                                     color: theme.text,
                                                 }}
-                                                autoFocus
                                                 onFocus={(e) =>
                                                     e.target.select()
                                                 }
@@ -315,6 +349,8 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                         </div>
                                     ) : (
                                         <div
+                                            role="button"
+                                            tabIndex={0}
                                             className="w-full p-2.5 cursor-pointer"
                                             style={
                                                 currentChatId === chat.id
@@ -324,6 +360,15 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                             onClick={() => {
                                                 onSelectChat(chat.id);
                                                 onClose();
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    e.key === 'Enter' ||
+                                                    e.key === ' '
+                                                ) {
+                                                    onSelectChat(chat.id);
+                                                    onClose();
+                                                }
                                             }}
                                         >
                                             <div className="flex items-center justify-between gap-1">
@@ -402,39 +447,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                                                     color: theme.textMuted,
                                                 }}
                                             >
-                                                {(() => {
-                                                    const d = new Date(
-                                                        chat.date
-                                                    );
-                                                    const dias = [
-                                                        'Dom',
-                                                        'Lun',
-                                                        'Mar',
-                                                        'Mié',
-                                                        'Jue',
-                                                        'Vie',
-                                                        'Sáb',
-                                                    ];
-                                                    const fecha =
-                                                        d.toLocaleDateString(
-                                                            'es-AR',
-                                                            {
-                                                                day: '2-digit',
-                                                                month: '2-digit',
-                                                                year: 'numeric',
-                                                            }
-                                                        );
-                                                    const hora =
-                                                        d.toLocaleTimeString(
-                                                            'es-AR',
-                                                            {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                                hour12: false,
-                                                            }
-                                                        );
-                                                    return `${dias[d.getDay()]} ${fecha} · ${hora}`;
-                                                })()}
+                                                {formatChatDate(chat.date)}
                                             </span>
                                         </div>
                                     )}
