@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas";
 import {
   createTitleEditHandlers,
@@ -23,7 +23,8 @@ const Title: React.FC<TitleProps> = ({
   editable = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(title);
+  const [editValue, setEditValue] = useState("");
+  const editInputRef = useRef<HTMLInputElement | null>(null);
 
   const { handleEditKeyDown, truncateTitle } = createTitleEditHandlers({
     maxLength: TITLE_LIMITS.TOOLBAR,
@@ -38,6 +39,10 @@ const Title: React.FC<TitleProps> = ({
     if (editable && chatId) {
       setIsEditing(true);
       setEditValue(title);
+      queueMicrotask(() => {
+        editInputRef.current?.focus();
+        editInputRef.current?.select();
+      });
     }
   };
 
@@ -68,6 +73,7 @@ const Title: React.FC<TitleProps> = ({
       {isEditing ? (
         <input
           type="text"
+          ref={editInputRef}
           value={editValue}
           onChange={handleEditChange}
           onBlur={handleEditBlur}
@@ -78,7 +84,6 @@ const Title: React.FC<TitleProps> = ({
             borderColor: theme.title.color,
             width: `${Math.max(editValue.length * 0.8, 10)}ch`,
           }}
-          autoFocus
           maxLength={100} // Permitir ingresar hasta 100 caracteres
         />
       ) : (

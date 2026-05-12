@@ -45,39 +45,3 @@ export const setupMobileKeyboardHandler = (): void => {
   });
 };
 
-/**
- * Cierra el teclado virtual desenfocando el elemento activo
- */
-export const closeKeyboard = (): void => {
-  // Desenfocar cualquier elemento activo para cerrar el teclado
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-
-  // Solución adicional para iOS
-  // Crear un input temporal, enfocarlo y desenfocarlo inmediatamente
-  const tempInput = document.createElement("input");
-
-  // Aplicar clases de Tailwind como atributos en lugar de estilos inline
-  tempInput.className = "fixed w-0 h-0 opacity-0 text-base"; // Equivalente a hide-keyboard con font-size 16px
-
-  document.body.appendChild(tempInput);
-  tempInput.focus();
-  tempInput.blur();
-
-  // Eliminar el input temporal después de un breve retraso
-  setTimeout(() => {
-    document.body.removeChild(tempInput);
-  }, 100);
-
-  // Solución específica para Android
-  if (window.navigator.userAgent.match(/Android/i)) {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-    document.documentElement.style.height = "100%";
-    setTimeout(() => {
-      document.documentElement.style.height = "";
-    }, 100);
-  }
-};

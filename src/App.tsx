@@ -16,7 +16,11 @@ import Footer, { FooterRef } from "./components/FOOTER/Footer";
 import ChatContainer from "./components/chat/ChatContainer";
 
 // Interfaces
-import { ChatMessageType } from "./interfaces/chat/chatTypes";
+import {
+  CHAT_HISTORY_KEY,
+  ChatMessageType,
+  STORAGE_KEY,
+} from "./interfaces/chat/chatTypes";
 const PROVIDER_IDS = ["groq", "routellm", "openai", "anthropic"] as const;
 // Constante de versión
 export const APP_VERSION = "v.7.0";
@@ -247,7 +251,7 @@ export const App = () => {
     // Actualizar el localStorage con la nueva conversación
     try {
       // 1. Actualizar las conversaciones
-      const storedConversations = localStorage.getItem("chat-messages");
+      const storedConversations = localStorage.getItem(STORAGE_KEY);
       let conversations = {};
 
       if (storedConversations) {
@@ -268,7 +272,7 @@ export const App = () => {
       };
 
       // Guardar todas las conversaciones
-      localStorage.setItem("chat-messages", JSON.stringify(conversations));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
 
       // 2. Actualizar el historial de chats (NO borrar los anteriores)
       const newChatHistory = [
@@ -281,7 +285,7 @@ export const App = () => {
         },
       ];
 
-      localStorage.setItem("chat-history", JSON.stringify(newChatHistory));
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newChatHistory));
 
       // 3. Actualizar el estado de React
       setMessages(newMessages);
@@ -321,7 +325,7 @@ export const App = () => {
 
     try {
       // 1. Actualizar los mensajes en localStorage
-      const storedConversations = localStorage.getItem("chat-messages");
+      const storedConversations = localStorage.getItem(STORAGE_KEY);
       let conversations: Record<string, ChatMessageType[]> = {};
 
       if (storedConversations) {
@@ -332,7 +336,7 @@ export const App = () => {
 
       // Añadir la nueva conversación
       conversations[newChatId] = welcomeMessage;
-      localStorage.setItem("chat-messages", JSON.stringify(conversations));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
 
       // 2. Actualizar el historial de chats
       const updatedHistory = chatHistory.filter(
@@ -346,7 +350,7 @@ export const App = () => {
       };
 
       const newChatHistory = [...updatedHistory, newChatEntry];
-      localStorage.setItem("chat-history", JSON.stringify(newChatHistory));
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newChatHistory));
 
       // 3. Actualizar el estado
       setMessages(welcomeMessage);
@@ -371,7 +375,7 @@ export const App = () => {
           const newValue = value(prev);
           // Almacenar en localStorage
           try {
-            localStorage.setItem("chat-history", JSON.stringify(newValue));
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newValue));
           } catch (error) {
             console.error("Error al guardar historial de chat:", error);
           }
@@ -380,7 +384,7 @@ export const App = () => {
       } else {
         // Almacenar en localStorage
         try {
-          localStorage.setItem("chat-history", JSON.stringify(value));
+          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(value));
         } catch (error) {
           console.error("Error al guardar historial de chat:", error);
         }
@@ -414,12 +418,12 @@ export const App = () => {
 
       try {
         // 1. Eliminar los mensajes de esta conversación de localStorage
-        const storedConversations = localStorage.getItem("chat-messages");
+        const storedConversations = localStorage.getItem(STORAGE_KEY);
         if (storedConversations) {
           const conversations = JSON.parse(storedConversations);
           // Eliminar la conversación
           delete conversations[chatIdToDelete];
-          localStorage.setItem("chat-messages", JSON.stringify(conversations));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
         }
 
         // 2. Actualizar el historial de chats
@@ -428,7 +432,7 @@ export const App = () => {
         );
 
         // Actualizar el historial en localStorage y estado inmediatamente
-        localStorage.setItem("chat-history", JSON.stringify(updatedHistory));
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(updatedHistory));
         setChatHistory(updatedHistory);
 
         // 3. Si estamos eliminando el chat actual, navegar a otro
@@ -449,7 +453,7 @@ export const App = () => {
               const newConversations: Record<string, ChatMessageType[]> = {};
               newConversations[newChatId] = welcomeMessage;
               localStorage.setItem(
-                "chat-messages",
+                STORAGE_KEY,
                 JSON.stringify(newConversations),
               );
 
@@ -462,7 +466,7 @@ export const App = () => {
                   model: selectedModel,
                 },
               ];
-              localStorage.setItem("chat-history", JSON.stringify(newHistory));
+              localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newHistory));
 
               // Actualizar el estado
               setMessages(welcomeMessage);
@@ -491,7 +495,7 @@ export const App = () => {
             setCurrentChatId(sortedNewer[0].id);
 
             // Cargar mensajes del chat seleccionado
-            const storedData = localStorage.getItem("chat-messages");
+            const storedData = localStorage.getItem(STORAGE_KEY);
             if (storedData) {
               const parsedData = JSON.parse(storedData);
               if (parsedData && parsedData[sortedNewer[0].id]) {
@@ -513,7 +517,7 @@ export const App = () => {
             setCurrentChatId(latestChat.id);
 
             // Cargar mensajes del chat seleccionado
-            const storedData = localStorage.getItem("chat-messages");
+            const storedData = localStorage.getItem(STORAGE_KEY);
             if (storedData) {
               const parsedData = JSON.parse(storedData);
               if (parsedData && parsedData[latestChat.id]) {

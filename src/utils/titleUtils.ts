@@ -1,5 +1,6 @@
 // Utilidades para la edición de títulos de chat
 import { KeyboardEvent } from "react";
+import { CHAT_HISTORY_KEY } from "../interfaces/chat/chatTypes";
 
 interface EditTitleUtilsConfig {
   maxLength?: number; // Longitud máxima para truncar la visualización
@@ -34,13 +35,13 @@ export const createTitleEditHandlers = (config: EditTitleUtilsConfig) => {
         onUpdateTitle(chatId, editValue);
 
         // Actualizar en localStorage también
-        const chatHistoryRaw = localStorage.getItem("chat-history");
+        const chatHistoryRaw = localStorage.getItem(CHAT_HISTORY_KEY);
         let chatHistoryArr = chatHistoryRaw ? JSON.parse(chatHistoryRaw) : [];
         chatHistoryArr = chatHistoryArr.map(
           (c: { id: string; title: string; date: Date; model?: string }) =>
             c.id === chatId ? { ...c, title: editValue } : c,
         );
-        localStorage.setItem("chat-history", JSON.stringify(chatHistoryArr));
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistoryArr));
       }
 
       // Cerrar la edición tanto para Enter como para Escape

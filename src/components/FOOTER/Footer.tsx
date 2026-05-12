@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useImperativeHandle } from "react";
 import { ColorPalette } from "../../interfaces/temas/temas";
 import { isMobile } from "../../utils/mobileUtils";
 import LunaIcon from "../../assets/luna.svg";
@@ -6,6 +6,7 @@ import EscobaIcon from "../../assets/escoba.svg";
 import TrashIcon from "../../assets/trash.svg";
 import VaritaIcon from "../../assets/varita_magica.svg";
 import { getProviderConfig, getApiKeyStorageKey } from "../../config/providers";
+import { CHAT_HISTORY_KEY } from "../../interfaces/chat/chatTypes";
 import axios from "axios";
 
 interface FooterProps {
@@ -22,6 +23,7 @@ interface FooterProps {
   selectedModel?: string;
   selectedProvider?: string;
   onCloseMenus?: () => void;
+  ref?: React.Ref<FooterRef>;
 }
 
 export interface FooterRef {
@@ -29,25 +31,22 @@ export interface FooterRef {
   setMessage: (msg: string) => void;
 }
 
-const Footer = React.forwardRef<FooterRef, FooterProps>(
-  (
-    {
-      onSendMessage,
-      toggleTheme,
-      clearContext,
-      hasContext = false,
-      theme,
-      isDarkTheme,
-      isLoading,
-      chatTitle,
-      onUpdateChatTitle,
-      currentChatId,
-      selectedModel,
-      selectedProvider,
-      onCloseMenus,
-    },
-    ref,
-  ) => {
+const Footer: React.FC<FooterProps> = ({
+  onSendMessage,
+  toggleTheme,
+  clearContext,
+  hasContext = false,
+  theme,
+  isDarkTheme,
+  isLoading,
+  chatTitle,
+  onUpdateChatTitle,
+  currentChatId,
+  selectedModel,
+  selectedProvider,
+  onCloseMenus,
+  ref,
+}) => {
     const [message, setMessage] = useState("");
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState("");
@@ -58,7 +57,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
     const titleInputRef = useRef<HTMLInputElement>(null);
     const mobileDevice = typeof window !== "undefined" && isMobile();
 
-    React.useImperativeHandle(ref, () => ({
+    useImperativeHandle(ref, () => ({
       focusTextarea: () => {
         if (textareaRef.current && !mobileDevice) textareaRef.current.focus();
       },
@@ -70,29 +69,22 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
       },
     }));
 
-    useEffect(() => {
-      if (chatTitle) setEditTitleValue(chatTitle);
-    }, [chatTitle]);
-
-    useEffect(() => {
-      if (isEditingTitle && titleInputRef.current)
-        titleInputRef.current.focus();
-    }, [isEditingTitle]);
-
     const adjustTextareaHeight = () => {
       const el = textareaRef.current;
       if (el) {
-        el.style.height = "auto";
-        el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+        el.style.cssText += `;height:auto;height:${Math.min(
+          el.scrollHeight,
+          120,
+        )}px`;
       }
     };
 
     useEffect(() => {
       if (message === "" && textareaRef.current)
-        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.cssText += ";height:auto";
     }, [message]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const updateDraftMessage = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setMessage(e.target.value);
       if (showMagicResponse) setShowMagicResponse(false);
       adjustTextareaHeight();
@@ -127,7 +119,7 @@ const Footer = React.forwardRef<FooterRef, FooterProps>(
 
           if (!selectedModel && currentChatId) {
             try {
-              const raw = localStorage.getItem("chat-history");
+              const raw = localStorage.getItem(CHAT_HISTORY_KEY);
               if (raw) {
                 const arr = JSON.parse(raw);
                 const chat = arr.find(
@@ -200,15 +192,18 @@ ${message}`;
     };
 
     const handlePasteFromClipboard = async () => {
+      const applyPastedText = (text: string) => {
+        if (!text) return;
+        setMessage(text);
+        if (showMagicResponse) setShowMagicResponse(false);
+        requestAnimationFrame(adjustTextareaHeight);
+      };
+
       // Intentar primero con la Clipboard API moderna
       if (navigator.clipboard && navigator.clipboard.readText) {
         try {
           const text = await navigator.clipboard.readText();
-          if (text) {
-            setMessage(text);
-            if (showMagicResponse) setShowMagicResponse(false);
-            adjustTextareaHeight();
-          }
+          applyPastedText(text);
           textareaRef.current?.focus();
           return;
         } catch {
@@ -226,9 +221,7 @@ ${message}`;
         const text = tmp.value;
         document.body.removeChild(tmp);
         if (ok && text) {
-          setMessage(text);
-          if (showMagicResponse) setShowMagicResponse(false);
-          adjustTextareaHeight();
+          applyPastedText(text);
         }
         textareaRef.current?.focus();
       } catch (err) {
@@ -261,6 +254,14 @@ ${message}`;
       }
     };
 
+    const focusTitleInput = (el: HTMLInputElement | null) => {
+      titleInputRef.current = el;
+      if (el) {
+        el.focus();
+        el.select();
+      }
+    };
+
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setEditTitleValue(e.target.value);
     };
@@ -269,14 +270,14 @@ ${message}`;
       if (editTitleValue.trim() && onUpdateChatTitle && currentChatId) {
         onUpdateChatTitle(editTitleValue);
         try {
-          const raw = localStorage.getItem("chat-history");
+          const raw = localStorage.getItem(CHAT_HISTORY_KEY);
           if (raw) {
             let arr = JSON.parse(raw);
             arr = arr.map(
               (c: { id: string; title: string; date: Date; model?: string }) =>
                 c.id === currentChatId ? { ...c, title: editTitleValue } : c,
             );
-            localStorage.setItem("chat-history", JSON.stringify(arr));
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(arr));
           }
         } catch (error) {
           console.error("Error al actualizar título:", error);
@@ -373,7 +374,7 @@ ${message}`;
               <textarea
                 ref={textareaRef}
                 value={message}
-                onChange={handleChange}
+                onChange={updateDraftMessage}
                 onKeyDown={handleKeyDown}
                 placeholder="Escribe un Prompt ..."
                 className="grow py-2 px-1 resize-none overflow-y-auto min-h-12 max-h-30 bg-transparent text-sm touch-manipulation appearance-none"
@@ -385,7 +386,6 @@ ${message}`;
                     : theme.input.text,
                   caretColor: theme.accent,
                   border: "none",
-                  outline: "none",
                   scrollbarWidth: "thin",
                   scrollbarColor: `${theme.accent} transparent`,
                   lineHeight: "1.6",
@@ -438,7 +438,7 @@ ${message}`;
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                      d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
                     />
                   </svg>
                 )}
@@ -448,8 +448,8 @@ ${message}`;
               <button
                 type="button"
                 onClick={handlePasteFromClipboard}
-                title="Pegar del portapapeles"
-                aria-label="Pegar del portapapeles"
+                title="Pegar desde el portapapeles"
+                aria-label="Pegar desde el portapapeles"
                 className="nm-press"
                 style={nmBtnBase}
               >
@@ -465,7 +465,7 @@ ${message}`;
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
+                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
                   />
                 </svg>
               </button>
@@ -572,7 +572,7 @@ ${message}`;
               <div className="flex items-center justify-center grow px-2">
                 {isEditingTitle ? (
                   <input
-                    ref={titleInputRef}
+                    ref={focusTitleInput}
                     value={editTitleValue}
                     onChange={handleTitleChange}
                     aria-label="Título del chat"
@@ -587,7 +587,7 @@ ${message}`;
                       }
                     }}
                     onFocus={(e) => e.target.select()}
-                    className="text-sm font-semibold bg-transparent text-center border-b-2 outline-none px-2 py-0.5"
+                    className="text-sm font-semibold bg-transparent text-center border-b-2 px-2 py-0.5"
                     style={{
                       borderColor: theme.accent,
                       color: theme.accent,
@@ -702,7 +702,6 @@ ${message}`;
         </div>
       </footer>
     );
-  },
-);
+};
 
 export default Footer;

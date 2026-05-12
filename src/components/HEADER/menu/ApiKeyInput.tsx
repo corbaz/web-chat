@@ -136,7 +136,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
       {/* Section heading */}
       <h3
         className="text-sm font-semibold mb-3 tracking-wide uppercase"
-        style={{ color: theme.accent, letterSpacing: "0.06em" }}
+        style={{ color: theme.accent, letterSpacing: "0.05em" }}
       >
         API Key
       </h3>
@@ -144,6 +144,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
       {/* Provider selector */}
       <div className="mb-3">
         <label
+          htmlFor="api-key-provider"
           className="block text-xs font-medium mb-1.5"
           style={{ color: theme.textMuted }}
         >
@@ -151,6 +152,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         </label>
         <div className="relative">
           <select
+            id="api-key-provider"
             title="Proveedor"
             aria-label="Proveedor"
             value={provider}

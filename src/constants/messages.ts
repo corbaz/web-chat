@@ -7,7 +7,7 @@
 /**
  * Mensaje de bienvenida que se muestra cuando se inicia un nuevo chat
  */
-export const WELCOME_MESSAGE =
+const WELCOME_MESSAGE =
   "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?";
 
 /**

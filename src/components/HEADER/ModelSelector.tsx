@@ -36,19 +36,16 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     ? allModels.filter((model) => model.provider === providerFilter)
     : allModels;
 
-  const modelDevelopers = [
-    ...new Set(filteredModels.map((model) => model.developer)),
-  ];
-
-  const groupedOptions: GroupBase<ModelOption>[] = modelDevelopers.map(
-    (developer) => ({
+  const groupedOptions: GroupBase<ModelOption>[] = Array.from(
+    filteredModels.reduce((groups, model) => {
+      const options = groups.get(model.developer) ?? [];
+      options.push({ value: model.id, label: model.name });
+      groups.set(model.developer, options);
+      return groups;
+    }, new Map<string, ModelOption[]>()),
+    ([developer, options]) => ({
       label: developer.toUpperCase(),
-      options: filteredModels
-        .filter((model) => model.developer === developer)
-        .map((model) => ({
-          value: model.id,
-          label: model.name,
-        })),
+      options,
     }),
   );
 

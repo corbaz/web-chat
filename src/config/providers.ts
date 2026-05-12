@@ -1,5 +1,5 @@
 // Configuración de proveedores de API
-export type ProviderType = "groq" | "routellm" | "openai" | "anthropic";
+type ProviderType = "groq" | "routellm" | "openai" | "anthropic";
 
 interface Message {
   role: string;
@@ -20,7 +20,7 @@ export interface ProviderConfig {
   warning?: string; // Mensaje de advertencia si el proveedor no es recomendado
 }
 
-export const PROVIDERS: Record<ProviderType, ProviderConfig> = {
+const PROVIDERS: Record<ProviderType, ProviderConfig> = {
   groq: {
     name: "Groq",
     endpoint: "https://api.groq.com/openai/v1/chat/completions",
@@ -91,12 +91,18 @@ export const PROVIDERS: Record<ProviderType, ProviderConfig> = {
     }),
     payloadBuilder: (model: string, messages: Message[], maxTokens: number) => {
       // Convertir formato OpenAI a formato Anthropic
-      const systemMessage = messages
-        .filter((m) => m.role === "system")
-        .map((m) => m.content)
-        .join("\n");
+      const systemContents: string[] = [];
+      const contentMessages: Message[] = [];
 
-      const contentMessages = messages.filter((m) => m.role !== "system");
+      for (const message of messages) {
+        if (message.role === "system") {
+          systemContents.push(message.content);
+        } else {
+          contentMessages.push(message);
+        }
+      }
+
+      const systemMessage = systemContents.join("\n");
 
       return {
         model,

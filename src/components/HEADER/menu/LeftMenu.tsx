@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
 import Swal from "sweetalert2";
 import { createTitleEditHandlers } from "../../../utils/titleUtils";
+import { CHAT_HISTORY_KEY } from "../../../interfaces/chat/chatTypes";
 import PenIcon from "../../../assets/pen.svg";
 import TrashIcon from "../../../assets/trash.svg";
 import PieBrand from "./PieBrand.tsx";
@@ -18,8 +19,6 @@ interface LeftMenuProps {
   onUpdateChatTitle?: (chatId: string, newTitle: string) => void;
   onDeleteChat?: (chatId: string) => void;
 }
-
-const CHAT_HISTORY_KEY = "chat-history";
 
 const readStoredHistory = (): {
   id: string;

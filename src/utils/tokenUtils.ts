@@ -9,7 +9,7 @@
  * @param text Texto para estimar tokens
  * @returns Número estimado de tokens
  */
-export const estimateTokens = (text: string): number => {
+const estimateTokens = (text: string): number => {
   if (!text) return 0;
 
   // Contar palabras (aproximadamente 4 caracteres por palabra)

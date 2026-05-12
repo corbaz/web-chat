@@ -478,12 +478,8 @@ const ApiKeyModal = ({
               labelEl &&
               arrow
             ) {
-              const persistedProvider =
-                localStorage.getItem("selectedProvider");
               const initialProvider =
-                modalState.forcedProvider ||
-                persistedProvider ||
-                PROVIDERS[0].id;
+                modalState.forcedProvider || storedProvider || PROVIDERS[0].id;
               select.value = initialProvider;
               const providerMeta =
                 PROVIDERS.find((pr) => pr.id === initialProvider) ||
@@ -521,8 +517,12 @@ const ApiKeyModal = ({
               let isOpen = false;
               const toggleMenu = () => {
                 isOpen = !isOpen;
-                menu.style.display = isOpen ? "block" : "none";
-                trigger.style.boxShadow = isOpen ? nmShadowInset : nmShadowSm;
+                Object.assign(menu.style, {
+                  display: isOpen ? "block" : "none",
+                });
+                Object.assign(trigger.style, {
+                  boxShadow: isOpen ? nmShadowInset : nmShadowSm,
+                });
                 Object.assign(arrow.style, {
                   transform: isOpen
                     ? "translateY(-50%) rotate(180deg)"
@@ -557,14 +557,18 @@ const ApiKeyModal = ({
                 // Hover effects (react-select style)
                 el.addEventListener("mouseenter", () => {
                   if (el.dataset.value !== select.value) {
-                    el.style.boxShadow = nmShadowSm;
-                    el.style.color = nmAccent;
+                    Object.assign(el.style, {
+                      boxShadow: nmShadowSm,
+                      color: nmAccent,
+                    });
                   }
                 });
                 el.addEventListener("mouseleave", () => {
                   if (el.dataset.value !== select.value) {
-                    el.style.boxShadow = "none";
-                    el.style.color = nmText;
+                    Object.assign(el.style, {
+                      boxShadow: "none",
+                      color: nmText,
+                    });
                   }
                 });
               });

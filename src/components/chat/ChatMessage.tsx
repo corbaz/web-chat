@@ -47,8 +47,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       } catch {
         const textarea = document.createElement("textarea");
         textarea.value = message.content;
-        textarea.style.position = "fixed";
-        textarea.style.top = "-9999px";
+        textarea.style.cssText = "position:fixed;top:-9999px";
         document.body.appendChild(textarea);
         textarea.focus();
         textarea.select();

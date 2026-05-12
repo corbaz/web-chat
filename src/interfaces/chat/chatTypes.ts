@@ -14,8 +14,8 @@ export interface GroqMessageType {
   content: string;
 }
 
-// Clave para almacenar mensajes en localStorage
-export const STORAGE_KEY = "prompting_chat_messages";
+// Clave versionada para almacenar mensajes en localStorage
+export const STORAGE_KEY = "prompting_chat_messages:v1";
 
-// Clave para almacenar historial de chats en localStorage
-export const CHAT_HISTORY_KEY = "prompting_chat_history";
+// Clave versionada para almacenar historial de chats en localStorage
+export const CHAT_HISTORY_KEY = "prompting_chat_history:v1";

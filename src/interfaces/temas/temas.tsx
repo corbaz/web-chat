@@ -211,5 +211,3 @@ export const lightTheme: ColorPalette = {
   },
 };
 
-// Default export — dark theme
-export const colorPalette = darkTheme;
