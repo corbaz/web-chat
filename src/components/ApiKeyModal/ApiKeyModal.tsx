@@ -228,7 +228,7 @@ const ApiKeyModal = ({
                         <div style="width: 100%; position: relative; margin-bottom: 3rem; display: grid; place-items: center;">
                           <label style="display:block; margin-bottom: 1.2rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${theme.accent}; width: 100%; text-align: left;">Proveedor</label>
                           <!-- Hidden native select for form value -->
-                          <select id="swal-select-provider" style="display:none;">
+                          <select id="swal-select-provider" name="swalProvider" style="display:none;">
                             ${optionsHtml}
                           </select>
                           <!-- Custom neumorphic dropdown (react-select style) -->
@@ -253,6 +253,7 @@ const ApiKeyModal = ({
                           <input
                             type="password"
                             id="swal-input-apikey-ue"
+                            name="swalApiKey"
                             class="swal2-input"
                             placeholder="Ingresa tu API Key"
                             style="width: 100%; padding: 0.75em 3em 0.75em 1.2em; background: ${theme.background}; color: ${theme.text}; border: none; border-radius: 12px; box-sizing: border-box; height: 3.1em; font-size: 0.9rem; font-family: inherit; font-weight: 500; letter-spacing: 0.01em; transition: box-shadow 0.25s ease; outline: none; text-align: left; box-shadow: ${theme.shadow.inset};"

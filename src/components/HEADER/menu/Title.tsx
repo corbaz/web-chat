@@ -72,6 +72,8 @@ const Title: React.FC<TitleProps> = ({
     <div className="flex items-end">
       {isEditing ? (
         <input
+          id="header-title-input"
+          name="headerTitle"
           type="text"
           ref={editInputRef}
           value={editValue}

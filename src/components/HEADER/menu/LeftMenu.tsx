@@ -316,6 +316,8 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                   {editingId === chat.id ? (
                     <div className="w-full p-2">
                       <input
+                        id={`chat-history-title-${chat.id}`}
+                        name="chatHistoryTitle"
                         ref={editInputRef}
                         value={editValue}
                         onChange={handleEditChange}

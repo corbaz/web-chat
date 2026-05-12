@@ -142,6 +142,8 @@ const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   return (
     <Select<ProviderOption, false>
       instanceId="provider-selector"
+      inputId="provider-selector-input"
+      name="selectedProvider"
       value={providers.find((p) => p.value === selectedProvider)}
       onChange={(option) => {
         if (option) {

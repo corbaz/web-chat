@@ -165,6 +165,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   return (
     <Select<ModelOption, false, GroupBase<ModelOption>>
       instanceId="model-selector"
+      inputId="model-selector-input"
+      name="selectedModel"
       value={groupedOptions
         .flatMap((group) => group.options)
         .find((option) => option.value === selectedModel)}

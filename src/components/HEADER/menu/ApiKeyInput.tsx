@@ -153,6 +153,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         <div className="relative">
           <select
             id="api-key-provider"
+            name="apiKeyProvider"
             title="Proveedor"
             aria-label="Proveedor"
             value={provider}
@@ -198,6 +199,8 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
       <div className="space-y-2">
         <div className="relative">
           <input
+            id="stored-api-key"
+            name="apiKey"
             type={state.isVisible ? "text" : "password"}
             value={state.apiKey}
             readOnly
