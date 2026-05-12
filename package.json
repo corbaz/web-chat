@@ -22,7 +22,7 @@
   "scripts": {
     "bun-install": "bun install",
     "bun-upgrade": "bun upgrade && bunx -y npm-check-updates",
-    "ncu": "bunx -y npm-check-updates -u && bun update",
+    "ncu": "bunx -y npm-check-updates -u && bun update --minimum-release-age 0",
     "dev": "vite --host",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --fix",

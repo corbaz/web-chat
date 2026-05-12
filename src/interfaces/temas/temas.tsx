@@ -210,4 +210,3 @@ export const lightTheme: ColorPalette = {
     hoverText: "#1a2040",
   },
 };
-

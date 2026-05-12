@@ -7,6 +7,14 @@ export default defineConfig({
     // Configura base como './' para generar rutas relativas en lugar de absolutas
     base: './',
     plugins: [react(), tailwindcss()],
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            clientPort: 5173,
+        },
+    },
     build: {
         // Directorio de salida para GitHub Pages
         outDir: 'docs',

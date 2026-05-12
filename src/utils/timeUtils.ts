@@ -15,4 +15,3 @@ export const formatResponseTime = (milliseconds: number): string => {
     return `${seconds}s`;
   }
 };
-

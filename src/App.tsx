@@ -23,7 +23,7 @@ import {
 } from "./interfaces/chat/chatTypes";
 const PROVIDER_IDS = ["groq", "routellm", "openai", "anthropic"] as const;
 // Constante de versión
-export const APP_VERSION = "v.7.0";
+export const APP_VERSION = "v.8.0";
 
 export const App = () => {
   // Estados para la UI
@@ -466,7 +466,10 @@ export const App = () => {
                   model: selectedModel,
                 },
               ];
-              localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newHistory));
+              localStorage.setItem(
+                CHAT_HISTORY_KEY,
+                JSON.stringify(newHistory),
+              );
 
               // Actualizar el estado
               setMessages(welcomeMessage);

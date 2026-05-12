@@ -816,7 +816,10 @@ const ApiKeyModal = ({
 
     manageApiKeyModal();
     return () => {
-      Swal.close();
+      // No cierres SweetAlert desde el cleanup del effect.
+      // En React StrictMode (dev/local), React ejecuta setup -> cleanup -> setup
+      // para detectar efectos inseguros. Si cerramos acá, el modal de API key
+      // se abre y se cierra solo en localhost, dejando apenas el fondo.
       if (closeOnOutsideClickRef) {
         document.removeEventListener("click", closeOnOutsideClickRef);
       }
