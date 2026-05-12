@@ -3,7 +3,7 @@
   "private": true,
   "version": "v.3.2",
   "type": "module",
-  "packageManager": "bun@1.3.11",
+  "packageManager": "bun@1.3.13",
   "homepage": "https://corbaz.github.io/web-chat",
   "repository": {
     "type": "git",
@@ -33,16 +33,16 @@
     "deploy": "surge docs --domain deepchat.surge.sh"
   },
   "dependencies": {
-    "@tailwindcss/vite": "4.2.2",
-    "axios": "1.14.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "@tailwindcss/vite": "4.3.0",
+    "axios": "1.16.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "react-markdown": "10.1.0",
     "react-select": "5.10.2",
     "react-syntax-highlighter": "16.1.1",
     "remark-gfm": "4.0.1",
     "sweetalert2": "11.26.24",
-    "tailwindcss": "4.2.2"
+    "tailwindcss": "4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -50,13 +50,13 @@
     "@types/react-dom": "19.2.3",
     "@types/react-syntax-highlighter": "15.5.13",
     "@vitejs/plugin-react": "6.0.1",
-    "eslint": "10.2.0",
-    "eslint-plugin-react-hooks": "7.0.1",
+    "eslint": "10.3.0",
+    "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.2",
-    "globals": "17.4.0",
-    "typescript": "6.0.2",
-    "typescript-eslint": "8.58.0",
-    "vite": "8.0.3"
+    "globals": "17.6.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.59.3",
+    "vite": "8.0.12"
   },
   "trustedDependencies": [
     "@tailwindcss/oxide",
