@@ -33,7 +33,7 @@ const PROVIDER_IDS = [
   "opencodefree",
 ] as const;
 // Constante de versión
-export const APP_VERSION = "v.8.0";
+export const APP_VERSION = "v.9.0";
 
 export const App = () => {
   // Estados para la UI
