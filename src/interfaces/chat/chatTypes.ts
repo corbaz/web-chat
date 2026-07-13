@@ -7,6 +7,9 @@ export interface ChatMessageType {
   tokensUsed?: number; // Número de tokens utilizados en la petición
   tokenLimit?: number; // Límite de tokens del modelo seleccionado
   modelName?: string; // Nombre del modelo usado para la respuesta
+  requestedModelId?: string; // ID del modelo solicitado por el usuario
+  promptTokens?: number; // Exact input/prompt tokens
+  completionTokens?: number; // Exact output/completion tokens
 }
 
 export interface GroqMessageType {

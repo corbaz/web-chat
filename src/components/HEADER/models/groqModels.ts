@@ -13,26 +13,26 @@ export interface GroqModel {
 }
 
 export const groqModels: GroqModel[] = [
-  // Alibaba Cloud — Preview (Default)
+  // OpenAI — Production (Recommended Flagship Default)
   {
-    id: "qwen/qwen3-32b",
-    name: "Alibaba Cloud Qwen3 32B (Default)",
-    developer: "Alibaba Cloud",
+    id: "openai/gpt-oss-120b",
+    name: "OpenAI GPT OSS 120B (Default)",
+    developer: "OpenAI",
     contextWindow: "131072",
     provider: "groq",
-    maxCompletionTokens: "40960",
-    velocidad: "400",
-    precio: "0.20",
+    maxCompletionTokens: "65536",
+    velocidad: "500",
+    precio: "0.15",
   },
   {
-    id: "qwen/qwen3.6-27b",
-    name: "Alibaba Cloud Qwen3.6 27B",
-    developer: "Alibaba Cloud",
+    id: "openai/gpt-oss-20b",
+    name: "OpenAI GPT OSS 20B",
+    developer: "OpenAI",
     contextWindow: "131072",
     provider: "groq",
-    maxCompletionTokens: "32768",
-    velocidad: "500",
-    precio: "0.60",
+    maxCompletionTokens: "65536",
+    velocidad: "1000",
+    precio: "0.075",
   },
 
   // Meta — Production
@@ -55,6 +55,28 @@ export const groqModels: GroqModel[] = [
     maxCompletionTokens: "131072",
     velocidad: "560",
     precio: "0.05",
+  },
+
+  // Alibaba Cloud — Preview
+  {
+    id: "qwen/qwen3-32b",
+    name: "Alibaba Cloud Qwen3 32B",
+    developer: "Alibaba Cloud",
+    contextWindow: "131072",
+    provider: "groq",
+    maxCompletionTokens: "40960",
+    velocidad: "400",
+    precio: "0.20",
+  },
+  {
+    id: "qwen/qwen3.6-27b",
+    name: "Alibaba Cloud Qwen3.6 27B",
+    developer: "Alibaba Cloud",
+    contextWindow: "131072",
+    provider: "groq",
+    maxCompletionTokens: "32768",
+    velocidad: "500",
+    precio: "0.60",
   },
 
   // Meta — Preview
@@ -89,28 +111,6 @@ export const groqModels: GroqModel[] = [
     maxCompletionTokens: "8192",
     velocidad: "450",
     precio: "0.00",
-  },
-
-  // OpenAI — Production
-  {
-    id: "openai/gpt-oss-120b",
-    name: "OpenAI GPT OSS 120B",
-    developer: "OpenAI",
-    contextWindow: "131072",
-    provider: "groq",
-    maxCompletionTokens: "65536",
-    velocidad: "500",
-    precio: "0.15",
-  },
-  {
-    id: "openai/gpt-oss-20b",
-    name: "OpenAI GPT OSS 20B",
-    developer: "OpenAI",
-    contextWindow: "131072",
-    provider: "groq",
-    maxCompletionTokens: "65536",
-    velocidad: "1000",
-    precio: "0.075",
   },
 
   // OpenAI — Preview

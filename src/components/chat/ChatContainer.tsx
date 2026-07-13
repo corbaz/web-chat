@@ -534,12 +534,23 @@ const ChatContainer = ({
           .replace(/<think>[\s\S]*?<\/think>/g, "")
           .trim();
 
-        // Preferir el modelo devuelto; si falta, conservar el solicitado sin asumir confirmación.
+         // Preferir el modelo devuelto; si falta, conservar el solicitado sin asumir confirmación.
         const actualModel = providerConfig.parseActualModel
           ? providerConfig.parseActualModel(
               response.data as Record<string, unknown>,
             ) || selectedModel
           : selectedModel;
+
+        const rawUsage = (response.data as { usage?: Record<string, unknown> })?.usage;
+        let promptTokens = totalTokensUsed;
+        let completionTokens = 0;
+
+        if (rawUsage && typeof rawUsage === "object") {
+          const rawPrompt = rawUsage.prompt_tokens ?? rawUsage.input_tokens;
+          if (typeof rawPrompt === "number") promptTokens = rawPrompt;
+          const rawCompletion = rawUsage.completion_tokens ?? rawUsage.output_tokens;
+          if (typeof rawCompletion === "number") completionTokens = rawCompletion;
+        }
 
         // Añadir respuesta del asistente con info de tokens
         const assistantMessage: ChatMessageType = {
@@ -550,9 +561,12 @@ const ChatContainer = ({
           content: filteredResponse,
           timestamp: Date.now(),
           responseTime: formattedTime,
-          tokensUsed: totalTokensUsed,
+          tokensUsed: promptTokens,
           tokenLimit: modelTokenLimit,
           modelName: actualModel,
+          requestedModelId: selectedModel,
+          promptTokens: promptTokens,
+          completionTokens: completionTokens,
         };
 
         setMessages((prevMessages: ChatMessageType[]) => [

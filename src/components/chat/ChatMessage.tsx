@@ -3,6 +3,11 @@ import { ChatMessageType } from "../../interfaces/chat/chatTypes.ts";
 import { ColorPalette } from "../../interfaces/temas/temas.tsx";
 import { groqModels } from "../../components/HEADER/models/groqModels";
 import { routellmModels } from "../../components/HEADER/models/routellmModels";
+import { openaiModels } from "../../components/HEADER/models/openaiModels";
+import { anthropicModels } from "../../components/HEADER/models/anthropicModels";
+import { opengoModels } from "../../components/HEADER/models/opengoModels";
+import { opencodeFreeModels } from "../../components/HEADER/models/opencodeFreeModels";
+import { geminiModels } from "../../components/HEADER/models/geminiModels";
 import { getTokenUsageString } from "../../utils/tokenUtils";
 import "./markdown-styles.css";
 
@@ -24,11 +29,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const getModelShortName = (modelId?: string): string => {
     if (!modelId) return "modelo";
-    const model = [...groqModels, ...routellmModels].find(
-      (m) => m.id === modelId,
-    );
+    const model = [
+      ...groqModels,
+      ...routellmModels,
+      ...openaiModels,
+      ...anthropicModels,
+      ...opengoModels,
+      ...opencodeFreeModels,
+      ...geminiModels,
+    ].find((m) => m.id === modelId);
     if (model) return model.name;
-    return modelId.split("/").pop()?.split("-")[0] || "modelo";
+    return modelId.split("/").pop()?.split("-")[0] || modelId;
   };
 
   const formatResponseTimeToMs = (responseTime: string): string => {
@@ -126,13 +137,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* AI metadata */}
         {!isUser && (
           <div className="flex flex-col gap-0.5 mt-2.5">
-            {message.responseTime && (
+            {message.modelName && (
               <div
                 className="text-xs text-right"
                 style={{ color: theme.textMuted }}
               >
-                ⏱ {getModelShortName(message.modelName)} ·{" "}
-                {formatResponseTimeToMs(message.responseTime)}
+                ⏱ {getModelShortName(message.modelName)}
+                {message.requestedModelId && message.requestedModelId !== message.modelName && (
+                  <span> (pedido: {getModelShortName(message.requestedModelId)})</span>
+                )}
+                {message.responseTime && ` · ${formatResponseTimeToMs(message.responseTime)}`}
               </div>
             )}
             {message.tokensUsed !== undefined &&
@@ -142,7 +156,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   style={{ color: theme.textMuted }}
                 >
                   📊{" "}
-                  {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
+                  {message.promptTokens !== undefined && message.completionTokens !== undefined ? (
+                    <span>
+                      In: {message.promptTokens} | Out: {message.completionTokens} ·{" "}
+                      {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
+                    </span>
+                  ) : (
+                    getTokenUsageString(message.tokensUsed, message.tokenLimit)
+                  )}
                 </div>
               )}
           </div>
