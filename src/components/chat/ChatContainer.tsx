@@ -541,14 +541,18 @@ const ChatContainer = ({
             ) || selectedModel
           : selectedModel;
 
-        const rawUsage = (response.data as { usage?: Record<string, unknown> })?.usage;
+        const rawData = response.data as {
+          usage?: Record<string, unknown>;
+          usageMetadata?: Record<string, unknown>;
+        };
+        const rawUsage = rawData?.usage || rawData?.usageMetadata;
         let promptTokens = totalTokensUsed;
         let completionTokens = 0;
 
         if (rawUsage && typeof rawUsage === "object") {
-          const rawPrompt = rawUsage.prompt_tokens ?? rawUsage.input_tokens;
+          const rawPrompt = rawUsage.prompt_tokens ?? rawUsage.input_tokens ?? rawUsage.promptTokenCount;
           if (typeof rawPrompt === "number") promptTokens = rawPrompt;
-          const rawCompletion = rawUsage.completion_tokens ?? rawUsage.output_tokens;
+          const rawCompletion = rawUsage.completion_tokens ?? rawUsage.output_tokens ?? rawUsage.candidatesTokenCount;
           if (typeof rawCompletion === "number") completionTokens = rawCompletion;
         }
 

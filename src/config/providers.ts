@@ -106,6 +106,46 @@ const parseOpenAIResponse = (data: Record<string, unknown>): string => {
   return choices?.[0]?.message?.content ?? "";
 };
 
+const buildGeminiNativePayload = (
+  _model: string,
+  messages: Message[],
+  maxTokens: number,
+): Record<string, unknown> => {
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  let systemText = "";
+
+  for (const message of messages) {
+    if (message.role === "system") {
+      systemText += (systemText ? "\n" : "") + message.content;
+    } else {
+      contents.push({
+        role: message.role === "assistant" ? "model" : "user",
+        parts: [{ text: message.content }],
+      });
+    }
+  }
+
+  return {
+    contents,
+    ...(systemText && {
+      systemInstruction: {
+        parts: [{ text: systemText }],
+      },
+    }),
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: 1.0,
+    },
+  };
+};
+
+const parseGeminiNativeResponse = (data: Record<string, unknown>): string => {
+  const candidates = data.candidates as Array<{
+    content?: { parts?: Array<{ text?: string }> };
+  }>;
+  return candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+};
+
 export const getApiErrorMessage = (data: unknown): string => {
   if (typeof data === "string") return data;
   if (!data || typeof data !== "object") return "";
@@ -281,23 +321,15 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
   },
   gemini: {
     name: "Gemini",
-    endpoint: () => "https://generativelanguage.googleapis.com/v1beta/chat/completions",
+    endpoint: (model: string) =>
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     headerAuth: (apiKey: string) => ({
-      Authorization: `Bearer ${apiKey}`,
+      "x-goog-api-key": apiKey,
     }),
-    payloadBuilder: (
-      model: string,
-      messages: Message[],
-      maxTokens: number,
-    ) => ({
-      model,
-      messages,
-      max_tokens: maxTokens,
-    }),
-    parseResponse: (data: Record<string, unknown>) => {
-      const choices = data.choices as Array<{ message?: { content?: string } }>;
-      return choices?.[0]?.message?.content ?? "";
-    },
+    payloadBuilder: (model: string, messages: Message[], maxTokens: number) =>
+      buildGeminiNativePayload(model, messages, maxTokens),
+    parseResponse: (data: Record<string, unknown>) =>
+      parseGeminiNativeResponse(data),
     parseActualModel: (data: Record<string, unknown>) => {
       return (data.model as string) ?? "";
     },
