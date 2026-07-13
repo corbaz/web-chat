@@ -6,6 +6,7 @@ import { openaiModels } from "./components/HEADER/models/openaiModels";
 import { anthropicModels } from "./components/HEADER/models/anthropicModels";
 import { opengoModels } from "./components/HEADER/models/opengoModels";
 import { opencodeFreeModels } from "./components/HEADER/models/opencodeFreeModels";
+import { geminiModels } from "./components/HEADER/models/geminiModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 import { generateLayoutCSS } from "./utils/layoutConstants";
 import { createWelcomeMessage } from "./constants/messages";
@@ -31,6 +32,7 @@ const PROVIDER_IDS = [
   "anthropic",
   "opengo",
   "opencodefree",
+  "gemini",
 ] as const;
 // Constante de versión
 export const APP_VERSION = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "v.development";
@@ -86,7 +88,9 @@ export const App = () => {
                 ? opengoModels
                 : provider === "opencodefree"
                   ? opencodeFreeModels
-                  : groqModels;
+                  : provider === "gemini"
+                    ? geminiModels
+                    : groqModels;
 
     // Si el modelo guardado existe en el provider actual, usarlo
     if (savedModel && allModels.some((m) => m.id === savedModel)) {
@@ -118,6 +122,8 @@ export const App = () => {
         return opengoModels[0]?.id || selectedModel;
       case "opencodefree":
         return opencodeFreeModels[0]?.id || selectedModel;
+      case "gemini":
+        return geminiModels[0]?.id || selectedModel;
       default:
         return groqModels[0]?.id || selectedModel;
     }

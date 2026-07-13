@@ -5,7 +5,8 @@ type ProviderType =
   | "openai"
   | "anthropic"
   | "opengo"
-  | "opencodefree";
+  | "opencodefree"
+  | "gemini";
 
 interface Message {
   role: string;
@@ -277,6 +278,29 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
     },
     warning:
       "OpenCode Free requiere un proxy de servidor para evitar problemas de CORS en producción. En localhost se utiliza un proxy local automático.",
+  },
+  gemini: {
+    name: "Gemini",
+    endpoint: () => "https://generativelanguage.googleapis.com/v1beta/chat/completions",
+    headerAuth: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+    }),
+    payloadBuilder: (
+      model: string,
+      messages: Message[],
+      maxTokens: number,
+    ) => ({
+      model,
+      messages,
+      max_tokens: maxTokens,
+    }),
+    parseResponse: (data: Record<string, unknown>) => {
+      const choices = data.choices as Array<{ message?: { content?: string } }>;
+      return choices?.[0]?.message?.content ?? "";
+    },
+    parseActualModel: (data: Record<string, unknown>) => {
+      return (data.model as string) ?? "";
+    },
   },
 };
 

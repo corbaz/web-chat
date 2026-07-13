@@ -124,7 +124,9 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             ? "OpenCode Go"
             : id === "opencodefree"
               ? "OpenCode Free"
-              : "Anthropic";
+              : id === "gemini"
+                ? "Gemini"
+                : "Anthropic";
 
   const providerLink = (id: string) =>
     id === "groq"
@@ -135,7 +137,9 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
           ? "https://platform.openai.com/api-keys"
           : id === "opengo"
             ? "https://opencode.ai/es/go"
-            : "https://console.anthropic.com/settings/keys";
+            : id === "gemini"
+              ? "https://aistudio.google.com/app/apikey"
+              : "https://console.anthropic.com/settings/keys";
 
   return (
     <div className="mb-6">
@@ -186,6 +190,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
             <option value="opengo">OpenCode Go</option>
+            <option value="gemini">Gemini</option>
           </select>
           {/* Chevron */}
           <svg

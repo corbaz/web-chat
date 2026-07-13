@@ -8,6 +8,7 @@ import { openaiModels } from "./models/openaiModels";
 import { anthropicModels } from "./models/anthropicModels";
 import { opengoModels } from "./models/opengoModels";
 import { opencodeFreeModels } from "./models/opencodeFreeModels";
+import { geminiModels } from "./models/geminiModels";
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -34,6 +35,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     ...anthropicModels,
     ...opengoModels,
     ...opencodeFreeModels,
+    ...geminiModels,
   ];
 
   const filteredModels = providerFilter

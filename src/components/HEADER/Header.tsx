@@ -44,6 +44,7 @@ const Header: React.FC<HeaderProps> = ({
         "anthropic",
         "opengo",
         "opencodefree",
+        "gemini",
       ];
       for (const provider of providers) {
         if (provider === "opencodefree") return provider;

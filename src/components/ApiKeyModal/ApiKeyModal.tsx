@@ -33,6 +33,11 @@ const PROVIDERS = [
     name: "OpenCode Go",
     link: "https://opencode.ai/es/go",
   },
+  {
+    id: "gemini",
+    name: "Gemini",
+    link: "https://aistudio.google.com/app/apikey",
+  },
 ] as const;
 
 // Función para validar la API key con el proveedor
@@ -144,6 +149,19 @@ const validateApiKey = async (
       // OpenCode Go bloquea peticiones CORS desde el navegador,
       // por lo que validamos que la clave tenga una longitud adecuada.
       return apiKey.trim().length >= 20;
+    } else if (provider === "gemini") {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res.ok;
+      } catch {
+        clearTimeout(timeoutId);
+        return false;
+      }
     }
     return false;
   } catch {

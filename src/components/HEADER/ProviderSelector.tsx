@@ -21,6 +21,7 @@ const allProviders: ProviderOption[] = [
   { value: "anthropic", label: "Anthropic" },
   { value: "opengo", label: "OpenCode Go" },
   { value: "opencodefree", label: "OpenCode Free" },
+  { value: "gemini", label: "Gemini" },
 ];
 
 const ProviderSelector: React.FC<ProviderSelectorProps> = ({

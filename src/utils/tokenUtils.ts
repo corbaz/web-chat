@@ -53,6 +53,7 @@ import { openaiModels } from "../components/HEADER/models/openaiModels";
 import { anthropicModels } from "../components/HEADER/models/anthropicModels";
 import { opengoModels } from "../components/HEADER/models/opengoModels";
 import { opencodeFreeModels } from "../components/HEADER/models/opencodeFreeModels";
+import { geminiModels } from "../components/HEADER/models/geminiModels";
 
 /**
  * Obtiene el límite de tokens para un modelo específico
@@ -69,6 +70,7 @@ export const getModelTokenLimit = (modelId: string): number => {
     ...anthropicModels,
     ...opengoModels,
     ...opencodeFreeModels,
+    ...geminiModels,
   ];
   const model = allModels.find((m) => m.id === modelId);
 
