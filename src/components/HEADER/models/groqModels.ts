@@ -124,38 +124,4 @@ export const groqModels: GroqModel[] = [
     velocidad: "1000",
     precio: "0.075",
   },
-
-  // Audio — Speech to Text (Production)
-  {
-    id: "whisper-large-v3",
-    name: "Whisper Large v3",
-    developer: "OpenAI",
-    contextWindow: "",
-    provider: "groq",
-    maxFileSize: "25 MB",
-  },
-  {
-    id: "whisper-large-v3-turbo",
-    name: "Whisper Large v3 Turbo",
-    developer: "OpenAI",
-    contextWindow: "",
-    provider: "groq",
-    maxFileSize: "25 MB",
-  },
-
-  // Audio — Text to Speech (Preview)
-  {
-    id: "canopylabs/orpheus-v1-english",
-    name: "Orpheus v1 English TTS",
-    developer: "Canopy Labs",
-    contextWindow: "10K",
-    provider: "groq",
-  },
-  {
-    id: "canopylabs/orpheus-arabic-saudi",
-    name: "Orpheus Arabic TTS",
-    developer: "Canopy Labs",
-    contextWindow: "10K",
-    provider: "groq",
-  },
 ];
