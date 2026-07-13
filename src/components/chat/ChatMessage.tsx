@@ -8,7 +8,6 @@ import { anthropicModels } from "../../components/HEADER/models/anthropicModels"
 import { opengoModels } from "../../components/HEADER/models/opengoModels";
 import { opencodeFreeModels } from "../../components/HEADER/models/opencodeFreeModels";
 import { geminiModels } from "../../components/HEADER/models/geminiModels";
-import { getTokenUsageString } from "../../utils/tokenUtils";
 import "./markdown-styles.css";
 
 const MarkdownRenderer = lazy(() => import("../chat/MarkdownRenderer.tsx"));
@@ -158,11 +157,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   📊{" "}
                   {message.promptTokens !== undefined && message.completionTokens !== undefined ? (
                     <span>
-                      Entrada: {message.promptTokens} | Salida: {message.completionTokens} ·{" "}
-                      {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
+                      Tokens de este mensaje: {message.promptTokens + message.completionTokens} (Entrada: {message.promptTokens} | Salida: {message.completionTokens}) · Límite de contexto: {message.tokenLimit.toLocaleString()} (Usado: {Math.max(0.1, Math.round(((message.promptTokens + message.completionTokens) / message.tokenLimit) * 1000) / 10)}%)
                     </span>
                   ) : (
-                    getTokenUsageString(message.tokensUsed, message.tokenLimit)
+                    <span>
+                      Tokens totales: {message.tokensUsed.toLocaleString()} / Límite de contexto: {message.tokenLimit.toLocaleString()}
+                    </span>
                   )}
                 </div>
               )}
