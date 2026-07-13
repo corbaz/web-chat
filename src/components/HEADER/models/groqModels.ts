@@ -24,6 +24,16 @@ export const groqModels: GroqModel[] = [
     velocidad: "400",
     precio: "0.20",
   },
+  {
+    id: "qwen/qwen3.6-27b",
+    name: "Alibaba Cloud Qwen3.6 27B",
+    developer: "Alibaba Cloud",
+    contextWindow: "131072",
+    provider: "groq",
+    maxCompletionTokens: "32768",
+    velocidad: "500",
+    precio: "0.60",
+  },
 
   // Meta — Production
   {
