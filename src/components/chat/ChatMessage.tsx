@@ -158,7 +158,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   📊{" "}
                   {message.promptTokens !== undefined && message.completionTokens !== undefined ? (
                     <span>
-                      In: {message.promptTokens} | Out: {message.completionTokens} ·{" "}
+                      Entrada: {message.promptTokens} | Salida: {message.completionTokens} ·{" "}
                       {getTokenUsageString(message.tokensUsed, message.tokenLimit)}
                     </span>
                   ) : (
