@@ -6,6 +6,8 @@ import { groqModels } from "./models/groqModels";
 import { routellmModels } from "./models/routellmModels";
 import { openaiModels } from "./models/openaiModels";
 import { anthropicModels } from "./models/anthropicModels";
+import { opengoModels } from "./models/opengoModels";
+import { opencodeFreeModels } from "./models/opencodeFreeModels";
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -30,6 +32,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     ...routellmModels,
     ...openaiModels,
     ...anthropicModels,
+    ...opengoModels,
+    ...opencodeFreeModels,
   ];
 
   const filteredModels = providerFilter

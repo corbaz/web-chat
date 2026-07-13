@@ -120,7 +120,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         ? "RouteLLM"
         : id === "openai"
           ? "OpenAI"
-          : "Anthropic";
+          : id === "opengo"
+            ? "OpenCode Go"
+            : id === "opencodefree"
+              ? "OpenCode Free"
+              : "Anthropic";
 
   const providerLink = (id: string) =>
     id === "groq"
@@ -129,7 +133,9 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         ? "https://routellm.abacus.ai/"
         : id === "openai"
           ? "https://platform.openai.com/api-keys"
-          : "https://console.anthropic.com/settings/keys";
+          : id === "opengo"
+            ? "https://opencode.ai/es/go"
+            : "https://console.anthropic.com/settings/keys";
 
   return (
     <div className="mb-6">
@@ -179,6 +185,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <option value="routellm">RouteLLM (Abacus.AI)</option>
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
+            <option value="opengo">OpenCode Go</option>
           </select>
           {/* Chevron */}
           <svg

@@ -1,6 +1,7 @@
 import React, { useEffect, useReducer, useMemo } from "react";
 import Select, { StylesConfig } from "react-select";
 import { ColorPalette } from "../../interfaces/temas/temas";
+import { isOpenCodeAvailable } from "../../config/providers";
 
 interface ProviderSelectorProps {
   selectedProvider: string;
@@ -18,6 +19,8 @@ const allProviders: ProviderOption[] = [
   { value: "routellm", label: "RouteLLM" },
   { value: "openai", label: "OpenAI" },
   { value: "anthropic", label: "Anthropic" },
+  { value: "opengo", label: "OpenCode Go" },
+  { value: "opencodefree", label: "OpenCode Free" },
 ];
 
 const ProviderSelector: React.FC<ProviderSelectorProps> = ({
@@ -34,6 +37,8 @@ const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   }, []);
 
   const providers = allProviders.filter((provider) => {
+    if (provider.value === "opencodefree") return isOpenCodeAvailable();
+    if (provider.value === "opengo" && !isOpenCodeAvailable()) return false;
     const apiKey = localStorage.getItem(`${provider.value}ApiKey`);
     return apiKey && apiKey.trim() !== "";
   });

@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef } from "react";
 import Swal from "sweetalert2";
 import { ColorPalette } from "../../interfaces/temas/temas";
 import { APP_VERSION } from "../../App";
+import { isOpenCodeAvailable } from "../../config/providers";
 
 interface ApiKeyModalProps {
   theme: ColorPalette;
@@ -26,6 +27,11 @@ const PROVIDERS = [
     id: "anthropic",
     name: "Anthropic",
     link: "https://console.anthropic.com/settings/keys",
+  },
+  {
+    id: "opengo",
+    name: "OpenCode Go",
+    link: "https://opencode.ai/es/go",
   },
 ] as const;
 
@@ -134,6 +140,10 @@ const validateApiKey = async (
         );
         return false;
       }
+    } else if (provider === "opengo") {
+      // OpenCode Go bloquea peticiones CORS desde el navegador,
+      // por lo que validamos que la clave tenga una longitud adecuada.
+      return apiKey.trim().length >= 20;
     }
     return false;
   } catch {
@@ -194,9 +204,9 @@ const ApiKeyModal = ({
     const manageApiKeyModal = async () => {
       if (!isModalLogicActiveRef.current) return;
 
-      const hasAnyKey = PROVIDERS.some((p) =>
-        localStorage.getItem(`${p.id}ApiKey`),
-      );
+      const hasAnyKey =
+        isOpenCodeAvailable() ||
+        PROVIDERS.some((p) => localStorage.getItem(`${p.id}ApiKey`));
       if (!hasAnyKey || modalState.forceShow) {
         if (Swal.isVisible()) return;
         const storedProvider = localStorage.getItem("selectedProvider");

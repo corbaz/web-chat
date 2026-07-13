@@ -4,10 +4,13 @@ import { groqModels } from "./components/HEADER/models/groqModels";
 import { routellmModels } from "./components/HEADER/models/routellmModels";
 import { openaiModels } from "./components/HEADER/models/openaiModels";
 import { anthropicModels } from "./components/HEADER/models/anthropicModels";
+import { opengoModels } from "./components/HEADER/models/opengoModels";
+import { opencodeFreeModels } from "./components/HEADER/models/opencodeFreeModels";
 import { setupMobileKeyboardHandler } from "./utils/mobileUtils";
 import { generateLayoutCSS } from "./utils/layoutConstants";
 import { createWelcomeMessage } from "./constants/messages";
 import ApiKeyModal from "./components/ApiKeyModal/ApiKeyModal.tsx";
+import { isOpenCodeAvailable } from "./config/providers";
 
 // Componentes principales
 import Header from "./components/HEADER/Header";
@@ -21,7 +24,14 @@ import {
   ChatMessageType,
   STORAGE_KEY,
 } from "./interfaces/chat/chatTypes";
-const PROVIDER_IDS = ["groq", "routellm", "openai", "anthropic"] as const;
+const PROVIDER_IDS = [
+  "groq",
+  "routellm",
+  "openai",
+  "anthropic",
+  "opengo",
+  "opencodefree",
+] as const;
 // Constante de versión
 export const APP_VERSION = "v.8.0";
 
@@ -32,6 +42,8 @@ export const App = () => {
   const hasAnyApiKey = useCallback(
     () =>
       PROVIDER_IDS.some((p) => {
+        if (p === "opencodefree") return isOpenCodeAvailable();
+        if (p === "opengo" && !isOpenCodeAvailable()) return false;
         const key = localStorage.getItem(`${p}ApiKey`);
         return key && key.trim() !== "";
       }),
@@ -40,18 +52,20 @@ export const App = () => {
 
   const getInitialProvider = () => {
     const stored = localStorage.getItem("selectedProvider");
-    // Si hay un provider guardado y tiene API key, úsalo
     if (stored) {
-      const key = localStorage.getItem(`${stored}ApiKey`);
-      if (key && key.trim() !== "") return stored;
+      if (stored === "opencodefree" && isOpenCodeAvailable()) return stored;
+      if (stored !== "opengo" || isOpenCodeAvailable()) {
+        const key = localStorage.getItem(`${stored}ApiKey`);
+        if (key && key.trim() !== "") return stored;
+      }
     }
-    // Si no, elige el primero que tenga API key
     for (const p of PROVIDER_IDS) {
+      if (p === "opencodefree" || (p === "opengo" && !isOpenCodeAvailable()))
+        continue;
       const key = localStorage.getItem(`${p}ApiKey`);
       if (key && key.trim() !== "") return p;
     }
-    // Fallback
-    return "groq";
+    return isOpenCodeAvailable() ? "opencodefree" : "groq";
   };
 
   const getInitialModel = (provider: string) => {
@@ -68,7 +82,11 @@ export const App = () => {
             ? openaiModels
             : provider === "anthropic"
               ? anthropicModels
-              : groqModels;
+              : provider === "opengo"
+                ? opengoModels
+                : provider === "opencodefree"
+                  ? opencodeFreeModels
+                  : groqModels;
 
     // Si el modelo guardado existe en el provider actual, usarlo
     if (savedModel && allModels.some((m) => m.id === savedModel)) {
@@ -96,6 +114,10 @@ export const App = () => {
         return openaiModels[0]?.id || selectedModel;
       case "anthropic":
         return anthropicModels[0]?.id || selectedModel;
+      case "opengo":
+        return opengoModels[0]?.id || selectedModel;
+      case "opencodefree":
+        return opencodeFreeModels[0]?.id || selectedModel;
       default:
         return groqModels[0]?.id || selectedModel;
     }

@@ -21,7 +21,14 @@ import {
 } from "../../utils/tokenUtils";
 import { formatResponseTime } from "../../utils/timeUtils";
 import { createWelcomeMessage } from "../../constants/messages";
-import { getProviderConfig, getApiKeyStorageKey } from "../../config/providers";
+import {
+  getApiErrorMessage,
+  getProviderConfig,
+  getApiKeyStorageKey,
+  isInvalidApiKeyError,
+  isOpenCodeAvailable,
+  OPENCODE_UNAVAILABLE_MESSAGE,
+} from "../../config/providers";
 import axios from "axios";
 
 interface ChatContainerProps {
@@ -409,6 +416,13 @@ const ChatContainer = ({
       const providerConfig = getProviderConfig(provider);
 
       try {
+        if (
+          (provider === "opengo" || provider === "opencodefree") &&
+          !isOpenCodeAvailable()
+        ) {
+          throw new Error(OPENCODE_UNAVAILABLE_MESSAGE);
+        }
+
         if (!providerConfig) {
           const errorResponseMessage: ChatMessageType = {
             id: `error_${Date.now()}_${Math.random()
@@ -436,9 +450,12 @@ const ChatContainer = ({
         const modelTokenLimit = getModelTokenLimit(selectedModel);
 
         const apiKeyStorageKey = getApiKeyStorageKey(provider);
-        const apiKey = localStorage.getItem(apiKeyStorageKey);
+        const apiKey =
+          provider === "opencodefree"
+            ? "free"
+            : localStorage.getItem(apiKeyStorageKey) || "";
 
-        if (!apiKey || !apiKey.trim()) {
+        if ((!apiKey || !apiKey.trim()) && provider !== "opencodefree") {
           const errorResponseMessage: ChatMessageType = {
             id: `error_${Date.now()}_${Math.random()
               .toString(36)
@@ -461,22 +478,19 @@ const ChatContainer = ({
           apiMessages,
           MAX_RESPONSE_TOKENS,
         );
-        const endpoint = providerConfig.endpoint;
+        const endpoint = providerConfig.endpoint(selectedModel);
         const headers = {
           "Content-Type": "application/json",
-          ...providerConfig.headerAuth(apiKey),
+          ...providerConfig.headerAuth(apiKey, selectedModel),
         };
 
-        // Log completo del request para debugging
+        // Log del request sin valores de cabeceras ni credenciales.
         console.log("🚀 Enviando petición al chat:", {
           proveedor: provider,
           proveedorNombre: providerConfig.name,
-          modelo: selectedModel,
+          modeloSolicitado: selectedModel,
           endpoint: endpoint,
-          apiKey: `${apiKey.substring(0, 10)}...${apiKey.substring(
-            apiKey.length - 4,
-          )}`,
-          headers: headers,
+          headers: Object.keys(headers),
           payload: payload,
           totalMensajes: apiMessages.length,
           tokensEstimados: totalTokensUsed,
@@ -489,7 +503,11 @@ const ChatContainer = ({
         // Log de la respuesta exitosa
         console.log("✅ Respuesta recibida:", {
           proveedor: provider,
-          modelo: selectedModel,
+          modeloSolicitado: selectedModel,
+          modeloDevuelto:
+            typeof response.data.model === "string"
+              ? response.data.model
+              : null,
           status: response.status,
           dataKeys: Object.keys(response.data),
           responsePreview:
@@ -503,10 +521,11 @@ const ChatContainer = ({
           endTime - (requestStartTimeRef.current[requestId] || endTime);
         const formattedTime = formatResponseTime(responseTime);
 
-        // Extraer texto según formato del proveedor (Anthropic usa content[0].text, el resto choices[0].message.content)
+        // Extraer texto según el protocolo resuelto para el modelo solicitado.
         const rawResponse = providerConfig.parseResponse
           ? providerConfig.parseResponse(
               response.data as Record<string, unknown>,
+              selectedModel,
             )
           : (response.data.choices[0].message.content as string);
 
@@ -515,7 +534,7 @@ const ChatContainer = ({
           .replace(/<think>[\s\S]*?<\/think>/g, "")
           .trim();
 
-        // Usar el modelo real que devuelve la API (más preciso que el seleccionado)
+        // Preferir el modelo devuelto; si falta, conservar el solicitado sin asumir confirmación.
         const actualModel = providerConfig.parseActualModel
           ? providerConfig.parseActualModel(
               response.data as Record<string, unknown>,
@@ -533,7 +552,7 @@ const ChatContainer = ({
           responseTime: formattedTime,
           tokensUsed: totalTokensUsed,
           tokenLimit: modelTokenLimit,
-          modelName: actualModel, // Modelo real confirmado por la API
+          modelName: actualModel,
         };
 
         setMessages((prevMessages: ChatMessageType[]) => [
@@ -545,7 +564,7 @@ const ChatContainer = ({
         console.error("❌ Error al obtener respuesta:", {
           proveedor: provider,
           modelo: selectedModel,
-          endpoint: providerConfig?.endpoint,
+          endpoint: providerConfig?.endpoint(selectedModel),
           errorType: axios.isAxiosError(error) ? error.code : "Unknown",
           errorMessage: axios.isAxiosError(error)
             ? error.message
@@ -561,6 +580,13 @@ const ChatContainer = ({
         let errorMessage =
           "Error al obtener respuesta. Por favor, intenta de nuevo.";
 
+        if (
+          error instanceof Error &&
+          error.message === OPENCODE_UNAVAILABLE_MESSAGE
+        ) {
+          errorMessage = error.message;
+        }
+
         if (axios.isAxiosError(error)) {
           if (error.code === "ERR_NETWORK") {
             if (providerConfig?.warning) {
@@ -569,18 +595,27 @@ const ChatContainer = ({
               errorMessage = `Error de red: No se pudo conectar con ${providerConfig?.name}. Verifica tu conexión y que el API Key sea válido.`;
             }
           } else if (error.response) {
+            const serverMessage = getApiErrorMessage(error.response.data);
             if (error.response.status === 529) {
-              errorMessage = `${providerConfig?.name || "El servidor"} está temporalmente sobrecargado. Por favor, intenta de nuevo en unos segundos.`;
+              errorMessage =
+                serverMessage ||
+                `${providerConfig?.name || "El servidor"} está temporalmente sobrecargado. Por favor, intenta de nuevo en unos segundos.`;
             } else if (
               error.response.status === 401 ||
               error.response.status === 403
             ) {
-              errorMessage = `API Key inválida o sin permisos para ${providerConfig?.name}. Verifica tu clave en el menú de configuración.`;
+              errorMessage = serverMessage
+                ? isInvalidApiKeyError(error.response.data)
+                  ? `API Key inválida para ${providerConfig?.name}: ${serverMessage}`
+                  : serverMessage
+                : `Acceso no autorizado para ${providerConfig?.name}.`;
             } else if (error.response.status === 429) {
-              errorMessage = `Límite de solicitudes alcanzado en ${providerConfig?.name}. Espera un momento antes de intentar de nuevo.`;
+              errorMessage =
+                serverMessage ||
+                `Límite de solicitudes alcanzado en ${providerConfig?.name}. Espera un momento antes de intentar de nuevo.`;
             } else {
               errorMessage = `Error del servidor (${error.response.status}): ${
-                error.response.data.error?.message || "Error desconocido"
+                serverMessage || "Error desconocido"
               }`;
             }
           }

@@ -37,13 +37,21 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [internalProvider, setInternalProvider] = useState<string>(() => {
     if (!externalProvider) {
-      const providers = ["groq", "routellm", "openai", "anthropic"];
+      const providers = [
+        "groq",
+        "routellm",
+        "openai",
+        "anthropic",
+        "opengo",
+        "opencodefree",
+      ];
       for (const provider of providers) {
+        if (provider === "opencodefree") return provider;
         const apiKey = localStorage.getItem(`${provider}ApiKey`);
         if (apiKey && apiKey.trim() !== "") return provider;
       }
     }
-    return "groq";
+    return "opencodefree";
   });
 
   const selectedProvider = externalProvider || internalProvider;

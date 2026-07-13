@@ -16,6 +16,13 @@ export default defineConfig({
             protocol: 'wss',
             clientPort: 5173,
         },
+        proxy: {
+            '/opencode-go-api': {
+                target: 'https://opencode.ai',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/opencode-go-api/, ''),
+            }
+        }
     },
     build: {
         // Directorio de salida para GitHub Pages

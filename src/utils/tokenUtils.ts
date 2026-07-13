@@ -51,6 +51,8 @@ import { groqModels } from "../components/HEADER/models/groqModels";
 import { routellmModels } from "../components/HEADER/models/routellmModels";
 import { openaiModels } from "../components/HEADER/models/openaiModels";
 import { anthropicModels } from "../components/HEADER/models/anthropicModels";
+import { opengoModels } from "../components/HEADER/models/opengoModels";
+import { opencodeFreeModels } from "../components/HEADER/models/opencodeFreeModels";
 
 /**
  * Obtiene el límite de tokens para un modelo específico
@@ -65,6 +67,8 @@ export const getModelTokenLimit = (modelId: string): number => {
     ...routellmModels,
     ...openaiModels,
     ...anthropicModels,
+    ...opengoModels,
+    ...opencodeFreeModels,
   ];
   const model = allModels.find((m) => m.id === modelId);
 

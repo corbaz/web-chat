@@ -150,8 +150,11 @@ ${message}`;
           return;
         }
 
-        const apiKey = localStorage.getItem(getApiKeyStorageKey(provider));
-        if (!apiKey?.trim()) {
+        const apiKey =
+          provider === "opencodefree"
+            ? "free"
+            : localStorage.getItem(getApiKeyStorageKey(provider)) || "";
+        if ((!apiKey || !apiKey.trim()) && provider !== "opencodefree") {
           setIsMagicLoading(false);
           alert(`Falta API key para ${providerConfig.name}`);
           return;
@@ -162,14 +165,25 @@ ${message}`;
           [{ role: "user", content: promptToSend }],
           2048,
         );
-        const response = await axios.post(providerConfig.endpoint, payload, {
-          headers: {
-            "Content-Type": "application/json",
-            ...providerConfig.headerAuth(apiKey),
+        const response = await axios.post(
+          providerConfig.endpoint(modelToUse),
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...providerConfig.headerAuth(apiKey, modelToUse),
+            },
           },
-        });
+        );
 
-        let improved = response.data.choices[0].message.content.trim();
+        let improved = providerConfig.parseResponse
+          ? providerConfig
+              .parseResponse(
+                response.data as Record<string, unknown>,
+                modelToUse,
+              )
+              .trim()
+          : response.data.choices[0].message.content.trim();
         improved = improved.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
         setMessage(improved);
         setShowMagicResponse(true);
