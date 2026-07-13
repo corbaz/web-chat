@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "./components/CHAT/markdown-styles.css";
+@import "./components/chat/markdown-styles.css";
 
 /* ─── Neumorphic Design System — Global Styles ───────────────────────────────
    Palette: "Midnight Cosmos" (dark) · "Pearl Cloud" (light)
