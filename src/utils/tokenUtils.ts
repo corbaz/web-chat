@@ -61,7 +61,7 @@ import { geminiModels } from "../components/HEADER/models/geminiModels";
  * @param modelId ID del modelo
  * @returns Límite de tokens para el modelo (por defecto 8192 si no se conoce)
  */
-export const getModelTokenLimit = (modelId: string): number => {
+export const getModelTokenLimit = (modelId: string, provider?: string): number => {
   // Buscar el modelo por su ID en todas las colecciones disponibles
   const allModels = [
     ...groqModels,
@@ -72,7 +72,10 @@ export const getModelTokenLimit = (modelId: string): number => {
     ...opencodeFreeModels,
     ...geminiModels,
   ];
-  const model = allModels.find((m) => m.id === modelId);
+  const model = allModels.find((m) => {
+    if (provider && m.provider !== provider) return false;
+    return m.id === modelId;
+  }) || allModels.find((m) => m.id === modelId);
 
   if (!model) return 8192; // Valor por defecto
 

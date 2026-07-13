@@ -277,7 +277,7 @@ const ChatContainer = ({
     modelId: string,
   ): GroqMessageType[] => {
     // Obtener el límite de tokens para el modelo seleccionado
-    const modelTokenLimit = getModelTokenLimit(modelId);
+    const modelTokenLimit = getModelTokenLimit(modelId, selectedProvider);
     const maxContextTokens = Math.floor(
       modelTokenLimit * TOKEN_LIMIT_SAFETY_FACTOR - MAX_RESPONSE_TOKENS,
     );
@@ -447,7 +447,7 @@ const ChatContainer = ({
           selectedModel,
         );
         const totalTokensUsed = estimateMessagesTokens(apiMessages);
-        const modelTokenLimit = getModelTokenLimit(selectedModel);
+        const modelTokenLimit = getModelTokenLimit(selectedModel, provider);
 
         const apiKeyStorageKey = getApiKeyStorageKey(provider);
         const apiKey =
