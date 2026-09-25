@@ -283,7 +283,7 @@ Deploy en surge: https://deepchat.surge.sh/ [![Surge](https://img.shields.io/bad
 
 Deploy en github pages: https://corbaz.github.io/web-chat/
 
-Deploy en Vercel: https://prompting.vercel.app/
+Deploy en Vercel: https://prompting-chat.vercel.app/
 
 OpenCode (Go y Zen) no acepta llamadas directas desde el navegador (CORS), por eso necesita un intermediario. En desarrollo lo hace el proxy de Vite (`/opencode-go-api`). En producción solo Vercel lo tiene: `vercel.json` reenvía `/opencode-go-api/*` a `https://opencode.ai/*`, y el proyecto de Vercel define `VITE_OPENCODE_PROXY_URL=/opencode-go-api`. En Surge y GitHub Pages, que son hosting estático, OpenCode se oculta.
 

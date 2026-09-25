@@ -102,4 +102,4 @@ Impact on T1: `jev-1.13-free` and `muse-spark-1.3-contributor-free` are listed a
 - T10: `bun test` 40 pass, 0 fail; `bunx tsc -b` exit 0; build OK. Live keyed check pending (user). Production proxy must forward/allow `x-opencode-session`.
 
 ## Next step
-Verify https://prompting.vercel.app with OpenCode Go and Zen keys.
+Verify https://prompting-chat.vercel.app with OpenCode Go and Zen keys (prompting.vercel.app belongs to another account).
