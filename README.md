@@ -254,8 +254,7 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 
 | Proveedor | Endpoint | Key | Filtro |
 |---|---|---|---|
-| OpenCode Zen free | `opencode.ai/zen/v1/models` | No | IDs `-free` o `big-pickle` que usan `/chat/completions` |
-| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos pagos de chat (se excluye `jev-*`) |
+| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos de chat, incluidos los gratis (`-free`, `big-pickle`); se excluye `jev-*` |
 | OpenCode Go | `opencode.ai/zen/go/v1/models` | Sí | Todos |
 | Groq | `api.groq.com/openai/v1/models` | Sí | Activos, sin audio, TTS ni guards |
 | Gemini | `generativelanguage.googleapis.com/v1beta/models` | Sí | Solo Flash / Flash Lite con `generateContent` |
@@ -264,7 +263,11 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 
 RouteLLM usa solo su catálogo estático.
 
+El acceso a OpenCode Zen sin API key fue retirado: OpenCode rechaza su nivel gratuito fuera de su propia app (`FreeTierError`). Los modelos gratis se usan con la API key de Zen.
+
 Los modelos que ya están en el catálogo estático conservan sus metadatos (nombre, contexto, precio); los nuevos se muestran con un nombre derivado del ID. En OpenCode Zen, el endpoint de chat depende de la familia del modelo (`src/services/modelCatalog/zenRoute.ts`): Claude y Qwen usan `/messages`, GPT, Grok y Muse usan `/responses`, Gemini usa `/models/<id>` y el resto `/chat/completions`.
+
+En OpenCode Go (`src/services/modelCatalog/zenRoute.ts`, `goRouteFor`) GPT, Grok y Muse usan `/responses`, MiniMax y Qwen usan `/messages` y el resto `/chat/completions`. Go exige el header `x-opencode-session`, estable por conversación: la app envía el ID del chat. La búsqueda web está desactivada para OpenCode Go y Zen.
 
 Código: `src/services/modelCatalog/`. Tests: `bun test`.
 
@@ -278,6 +281,14 @@ Repositorio: https://github.com/corbaz/web-chat [![GitHub](https://img.shields.i
 ### Deploy
 Deploy en surge: https://deepchat.surge.sh/ [![Surge](https://img.shields.io/badge/Surge-Deploy-blue?style=flat&logo=surge)](https://deepchat.surge.sh/)
 
-Deploy en github pages: https://corbaz.github.io/web-chat/ [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deploy-blue?style=flat&logo=github)](https://corbaz.github.io/web-chat/)
+Deploy en github pages: https://corbaz.github.io/web-chat/
+
+Deploy en Vercel: https://prompting.vercel.app/
+
+OpenCode (Go y Zen) no acepta llamadas directas desde el navegador (CORS), por eso necesita un intermediario. En desarrollo lo hace el proxy de Vite (`/opencode-go-api`). En producción solo Vercel lo tiene: `vercel.json` reenvía `/opencode-go-api/*` a `https://opencode.ai/*`, y el proyecto de Vercel define `VITE_OPENCODE_PROXY_URL=/opencode-go-api`. En Surge y GitHub Pages, que son hosting estático, OpenCode se oculta.
+
+```bash
+vercel deploy --prod
+``` [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deploy-blue?style=flat&logo=github)](https://corbaz.github.io/web-chat/)
   
 ---

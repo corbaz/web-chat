@@ -1,0 +1,9 @@
+node_modules
+docs
+.codegraph
+.atl
+.zed
+.graphify
+.env*
+openspec
+odd

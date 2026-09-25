@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "bun install",
+  "buildCommand": "bun run build",
+  "outputDirectory": "docs",
+  "rewrites": [
+    {
+      "source": "/opencode-go-api/:path*",
+      "destination": "https://opencode.ai/:path*"
+    }
+  ]
+}
