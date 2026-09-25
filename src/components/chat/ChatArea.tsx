@@ -92,7 +92,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
         {isLoading && (
           <div
-            className="flex flex-col items-center justify-center p-3.5 rounded-2xl my-12 gap-2 mx-auto max-w-[200px]"
+            className="flex flex-col items-center justify-center p-3.5 rounded-2xl my-12 gap-2 mx-auto max-w-50"
             style={{
               backgroundColor: theme.messages.user.background,
               boxShadow: theme.shadow.sm,
