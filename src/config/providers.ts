@@ -2,6 +2,7 @@
 import type {
   Citation,
   ExecutedTool,
+  ImageAttachment,
   ToolConfig,
 } from '../interfaces/chat/chatTypes'
 import { goRouteFor, zenRouteFor } from '../services/modelCatalog/zenRoute'
@@ -23,6 +24,7 @@ type ProviderType =
 interface Message {
   role: string
   content: string
+  images?: ImageAttachment[]
 }
 
 export interface ProviderConfig {
@@ -64,6 +66,98 @@ export interface ProviderConfig {
     toolsConfig?: ToolConfig,
   ) => { url: string; body: Record<string, unknown> } | null
   warning?: string // Mensaje de advertencia si el proveedor no es recomendado
+}
+
+// === T2: contenido con imágenes por protocolo (ver tabla de formatos en
+// odd/tasks/image-input.md) ===
+// Solo el último mensaje de usuario de la conversación puede llevar
+// `images`: el historial cargado desde localStorage nunca las lleva (se
+// eliminan al persistir, ver ChatMessageType.imageCount). Cuando un mensaje
+// no tiene imágenes, cada helper de abajo deja `content` como el mismo
+// string de siempre, así el payload de una conversación sin imágenes queda
+// byte-idéntico al de antes de esta funcionalidad.
+const hasImages = (message: Message): boolean =>
+  Array.isArray(message.images) && message.images.length > 0
+
+// OpenAI Chat Completions: Groq, OpenCode Go/Zen (ruta 'chat'), RouteLLM.
+const toChatCompletionsMessage = (
+  message: Message,
+): { role: string; content: unknown } => {
+  if (!hasImages(message)) {
+    return { role: message.role, content: message.content }
+  }
+  return {
+    role: message.role,
+    content: [
+      { type: 'text', text: message.content },
+      ...(message.images ?? []).map((image) => ({
+        type: 'image_url',
+        image_url: { url: `data:${image.mimeType};base64,${image.data}` },
+      })),
+    ],
+  }
+}
+
+const toChatCompletionsMessages = (messages: Message[]) =>
+  messages.map(toChatCompletionsMessage)
+
+// OpenAI Responses API: OpenAI (con imágenes), OpenCode Go/Zen (ruta 'responses').
+const toResponsesItem = (
+  message: Message,
+): { role: string; content: unknown } => {
+  if (!hasImages(message)) {
+    return { role: message.role, content: message.content }
+  }
+  return {
+    role: message.role,
+    content: [
+      { type: 'input_text', text: message.content },
+      ...(message.images ?? []).map((image) => ({
+        type: 'input_image',
+        image_url: `data:${image.mimeType};base64,${image.data}`,
+      })),
+    ],
+  }
+}
+
+// Anthropic Messages: Anthropic, OpenCode Go/Zen (ruta 'messages').
+const toAnthropicMessage = (
+  message: Message,
+): { role: string; content: unknown } => {
+  if (!hasImages(message)) {
+    return { role: message.role, content: message.content }
+  }
+  return {
+    role: message.role,
+    content: [
+      ...(message.images ?? []).map((image) => ({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: image.mimeType,
+          data: image.data,
+        },
+      })),
+      { type: 'text', text: message.content },
+    ],
+  }
+}
+
+// Gemini generateContent: Gemini, OpenCode Zen (ruta 'gemini').
+type GeminiPart =
+  | { text: string }
+  | { inline_data: { mime_type: string; data: string } }
+
+const toGeminiParts = (message: Message): GeminiPart[] => {
+  if (!hasImages(message)) {
+    return [{ text: message.content }]
+  }
+  return [
+    ...(message.images ?? []).map((image) => ({
+      inline_data: { mime_type: image.mimeType, data: image.data },
+    })),
+    { text: message.content },
+  ]
 }
 
 const usesOpenCodeGoAnthropic = (model: string): boolean =>
@@ -113,7 +207,7 @@ const buildAnthropicPayload = (
     model,
     max_tokens: maxTokens,
     ...(systemMessage && { system: systemMessage }),
-    messages: contentMessages,
+    messages: contentMessages.map(toAnthropicMessage),
     ...(toolsConfig?.searchEnabled === true && {
       tools: [
         {
@@ -272,10 +366,7 @@ const buildResponsesPayload = (
   messages: Message[],
   toolsConfig?: ToolConfig,
 ): Record<string, unknown> => {
-  const input = messages.map((m) => ({
-    role: m.role,
-    content: m.content,
-  }))
+  const input = messages.map(toResponsesItem)
 
   return {
     model,
@@ -297,7 +388,10 @@ const buildOpenAIRequest = (
   _maxTokens: number,
   toolsConfig?: ToolConfig,
 ) => {
-  if (toolsConfig?.searchEnabled !== true) {
+  // Las imágenes de OpenAI solo viajan por la Responses API (ver tabla de
+  // formatos en odd/tasks/image-input.md): si el último mensaje lleva
+  // imágenes, se usa este endpoint aunque no haya búsqueda web activa.
+  if (toolsConfig?.searchEnabled !== true && !messages.some(hasImages)) {
     return null
   }
 
@@ -323,7 +417,7 @@ const buildGeminiNativePayload = (
   maxTokens: number,
   toolsConfig?: ToolConfig,
 ): Record<string, unknown> => {
-  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = []
+  const contents: Array<{ role: string; parts: GeminiPart[] }> = []
   let systemText = ''
 
   for (const message of messages) {
@@ -332,7 +426,7 @@ const buildGeminiNativePayload = (
     } else {
       contents.push({
         role: message.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: message.content }],
+        parts: toGeminiParts(message),
       })
     }
   }
@@ -377,6 +471,13 @@ const buildGeminiRequest = (
   toolsConfig?: ToolConfig,
 ) => {
   if (toolsConfig?.searchEnabled !== true) {
+    return null
+  }
+
+  // Las imágenes no viajan por el endpoint `interactions` (búsqueda web):
+  // si el último mensaje lleva imágenes, se usa generateContent (ver
+  // payloadBuilder de 'gemini' más abajo, que sí soporta inline_data).
+  if (messages.some(hasImages)) {
     return null
   }
 
@@ -551,7 +652,7 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
     ) => {
       const base: Record<string, unknown> = {
         model,
-        messages,
+        messages: toChatCompletionsMessages(messages),
         temperature: 0.7,
         max_tokens: maxTokens,
         presence_penalty: 0.1,
@@ -578,7 +679,7 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       maxTokens: number,
     ) => ({
       model,
-      messages,
+      messages: toChatCompletionsMessages(messages),
       max_tokens: maxTokens,
       stream: false,
     }),
@@ -663,7 +764,7 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
 
       return {
         model,
-        messages,
+        messages: toChatCompletionsMessages(messages),
         max_tokens: maxTokens,
         ...(toolsConfig?.searchEnabled === true && {
           tools: [
@@ -740,7 +841,7 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       }
       return {
         model,
-        messages,
+        messages: toChatCompletionsMessages(messages),
         max_tokens: maxTokens,
         ...(toolsConfig?.searchEnabled === true && {
           tools: [

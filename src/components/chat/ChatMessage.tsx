@@ -42,6 +42,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return t < 1 ? `${Math.round(t * 1000)}ms` : responseTime
   }
 
+  const imageToDataUrl = (mimeType: string, data: string): string =>
+    `data:${mimeType};base64,${data}`
+
   const [copied, setCopied] = useState(false)
 
   const handleCopyMessage = async () => {
@@ -114,6 +117,46 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         className="max-w-[82%] md:max-w-[72%] px-4 py-3"
         style={isUser ? userMsgStyle : aiMsgStyle}
       >
+        {/* Imágenes adjuntas (T4): miniaturas si están en memoria, o el
+            marcador "[imagen]" cuando el historial persistido solo
+            conserva imageCount (las imágenes nunca se guardan en
+            localStorage, ver odd/tasks/image-input.md). */}
+        {isUser && message.images && message.images.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {message.images.map((image, index) => {
+              const dataUrl = imageToDataUrl(image.mimeType, image.data)
+              return (
+                <a
+                  key={image.id ?? dataUrl}
+                  href={dataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ver imagen completa"
+                >
+                  <img
+                    src={dataUrl}
+                    alt={`Imagen adjunta ${index + 1}`}
+                    className="size-20 object-cover rounded-lg"
+                    style={{ boxShadow: theme.shadow.sm }}
+                  />
+                </a>
+              )
+            })}
+          </div>
+        )}
+        {isUser &&
+          (!message.images || message.images.length === 0) &&
+          !!message.imageCount && (
+            <div
+              className="text-xs italic mb-2"
+              style={{ color: theme.textMuted }}
+            >
+              {message.imageCount === 1
+                ? '📎 [imagen]'
+                : `📎 [imagen ×${message.imageCount}]`}
+            </div>
+          )}
+
         {/* Message content */}
         <div
           className={`text-sm leading-relaxed overflow-hidden ${

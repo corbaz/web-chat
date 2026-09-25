@@ -275,6 +275,30 @@ Código: `src/services/modelCatalog/`. Tests: `bun test`.
 
 ---
 
+### Entrada de imágenes (modelos con visión)
+
+Con un modelo compatible con visión seleccionado aparece un botón de adjuntar en el footer (📎) y se puede pegar una imagen con Ctrl+V; se admiten hasta 4 imágenes por mensaje en `image/png`, `image/jpeg`, `image/webp` e `image/gif`. Las imágenes se redimensionan en el navegador (canvas) a un lado largo máximo de 2048&nbsp;px y, si el base64 resultante supera ~3.5&nbsp;MB, se reenconden a JPEG calidad 0.85 (Groq limita 4&nbsp;MB de base64 por petición). También se puede enviar solo una imagen sin texto: el mensaje viaja con un texto por defecto ("Describe la imagen.") únicamente en la petición a la API, no en lo que se muestra en el chat.
+
+Modelos con visión habilitados (`src/config/vision.ts`, `supportsVision`):
+
+| Proveedor | Modelos con visión |
+|---|---|
+| Groq | Solo `qwen/qwen3.8-27b` |
+| OpenAI | `gpt-4o*`, `gpt-4.1*`, `gpt-5*`, `o3*`, `o4*` |
+| Anthropic | Todos los `claude-*` |
+| Gemini | Todos |
+| OpenCode Zen | `claude-*`, `gpt-*`, `gemini-*`, o ids con `vision`/`omni` |
+| OpenCode Go | Solo ids con `vision`/`omni` |
+| RouteLLM | Ninguno |
+
+Con un modelo sin visión no se muestra el botón de adjuntar y pegar una imagen no hace nada especial (el pegado de texto normal sigue funcionando igual). Cada proveedor recibe las imágenes en el formato de su protocolo: `image_url` (Chat Completions: Groq, OpenCode Go/Zen genérico, RouteLLM), `input_image` (Responses API: OpenAI, OpenCode Go/Zen `responses`), bloques `image` en base64 (Anthropic Messages: Anthropic, OpenCode Go/Zen `messages`) o `inline_data` (Gemini `generateContent`: Gemini, OpenCode Zen `gemini`). Si la búsqueda web de Gemini está activa y el mensaje lleva imágenes, la petición usa `generateContent` en vez del endpoint `interactions` de búsqueda, porque este último no acepta imágenes.
+
+**Las imágenes nunca se guardan en `localStorage`** (la cuota es de ~5&nbsp;MB): al persistir el historial se descartan los adjuntos y solo queda un marcador "[imagen]" junto al mensaje, así que al recargar la página o cambiar de chat se ve que se envió una imagen pero no se puede volver a abrir.
+
+Código: `src/config/vision.ts` (capacidad por modelo), `src/config/providers.ts` (formato por protocolo), `src/components/FOOTER/Footer.tsx` (adjuntar/pegar/redimensionar). Tests: `bun test`.
+
+---
+
 ### Repositorio en GitHub
 Repositorio: https://github.com/corbaz/web-chat [![GitHub](https://img.shields.io/badge/GitHub-Repo-blue?style=flat&logo=github)](https://github.com/corbaz/web-chat)
 
@@ -289,8 +313,10 @@ Deploy en Vercel: https://prompting-chat.vercel.app/
 
 OpenCode (Go y Zen) no acepta llamadas directas desde el navegador (CORS), por eso necesita un intermediario. En desarrollo lo hace el proxy de Vite (`/opencode-go-api`). En producción solo Vercel lo tiene: `vercel.json` reenvía `/opencode-go-api/*` a `https://opencode.ai/*`, y el proyecto de Vercel define `VITE_OPENCODE_PROXY_URL=/opencode-go-api`. En Surge y GitHub Pages, que son hosting estático, OpenCode se oculta.
 
+El proyecto de Vercel está conectado al repositorio: cada push a `main` publica automáticamente. Para publicar a mano:
+
 ```bash
-vercel deploy --prod
+bun run deploy:vercel
 ``` [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deploy-blue?style=flat&logo=github)](https://corbaz.github.io/web-chat/)
   
 ---

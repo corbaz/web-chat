@@ -10,13 +10,92 @@ import {
   getProviderConfig,
   openCodeSessionHeaders,
 } from '../../config/providers'
+import { supportsVision } from '../../config/vision'
 import { supportsWebSearch } from '../../config/webSearch'
-import { CHAT_HISTORY_KEY } from '../../interfaces/chat/chatTypes'
+import {
+  CHAT_HISTORY_KEY,
+  type ImageAttachment,
+} from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { isMobile } from '../../utils/mobileUtils'
 
+// Constantes de adjuntos de imagen (T3, ver odd/tasks/image-input.md).
+const MAX_IMAGES = 4
+const ACCEPTED_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]
+const MAX_LONG_SIDE = 2048
+// Groq limita 4 MB de base64; nos quedamos con margen antes de reencodar.
+const MAX_BASE64_LENGTH = 3.5 * 1024 * 1024
+const DOWNSCALE_JPEG_QUALITY = 0.85
+
+const readImageElement = (file: File): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('No se pudo leer la imagen'))
+    }
+    img.src = objectUrl
+  })
+
+// Downscala una imagen al lado largo máximo (2048px) con canvas y la
+// reencoda a JPEG ~0.85 si el base64 resultante supera ~3.5 MB. Los GIF se
+// aplanan a PNG: canvas no conserva animación (fuera de alcance).
+const processImageFile = async (
+  file: File,
+): Promise<ImageAttachment | null> => {
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) return null
+
+  let objectUrl = ''
+  try {
+    const img = await readImageElement(file)
+    objectUrl = img.src
+    const longSide = Math.max(img.naturalWidth, img.naturalHeight) || 1
+    const scale = longSide > MAX_LONG_SIDE ? MAX_LONG_SIDE / longSide : 1
+    const width = Math.max(1, Math.round(img.naturalWidth * scale))
+    const height = Math.max(1, Math.round(img.naturalHeight * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.drawImage(img, 0, 0, width, height)
+
+    let mimeType = file.type === 'image/gif' ? 'image/png' : file.type
+    let dataUrl = canvas.toDataURL(mimeType)
+    let data = dataUrl.split(',')[1] ?? ''
+
+    if (data.length > MAX_BASE64_LENGTH) {
+      mimeType = 'image/jpeg'
+      dataUrl = canvas.toDataURL('image/jpeg', DOWNSCALE_JPEG_QUALITY)
+      data = dataUrl.split(',')[1] ?? ''
+    }
+
+    if (!data) return null
+    const id = `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    return { mimeType, data, id }
+  } catch (error) {
+    console.error('Error al procesar la imagen adjunta:', error)
+    return null
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl)
+  }
+}
+
+const imageToDataUrl = (image: ImageAttachment): string =>
+  `data:${image.mimeType};base64,${image.data}`
+
 interface FooterProps {
-  onSendMessage: (message: string) => void
+  onSendMessage: (message: string, images?: ImageAttachment[]) => void
   toggleTheme: () => void
   clearContext?: () => void
   hasContext?: boolean
@@ -64,9 +143,50 @@ const Footer: React.FC<FooterProps> = ({
   const [showMagicResponse, setShowMagicResponse] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState(false)
   const [pasteFeedback, setPasteFeedback] = useState(false)
+  const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const mobileDevice = typeof window !== 'undefined' && isMobile()
+
+  const visionEnabled = Boolean(
+    selectedModel && supportsVision(selectedModel, selectedProvider),
+  )
+
+  // Si el modelo cambia a uno sin visión, se descartan los adjuntos
+  // pendientes: no tiene sentido enviarlos y el botón de adjuntar desaparece.
+  useEffect(() => {
+    if (!visionEnabled && pendingImages.length > 0) setPendingImages([])
+  }, [visionEnabled, pendingImages.length])
+
+  const addImageFiles = async (files: File[]) => {
+    const room = MAX_IMAGES - pendingImages.length
+    if (room <= 0) return
+    const results = await Promise.all(
+      files.slice(0, room).map((file) => processImageFile(file)),
+    )
+    const valid = results.filter((img): img is ImageAttachment => img !== null)
+    if (valid.length > 0) {
+      setPendingImages((prev) => [...prev, ...valid].slice(0, MAX_IMAGES))
+    }
+  }
+
+  const handleAttachClick = () => {
+    if (!visionEnabled || pendingImages.length >= MAX_IMAGES) return
+    fileInputRef.current?.click()
+  }
+
+  const handleFilesSelected = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = e.target.files ? Array.from(e.target.files) : []
+    e.target.value = '' // permite volver a elegir el mismo archivo
+    if (files.length > 0) await addImageFiles(files)
+  }
+
+  const handleRemoveImage = (id: string | undefined) => {
+    setPendingImages((prev) => prev.filter((image) => image.id !== id))
+  }
 
   useImperativeHandle(ref, () => ({
     focusTextarea: () => {
@@ -113,13 +233,38 @@ const Footer: React.FC<FooterProps> = ({
   }
 
   const handleSendMessage = () => {
-    if (message.trim() && !isLoading) {
-      onSendMessage(message)
+    if ((message.trim() || pendingImages.length > 0) && !isLoading) {
+      onSendMessage(
+        message,
+        pendingImages.length > 0 ? pendingImages : undefined,
+      )
       setMessage('')
+      setPendingImages([])
       setShowMagicResponse(false)
       if (mobileDevice && document.activeElement instanceof HTMLElement)
         document.activeElement.blur()
     }
+  }
+
+  // Pega imágenes del portapapeles (Ctrl+V) cuando el modelo soporta
+  // visión; el paste de texto normal sigue funcionando sin cambios porque
+  // solo se intercepta el evento cuando hay archivos de imagen presentes.
+  const handlePasteImages = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!visionEnabled) return
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const imageFiles: File[] = []
+    for (const item of Array.from(items)) {
+      if (item.kind === 'file' && ACCEPTED_IMAGE_TYPES.includes(item.type)) {
+        const file = item.getAsFile()
+        if (file) imageFiles.push(file)
+      }
+    }
+    if (imageFiles.length === 0) return
+
+    e.preventDefault()
+    void addImageFiles(imageFiles)
   }
 
   const handleMagicButton = async () => {
@@ -352,7 +497,8 @@ ${message}`
     color: '#fff',
   }
 
-  const canSend = message.trim() && !isLoading
+  const canClearText = message.trim() && !isLoading
+  const canSend = (message.trim() || pendingImages.length > 0) && !isLoading
   const canMagic = message.trim() && !isLoading && !isMagicLoading
 
   return (
@@ -367,6 +513,36 @@ ${message}`
     >
       <div className="flex justify-center w-full">
         <div className="px-4 py-3 w-full md:max-w-3xl lg:max-w-4xl xl:max-w-6xl space-y-2">
+          {/* ── Miniaturas de imágenes adjuntas ──────────────────────────────── */}
+          {pendingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-1">
+              {pendingImages.map((image, index) => (
+                <div key={image.id} className="relative">
+                  <img
+                    src={imageToDataUrl(image)}
+                    alt={`Adjunto ${index + 1}`}
+                    className="size-14 object-cover rounded-lg"
+                    style={{ boxShadow: theme.shadow.sm }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(image.id)}
+                    title="Quitar imagen"
+                    aria-label={`Quitar imagen ${index + 1}`}
+                    className="absolute -top-1.5 -right-1.5 flex items-center justify-center size-5 rounded-full text-xs"
+                    style={{
+                      backgroundColor: theme.accent,
+                      color: '#fff',
+                      boxShadow: theme.shadow.sm,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* ── Input bar ─────────────────────────────────────────────────── */}
           <div
             className="flex items-center gap-2 p-2 rounded-2xl"
@@ -382,8 +558,8 @@ ${message}`
               title="Eliminar Prompt"
               aria-label="Eliminar Prompt"
               className="nm-press"
-              style={canSend ? nmBtnBase : nmBtnDisabled}
-              disabled={!canSend}
+              style={canClearText ? nmBtnBase : nmBtnDisabled}
+              disabled={!canClearText}
             >
               <img
                 src={TrashIcon}
@@ -401,6 +577,7 @@ ${message}`
               value={message}
               onChange={updateDraftMessage}
               onKeyDown={handleKeyDown}
+              onPaste={handlePasteImages}
               placeholder="Escribe un Prompt ..."
               className="grow py-2 px-1 resize-none overflow-y-auto min-h-12 max-h-30 bg-transparent text-sm touch-manipulation appearance-none"
               style={{
@@ -509,6 +686,55 @@ ${message}`
                 </svg>
               )}
             </button>
+
+            {/* Attach image button — solo modelos con visión */}
+            {visionEnabled && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                  multiple
+                  onChange={handleFilesSelected}
+                  className="hidden"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+                <button
+                  type="button"
+                  onClick={handleAttachClick}
+                  title={
+                    pendingImages.length >= MAX_IMAGES
+                      ? `Máximo ${MAX_IMAGES} imágenes`
+                      : 'Adjuntar imagen'
+                  }
+                  aria-label="Adjuntar imagen"
+                  className="nm-press"
+                  style={
+                    pendingImages.length >= MAX_IMAGES
+                      ? nmBtnDisabled
+                      : nmBtnBase
+                  }
+                  disabled={pendingImages.length >= MAX_IMAGES}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="size-5"
+                    style={{ color: theme.textMuted }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
+                    />
+                  </svg>
+                </button>
+              </>
+            )}
 
             {/* Magic wand button */}
             <button

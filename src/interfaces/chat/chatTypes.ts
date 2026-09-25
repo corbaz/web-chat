@@ -13,6 +13,8 @@ export interface ChatMessageType {
   executedTools?: ExecutedTool[] // Herramientas integradas ejecutadas por Groq (GPT-OSS)
   citations?: Citation[] // Citaciones/Fuentes de la búsqueda web
   searchState?: 'incomplete' | undefined // Estado de la búsqueda web ('incomplete' para pause_turn de Anthropic)
+  images?: ImageAttachment[] // Adjuntos de imagen en memoria (nunca se persisten, ver imageCount)
+  imageCount?: number // Nº de imágenes enviadas en este mensaje; sobrevive a la persistencia como marcador "[imagen]"
 }
 
 export interface Citation {
@@ -21,9 +23,20 @@ export interface Citation {
   snippet?: string
 }
 
+// Adjunto de imagen para modelos con visión (T2, ver odd/tasks/image-input.md).
+// `data` es base64 sin el prefijo `data:<mime>;base64,`. `id` es opcional:
+// solo lo usa la UI (key de lista, remover miniatura); los payloadBuilder
+// de providers.ts solo leen mimeType/data.
+export interface ImageAttachment {
+  mimeType: string
+  data: string
+  id?: string
+}
+
 export interface GroqMessageType {
   role: 'user' | 'assistant' | 'system'
   content: string
+  images?: ImageAttachment[]
 }
 
 // Clave versionada para almacenar mensajes en localStorage

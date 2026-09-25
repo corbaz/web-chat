@@ -17,6 +17,7 @@ import {
   type ChatMessageType,
   type Citation,
   type GroqMessageType,
+  type ImageAttachment,
   STORAGE_KEY,
   type ToolConfig,
 } from '../../interfaces/chat/chatTypes'
@@ -268,10 +269,16 @@ const ChatContainer = ({
           dataToStore = JSON.parse(storedData)
         }
 
+        // Las imágenes nunca se persisten en localStorage (cuota ~5 MB):
+        // se descarta `images` y queda solo el marcador `imageCount`.
+        const messagesToPersist = messages.map(
+          ({ images: _images, ...rest }) => rest,
+        )
+
         // Creamos un nuevo objeto para evitar modificar directamente la referencia
         const updatedData = {
           ...dataToStore,
-          [currentChatId]: messages,
+          [currentChatId]: messagesToPersist,
         }
 
         // Solo guardamos si hay cambios
@@ -308,10 +315,19 @@ const ChatContainer = ({
         modelTokenLimit * TOKEN_LIMIT_SAFETY_FACTOR - MAX_RESPONSE_TOKENS,
       )
 
-      // Convertir mensajes al formato para API
+      // Convertir mensajes al formato para API. Solo el último mensaje de
+      // usuario (recién compuesto) puede traer `images`: el historial
+      // cargado desde localStorage nunca las tiene (se eliminan al
+      // persistir, ver el efecto de guardado más abajo). Si el usuario
+      // envía imágenes sin texto, el payload usa un texto por defecto; el
+      // mensaje mostrado en la UI conserva el contenido real (vacío).
       const apiMessages: GroqMessageType[] = messagesHistory.map((msg) => ({
         role: msg.role,
-        content: msg.content,
+        content:
+          !msg.content.trim() && msg.images && msg.images.length > 0
+            ? 'Describe la imagen.'
+            : msg.content,
+        ...(msg.images && msg.images.length > 0 ? { images: msg.images } : {}),
       }))
 
       // Añadir sistema de mensajes para asegurar que responda en español
@@ -435,8 +451,9 @@ const ChatContainer = ({
 
   // Función para enviar un mensaje al API de Groq
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim()) return
+    async (content: string, images?: ImageAttachment[]) => {
+      const hasImages = Boolean(images && images.length > 0)
+      if (!content.trim() && !hasImages) return
 
       // Generar ID único para el mensaje
       const userMessageId = `user_${Date.now()}_${Math.random()
@@ -447,12 +464,16 @@ const ChatContainer = ({
         .replace(/<think>[\s\S]*?<\/think>/g, '')
         .trim()
 
-      // Añadir mensaje del usuario (con contenido filtrado)
+      // Añadir mensaje del usuario (con contenido filtrado). Las imágenes
+      // quedan en memoria para mostrarlas (ChatMessage) y para esta
+      // petición; nunca se guardan en localStorage (ver efecto de
+      // persistencia), donde solo sobrevive `imageCount`.
       const userMessage: ChatMessageType = {
         id: userMessageId,
         role: 'user',
         content: filteredContent,
         timestamp: Date.now(),
+        ...(hasImages ? { images, imageCount: images?.length } : {}),
       }
 
       // Actualizar mensajes con el nuevo mensaje del usuario
@@ -463,8 +484,9 @@ const ChatContainer = ({
       // Si el mensaje actual solo contiene el mensaje de bienvenida, actualizar el título del chat
       if (messages.length === 1 && messages[0].id === 'intro-message') {
         const newChatId = currentChatId || `chat_${Date.now()}`
-        const title =
-          content.trim().substring(0, 30) + (content.length > 30 ? '...' : '')
+        const title = content.trim()
+          ? content.trim().substring(0, 30) + (content.length > 30 ? '...' : '')
+          : 'Imagen'
 
         // Actualizar historial de chat incluyendo el modelo actual
         setChatHistory(
@@ -1009,8 +1031,11 @@ const ChatContainer = ({
   // Escuchar el evento personalizado para enviar mensajes
   useEffect(() => {
     const handleSendMessage = (event: Event) => {
-      const customEvent = event as CustomEvent<{ message: string }>
-      sendMessage(customEvent.detail.message)
+      const customEvent = event as CustomEvent<{
+        message: string
+        images?: ImageAttachment[]
+      }>
+      sendMessage(customEvent.detail.message, customEvent.detail.images)
     }
 
     document.addEventListener(
