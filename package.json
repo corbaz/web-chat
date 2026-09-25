@@ -4,7 +4,7 @@
   "version": "v.7.0",
   "type": "module",
   "packageManager": "bun@1.3.14",
-  "homepage": "https://corbaz.github.io/web-chat",
+  "homepage": "https://prompting-chat.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/corbaz/web-chat.git"
@@ -32,7 +32,8 @@
     "check": "biome check --write src",
     "build": "tsc -b && vite build --outDir ./docs",
     "preview": "vite preview --host",
-    "deploy": "surge docs --domain deepchat.surge.sh"
+    "deploy": "surge docs --domain deepchat.surge.sh",
+    "deploy:vercel": "vercel deploy --prod"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",
