@@ -1,0 +1,1 @@
+import{i as e,t}from"./vendor-BD1dsfwB.js";import{t as n}from"./markdown-DzjsSnQ0.js";var r=e(),i=({content:e})=>(0,r.jsx)(t,{remarkPlugins:[n],children:e});export{i as default};
