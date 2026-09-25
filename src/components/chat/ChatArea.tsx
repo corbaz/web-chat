@@ -119,7 +119,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                   <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
                   <path d="M2 12h20" />
                 </svg>
-                <span>Buscando en la web...</span>
+                <span title="Búsqueda web disponible: el modelo decide si la usa">
+                  Pensando...
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2 p-2">
