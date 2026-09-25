@@ -12,14 +12,9 @@ import type {
 // Límite de truncamiento de salida de herramientas (Fase 3 lo usa para "Ver más")
 export const TOOL_TRUNCATION_LIMIT = 500
 
-// Catálogo de herramientas por familia (verificación live 1.1)
-export const COMPOUND_TOOLS: BuiltinToolId[] = [
-  'web_search',
-  'code_interpreter',
-  'visit_website',
-  'wolfram_alpha',
-]
-
+// Catálogo de herramientas por familia (verificación live 1.1). La familia
+// compound se retiró: groq/compound y groq/compound-mini fueron apagados el
+// 21/09/26 (https://console.groq.com/docs/deprecations).
 export const GPT_OSS_TOOLS: BuiltinToolId[] = [
   'browser_search',
   'code_interpreter',
@@ -42,42 +37,16 @@ const VERIFIED_GPT_OSS_TOOL_MODELS = new Set<string>([
   'openai/gpt-oss-safeguard-20b',
 ])
 
-// Modelos cuya capacidad de herramientas es PROVISIONAL: el payload fue aceptado
-// (HTTP 200, sin 400) pero la ejecución no se observó en la verificación live 1.1.
-// Phase 2/3 puede revocar el tag `supportsBuiltinTools` sin cambios de infra si
-// el smoke-test no muestra ejecución. Ver verification.md.
-export const PROVISIONAL_TOOL_MODELS = new Set<string>(['groq/compound-mini'])
-
 // Determina la familia de herramientas de un modelo (verificación live 1.1).
 // CONTRATO CONSERVADOR: solo se clasifican como tool-capables los IDs verificados
 // live. NO se usa prefix match sobre `openai/gpt-oss-*` — futuros IDs deben
 // verificarse live antes de clasificarse (evita habilitar herramientas para
 // modelos no verificados que podrían no aceptar o ejecutar tools).
-// - groq/compound → compound (verificado: ejecutó herramientas)
-// - groq/compound-mini → compound (PROVISIONAL: payload aceptado sin 400,
-//   ejecución no observada — ver PROVISIONAL_TOOL_MODELS y verification.md;
-//   revocar el tag en Phase 2 si el smoke-test no muestra ejecución)
 // - openai/gpt-oss-120b, openai/gpt-oss-safeguard-20b → gpt-oss (verificados:
 //   ejecutaron herramientas). openai/gpt-oss-20b NO está verificado → null.
 export const isToolCapableModel = (model: string): ToolFamily | null => {
-  if (model === 'groq/compound') return 'compound'
-  if (model === 'groq/compound-mini') return 'compound'
   if (VERIFIED_GPT_OSS_TOOL_MODELS.has(model)) return 'gpt-oss'
   return null
-}
-
-// Payload para modelos compound: compound_custom.tools.enabled_tools (solo habilitadas)
-export const compoundToolPayload = (
-  toolsConfig: ToolConfig,
-): Record<string, unknown> => {
-  const enabledTools = COMPOUND_TOOLS.filter((tool) => toolsConfig[tool])
-  return {
-    compound_custom: {
-      tools: {
-        enabled_tools: enabledTools,
-      },
-    },
-  }
 }
 
 // Payload para modelos GPT-OSS: tools:[{type}] (solo habilitadas)

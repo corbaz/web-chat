@@ -8,8 +8,9 @@ import {
   isInvalidApiKeyError,
   isOpenCodeAvailable,
   OPENCODE_UNAVAILABLE_MESSAGE,
+  openCodeSessionHeaders,
 } from '../../config/providers'
-import { sanitizeCitations } from '../../config/webSearch'
+import { sanitizeCitations, supportsWebSearch } from '../../config/webSearch'
 import { createWelcomeMessage } from '../../constants/messages'
 import {
   CHAT_HISTORY_KEY,
@@ -508,7 +509,7 @@ const ChatContainer = ({
 
       try {
         if (
-          (provider === 'opengo' || provider === 'opencodefree') &&
+          (provider === 'opengo' || provider === 'opencodezen') &&
           !isOpenCodeAvailable()
         ) {
           throw new Error(OPENCODE_UNAVAILABLE_MESSAGE)
@@ -545,12 +546,9 @@ const ChatContainer = ({
         const modelTokenLimit = getModelTokenLimit(selectedModel, provider)
 
         const apiKeyStorageKey = getApiKeyStorageKey(provider)
-        const apiKey =
-          provider === 'opencodefree'
-            ? 'free'
-            : localStorage.getItem(apiKeyStorageKey) || ''
+        const apiKey = localStorage.getItem(apiKeyStorageKey) || ''
 
-        if (!apiKey?.trim() && provider !== 'opencodefree') {
+        if (!apiKey?.trim()) {
           const errorResponseMessage: ChatMessageType = {
             id: `error_${Date.now()}_${Math.random()
               .toString(36)
@@ -568,13 +566,17 @@ const ChatContainer = ({
           return
         }
 
+        // Solo se piden herramientas de búsqueda si el modelo las soporta:
+        // el toggle puede quedar activo al cambiar a un modelo sin soporte.
+        const effectiveSearch =
+          searchEnabled && supportsWebSearch(selectedModel, provider)
         const toolsConfig: ToolConfig = {
-          web_search: searchEnabled,
+          web_search: effectiveSearch,
           code_interpreter: false,
           visit_website: false,
           wolfram_alpha: false,
-          browser_search: searchEnabled,
-          searchEnabled,
+          browser_search: effectiveSearch,
+          searchEnabled: effectiveSearch,
         }
 
         let payload: Record<string, unknown>
@@ -611,6 +613,7 @@ const ChatContainer = ({
         const headers = {
           'Content-Type': 'application/json',
           ...providerConfig.headerAuth(apiKey, selectedModel),
+          ...openCodeSessionHeaders(provider, currentChatId ?? requestId),
         }
 
         // Log del request sin valores de cabeceras ni credenciales.

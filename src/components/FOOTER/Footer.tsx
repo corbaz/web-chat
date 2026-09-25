@@ -5,7 +5,11 @@ import EscobaIcon from '../../assets/escoba.svg'
 import LunaIcon from '../../assets/luna.svg'
 import TrashIcon from '../../assets/trash.svg'
 import VaritaIcon from '../../assets/varita_magica.svg'
-import { getApiKeyStorageKey, getProviderConfig } from '../../config/providers'
+import {
+  getApiKeyStorageKey,
+  getProviderConfig,
+  openCodeSessionHeaders,
+} from '../../config/providers'
 import { supportsWebSearch } from '../../config/webSearch'
 import { CHAT_HISTORY_KEY } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
@@ -122,7 +126,7 @@ const Footer: React.FC<FooterProps> = ({
     if (message.trim() && !isLoading && !isMagicLoading) {
       try {
         setIsMagicLoading(true)
-        let modelToUse: string = selectedModel || 'llama-3.3-70b-versatile'
+        let modelToUse: string = selectedModel || 'openai/gpt-oss-120b'
 
         if (!selectedModel && currentChatId) {
           try {
@@ -154,11 +158,8 @@ ${message}`
           return
         }
 
-        const apiKey =
-          provider === 'opencodefree'
-            ? 'free'
-            : localStorage.getItem(getApiKeyStorageKey(provider)) || ''
-        if (!apiKey?.trim() && provider !== 'opencodefree') {
+        const apiKey = localStorage.getItem(getApiKeyStorageKey(provider)) || ''
+        if (!apiKey?.trim()) {
           setIsMagicLoading(false)
           alert(`Falta API key para ${providerConfig.name}`)
           return
@@ -178,6 +179,10 @@ ${message}`
             headers: {
               'Content-Type': 'application/json',
               ...providerConfig.headerAuth(apiKey, modelToUse),
+              ...openCodeSessionHeaders(
+                provider,
+                currentChatId ?? `magic_${Date.now()}`,
+              ),
             },
           },
         )
@@ -543,8 +548,7 @@ ${message}`
 
             {/* Toggle de búsqueda web */}
             {selectedModel &&
-              supportsWebSearch(selectedModel, selectedProvider) &&
-              selectedModel !== 'groq/compound' && (
+              supportsWebSearch(selectedModel, selectedProvider) && (
                 <button
                   type="button"
                   onClick={onToggleSearch}

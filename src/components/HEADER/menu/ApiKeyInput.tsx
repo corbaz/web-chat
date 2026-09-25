@@ -123,13 +123,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
           ? 'OpenAI'
           : id === 'opengo'
             ? 'OpenCode Go'
-            : id === 'opencodefree'
-              ? 'OpenCode Free'
-              : id === 'opencodezen'
-                ? 'OpenCode Zen'
-                : id === 'gemini'
-                  ? 'Gemini'
-                  : 'Anthropic'
+            : id === 'opencodezen'
+              ? 'OpenCode Zen'
+              : id === 'gemini'
+                ? 'Gemini'
+                : 'Anthropic'
 
   const providerLink = (id: string) =>
     id === 'groq'

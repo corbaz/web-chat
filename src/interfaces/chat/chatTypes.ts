@@ -10,7 +10,7 @@ export interface ChatMessageType {
   requestedModelId?: string // ID del modelo solicitado por el usuario
   promptTokens?: number // Exact input/prompt tokens
   completionTokens?: number // Exact output/completion tokens
-  executedTools?: ExecutedTool[] // Herramientas integradas ejecutadas por Groq (compound/GPT-OSS)
+  executedTools?: ExecutedTool[] // Herramientas integradas ejecutadas por Groq (GPT-OSS)
   citations?: Citation[] // Citaciones/Fuentes de la búsqueda web
   searchState?: 'incomplete' | undefined // Estado de la búsqueda web ('incomplete' para pause_turn de Anthropic)
 }
@@ -35,7 +35,7 @@ export const CHAT_HISTORY_KEY = 'prompting_chat_history:v1'
 // === Herramientas integradas de Groq (Fase 1: infraestructura) ===
 
 // Familias de modelos de Groq con herramientas integradas soportadas
-export type ToolFamily = 'compound' | 'gpt-oss'
+export type ToolFamily = 'gpt-oss'
 
 // Identificadores de herramientas integradas que acepta la API de Groq
 export type BuiltinToolId =

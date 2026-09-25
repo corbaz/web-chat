@@ -37,3 +37,23 @@ export function zenRouteFor(id: string): ZenRoute {
 
   return 'chat'
 }
+
+export type GoRoute = 'responses' | 'messages' | 'chat'
+
+/**
+ * Endpoint de chat de OpenCode Go por familia de modelo.
+ * Fuente: tabla "Endpoints" de https://opencode.ai/docs/go/ (2026-09-25).
+ * Difiere de Zen: en Go todos los qwen* (incluido qwen3.8-max) y minimax-*
+ * usan /messages, y Go no ofrece modelos Claude ni Gemini.
+ */
+export function goRouteFor(id: string): GoRoute {
+  if (
+    id.startsWith('gpt-') ||
+    id.startsWith('grok-') ||
+    id.startsWith('muse-')
+  ) {
+    return 'responses'
+  }
+  if (id.startsWith('minimax-') || id.startsWith('qwen')) return 'messages'
+  return 'chat'
+}

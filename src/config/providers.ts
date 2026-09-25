@@ -4,9 +4,8 @@ import type {
   ExecutedTool,
   ToolConfig,
 } from '../interfaces/chat/chatTypes'
-import { zenRouteFor } from '../services/modelCatalog/zenRoute'
+import { goRouteFor, zenRouteFor } from '../services/modelCatalog/zenRoute'
 import {
-  compoundToolPayload,
   gptOssToolPayload,
   isToolCapableModel,
   parseExecutedTools,
@@ -18,7 +17,6 @@ type ProviderType =
   | 'openai'
   | 'anthropic'
   | 'opengo'
-  | 'opencodefree'
   | 'opencodezen'
   | 'gemini'
 
@@ -68,17 +66,8 @@ export interface ProviderConfig {
   warning?: string // Mensaje de advertencia si el proveedor no es recomendado
 }
 
-const OPENCODE_GO_ANTHROPIC_MODELS = new Set([
-  'minimax-m3',
-  'minimax-m2.7',
-  'minimax-m2.5',
-  'qwen3.7-max',
-  'qwen3.7-plus',
-  'qwen3.6-plus',
-])
-
 const usesOpenCodeGoAnthropic = (model: string): boolean =>
-  OPENCODE_GO_ANTHROPIC_MODELS.has(model)
+  goRouteFor(model) === 'messages'
 
 const isLocalhost = (): boolean =>
   window.location.hostname === 'localhost' ||
@@ -567,14 +556,10 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
         max_tokens: maxTokens,
         presence_penalty: 0.1,
       }
-      // Solo se inyecta compound_custom / tools cuando toolsConfig está presente
-      // y el modelo es tool-capable (verificación live 1.1). Sin toolsConfig no
-      // hay inyección: compound auto-usa herramientas por defecto; GPT-OSS no las
-      // usa — comportamiento previo preservado en Fase 1.
+      // Solo se inyectan tools cuando toolsConfig está presente y el modelo es
+      // tool-capable (verificación live 1.1). Sin toolsConfig no hay inyección.
       const family = isToolCapableModel(model)
-      if (family === 'compound' && toolsConfig) {
-        Object.assign(base, compoundToolPayload(toolsConfig))
-      } else if (family === 'gpt-oss' && toolsConfig) {
+      if (family === 'gpt-oss' && toolsConfig) {
         Object.assign(base, gptOssToolPayload(toolsConfig))
       }
       return base
@@ -648,6 +633,9 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       if (usesOpenCodeGoAnthropic(model)) {
         return `${base}/zen/go/v1/messages`
       }
+      if (goRouteFor(model) === 'responses') {
+        return `${base}/zen/go/v1/responses`
+      }
       return `${base}/zen/go/v1/chat/completions`
     },
     headerAuth: (apiKey: string, model: string): Record<string, string> => {
@@ -668,6 +656,9 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
     ) => {
       if (usesOpenCodeGoAnthropic(model)) {
         return buildAnthropicPayload(model, messages, maxTokens, toolsConfig)
+      }
+      if (goRouteFor(model) === 'responses') {
+        return buildResponsesPayload(model, messages, toolsConfig)
       }
 
       return {
@@ -698,40 +689,6 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
     },
     warning:
       'OpenCode Go requiere un proxy de servidor para evitar problemas de CORS en producción. En localhost se utiliza un proxy local automático.',
-  },
-  opencodefree: {
-    name: 'OpenCode Free',
-    endpoint: () => {
-      const base = getOpenCodeBase()
-      return `${base}/zen/v1/chat/completions`
-    },
-    headerAuth: () => ({}),
-    payloadBuilder: (
-      model: string,
-      messages: Message[],
-      maxTokens: number,
-      toolsConfig?: ToolConfig,
-    ) => ({
-      model,
-      messages,
-      max_tokens: maxTokens,
-      ...(toolsConfig?.searchEnabled === true && {
-        tools: [
-          {
-            type: 'web_search',
-          },
-        ],
-      }),
-    }),
-    parseResponse: parseOpenAIResponse,
-    parseActualModel: (data: Record<string, unknown>) => {
-      return (data.model as string) ?? ''
-    },
-    parseCitations: (data: Record<string, unknown>) => {
-      return parseOpenAICitations(data)
-    },
-    warning:
-      'OpenCode Free requiere un proxy de servidor para evitar problemas de CORS en producción. En localhost se utiliza un proxy local automático.',
   },
   opencodezen: {
     name: 'OpenCode Zen',
@@ -848,3 +805,14 @@ export const getProviderConfig = (provider: string): ProviderConfig | null => {
 export const getApiKeyStorageKey = (provider: string): string => {
   return `${provider}ApiKey`
 }
+
+// OpenCode Go rechaza pedidos sin `x-opencode-session` (HTTP 400: "Request is
+// missing x-opencode-session"). Debe ser estable por conversación para que
+// OpenCode optimice ruteo y prompt caching (https://opencode.ai/docs/go/).
+export const openCodeSessionHeaders = (
+  provider: string,
+  sessionId: string | undefined,
+): Record<string, string> =>
+  (provider === 'opengo' || provider === 'opencodezen') && sessionId
+    ? { 'x-opencode-session': sessionId }
+    : {}

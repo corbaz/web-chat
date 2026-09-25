@@ -100,8 +100,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           >
             {selectedModel &&
             supportsWebSearch(selectedModel, selectedProvider) &&
-            searchEnabled &&
-            selectedModel !== 'groq/compound-mini' ? (
+            searchEnabled ? (
               <div
                 className="flex items-center gap-1.5 text-xs font-semibold animate-pulse"
                 style={{ color: theme.accent }}

@@ -26,7 +26,6 @@ const PROVIDER_IDS = [
   'openai',
   'anthropic',
   'opengo',
-  'opencodefree',
   'opencodezen',
   'gemini',
 ] as const
@@ -41,7 +40,6 @@ export const App = () => {
   const hasAnyApiKey = useCallback(
     () =>
       PROVIDER_IDS.some((p) => {
-        if (p === 'opencodefree') return isOpenCodeAvailable()
         if (isOpenCodeGatedProvider(p) && !isOpenCodeAvailable()) return false
         const key = localStorage.getItem(`${p}ApiKey`)
         return key && key.trim() !== ''
@@ -51,23 +49,21 @@ export const App = () => {
 
   const getInitialProvider = () => {
     const stored = localStorage.getItem('selectedProvider')
+    // Un `selectedProvider` heredado de 'opencodefree' (proveedor retirado,
+    // ver T8) se trata como si no hubiera valor guardado: nunca coincide con
+    // ningún elemento de PROVIDER_IDS, así que cae al loop de abajo.
     if (stored) {
-      if (stored === 'opencodefree' && isOpenCodeAvailable()) return stored
       if (!isOpenCodeGatedProvider(stored) || isOpenCodeAvailable()) {
         const key = localStorage.getItem(`${stored}ApiKey`)
         if (key && key.trim() !== '') return stored
       }
     }
     for (const p of PROVIDER_IDS) {
-      if (
-        p === 'opencodefree' ||
-        (isOpenCodeGatedProvider(p) && !isOpenCodeAvailable())
-      )
-        continue
+      if (isOpenCodeGatedProvider(p) && !isOpenCodeAvailable()) continue
       const key = localStorage.getItem(`${p}ApiKey`)
       if (key && key.trim() !== '') return p
     }
-    return isOpenCodeAvailable() ? 'opencodefree' : 'groq'
+    return 'groq'
   }
 
   const getInitialModel = (provider: string) => {

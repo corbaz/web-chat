@@ -1,22 +1,24 @@
-// Fetcher/parser de OpenCode Zen (plan pago, con API key).
+// Fetcher/parser de OpenCode Zen (con API key propia de Zen).
 // GET https://opencode.ai/zen/v1/models (Bearer) → {data:[{id}]}.
-// Mismo endpoint que el catálogo free (ver zenFreeFetcher.ts), pero acá se
-// descartan los modelos "free" (pertenecen al proveedor `opencodefree`) y
-// los ids sin ruta de chat conocida (ver zenRoute.ts, p. ej. `jev-*`).
+// Con key de Zen, el mismo endpoint sirve tanto modelos pagos como los
+// "free" del plan (ids que terminan en "-free" o "big-pickle"): el tier
+// keyless dedicado (proveedor `opencodefree`) fue retirado porque OpenCode
+// Zen ahora rechaza cualquier cliente que no sea OpenCode mismo (ver T8 en
+// odd/tasks/dynamic-model-catalog.md). Solo se descartan los ids sin ruta
+// de chat conocida (ver zenRoute.ts, p. ej. `jev-*`).
 
 import { zenRouteFor } from '../zenRoute'
 import { fetchJson, parseDataIds } from './http'
-import { isFreeModelId } from './zenFreeFetcher'
 
 const ZEN_MODELS_URL = 'https://opencode.ai/zen/v1/models'
 
-export function isZenPaidChatModel(id: string): boolean {
-  return !isFreeModelId(id) && zenRouteFor(id) !== null
+export function isZenChatModel(id: string): boolean {
+  return zenRouteFor(id) !== null
 }
 
-/** Devuelve solo los IDs de modelos pagos y de chat del payload de /zen/v1/models. */
+/** Devuelve solo los IDs de modelos de chat del payload de /zen/v1/models. */
 export function parseZenModelIds(payload: unknown): string[] {
-  return parseDataIds(payload, isZenPaidChatModel)
+  return parseDataIds(payload, isZenChatModel)
 }
 
 export async function fetchOpenCodeZenModelIds(

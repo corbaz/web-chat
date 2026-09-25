@@ -1,15 +1,4 @@
 import type { Citation } from '../interfaces/chat/chatTypes'
-import { getModels } from '../services/modelCatalog/store'
-
-// Se consulta el store en cada llamada (en vez de cachear un Set al cargar
-// el módulo) para reflejar los modelos de OpenCode Free tras un refresh
-// dinámico del catálogo.
-function isOpenCodeModel(modelId: string): boolean {
-  return (
-    getModels('opengo').some((model) => model.id === modelId) ||
-    getModels('opencodefree').some((model) => model.id === modelId)
-  )
-}
 
 const WEB_SEARCH_CAPABLE_MODELS = new Set<string>([
   'openai/gpt-oss-120b',
@@ -30,8 +19,10 @@ const WEB_SEARCH_CAPABLE_MODELS = new Set<string>([
 
 export function supportsWebSearch(modelId: string, provider?: string): boolean {
   if (!modelId || provider === 'routellm') return false
+  // OpenCode Go/Zen: sin búsqueda web. Go rechaza `tools[0].type: web_search`
+  // (HTTP 400, verificado 2026-09-25) y el soporte en Zen no está verificado.
+  if (provider === 'opengo' || provider === 'opencodezen') return false
   if (WEB_SEARCH_CAPABLE_MODELS.has(modelId)) return true
-  if (isOpenCodeModel(modelId)) return true
   return (
     modelId.startsWith('gpt-') ||
     modelId.startsWith('o3') ||

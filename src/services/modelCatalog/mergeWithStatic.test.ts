@@ -7,14 +7,14 @@ const staticModels: CatalogModel[] = [
     id: 'mimo-v2.5-free',
     name: 'MiMo V2.5 Free',
     developer: 'MiMo AI',
-    provider: 'opencodefree',
+    provider: 'opencodezen',
     contextWindow: '128000',
   },
   {
     id: 'big-pickle',
     name: 'Big Pickle Free',
     developer: 'Stealth',
-    provider: 'opencodefree',
+    provider: 'opencodezen',
     contextWindow: '128000',
   },
 ]
@@ -24,7 +24,7 @@ describe('mergeWithStatic', () => {
     const result = mergeWithStatic(
       ['mimo-v2.5-free'],
       staticModels,
-      'opencodefree',
+      'opencodezen',
     )
     expect(result).toEqual([staticModels[0]])
   })
@@ -33,14 +33,14 @@ describe('mergeWithStatic', () => {
     const result = mergeWithStatic(
       ['deepseek-v4-flash-free'],
       staticModels,
-      'opencodefree',
+      'opencodezen',
     )
     expect(result).toEqual([
       {
         id: 'deepseek-v4-flash-free',
         name: 'Deepseek V4 Flash Free',
         developer: 'DeepSeek',
-        provider: 'opencodefree',
+        provider: 'opencodezen',
       },
     ])
   })
@@ -49,13 +49,13 @@ describe('mergeWithStatic', () => {
     const result = mergeWithStatic(
       ['nuevo-modelo-free', 'big-pickle'],
       staticModels,
-      'opencodefree',
+      'opencodezen',
     )
     expect(result.map((m) => m.id)).toEqual(['nuevo-modelo-free', 'big-pickle'])
     expect(result[1]).toEqual(staticModels[1])
   })
 
   test('lista vacía de ids produce lista vacía', () => {
-    expect(mergeWithStatic([], staticModels, 'opencodefree')).toEqual([])
+    expect(mergeWithStatic([], staticModels, 'opencodezen')).toEqual([])
   })
 })

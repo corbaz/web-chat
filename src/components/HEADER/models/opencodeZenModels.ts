@@ -63,4 +63,11 @@ export const opencodeZenModels: OpenCodeZenModel[] = [
     provider: 'opencodezen',
     contextWindow: '128000',
   },
+  {
+    id: 'big-pickle',
+    name: 'Big Pickle (Free)',
+    developer: 'Stealth',
+    provider: 'opencodezen',
+    contextWindow: '128000',
+  },
 ]

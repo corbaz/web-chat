@@ -21,7 +21,6 @@ const allProviders: ProviderOption[] = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'opengo', label: 'OpenCode Go' },
-  { value: 'opencodefree', label: 'OpenCode Free' },
   { value: 'opencodezen', label: 'OpenCode Zen' },
   { value: 'gemini', label: 'Gemini' },
 ]
@@ -40,7 +39,6 @@ const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   }, [])
 
   const providers = allProviders.filter((provider) => {
-    if (provider.value === 'opencodefree') return isOpenCodeAvailable()
     if (
       (provider.value === 'opengo' || provider.value === 'opencodezen') &&
       !isOpenCodeAvailable()

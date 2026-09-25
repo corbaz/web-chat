@@ -7,8 +7,7 @@ describe('parseGroqModelIds', () => {
       object: 'list',
       data: [
         { id: 'openai/gpt-oss-120b', active: true, context_window: 131072 },
-        { id: 'llama-3.3-70b-versatile', active: true },
-        { id: 'groq/compound', active: true },
+        { id: 'qwen/qwen3.8-27b', active: true },
         { id: 'openai/gpt-oss-safeguard-20b', active: true },
         { id: 'whisper-large-v3', active: true },
         { id: 'whisper-large-v3-turbo', active: true },
@@ -21,8 +20,7 @@ describe('parseGroqModelIds', () => {
     }
     expect(parseGroqModelIds(payload)).toEqual([
       'openai/gpt-oss-120b',
-      'llama-3.3-70b-versatile',
-      'groq/compound',
+      'qwen/qwen3.8-27b',
       'openai/gpt-oss-safeguard-20b',
     ])
   })

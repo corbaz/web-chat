@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { zenRouteFor } from './zenRoute'
+import { goRouteFor, zenRouteFor } from './zenRoute'
 
 describe('zenRouteFor', () => {
   test('gpt-*, grok-* y muse-* usan /zen/v1/responses', () => {
@@ -36,5 +36,27 @@ describe('zenRouteFor', () => {
     expect(zenRouteFor('kimi-k3')).toBe('chat')
     expect(zenRouteFor('big-pickle')).toBe('chat')
     expect(zenRouteFor('mimo-v2.5-free')).toBe('chat')
+  })
+})
+
+describe('goRouteFor', () => {
+  test('gpt-*, grok-* y muse-* usan responses', () => {
+    expect(goRouteFor('gpt-6-luna')).toBe('responses')
+    expect(goRouteFor('grok-4.7')).toBe('responses')
+    expect(goRouteFor('muse-spark-1.3-contributor')).toBe('responses')
+  })
+
+  test('minimax-* y todos los qwen* usan messages (incluido qwen3.8-max)', () => {
+    expect(goRouteFor('minimax-m3')).toBe('messages')
+    expect(goRouteFor('qwen3.8-max')).toBe('messages')
+    expect(goRouteFor('qwen3.8-flash')).toBe('messages')
+    expect(goRouteFor('qwen3.6-plus')).toBe('messages')
+  })
+
+  test('el resto usa chat completions', () => {
+    expect(goRouteFor('glm-5.2')).toBe('chat')
+    expect(goRouteFor('kimi-k3')).toBe('chat')
+    expect(goRouteFor('deepseek-v4-flash')).toBe('chat')
+    expect(goRouteFor('space-bunny-free')).toBe('chat')
   })
 })

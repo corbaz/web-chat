@@ -40,6 +40,11 @@ Providers: OpenCode Zen free, OpenCode Go, Groq, Gemini, OpenAI, Anthropic. Open
 - [x] T5 OpenAI (filter chat models).
 - [x] T6 Anthropic.
 - [x] T7 OpenCode Zen paid provider with API key (user approved 2026-09-25): new provider `opencodezen` with key field, dynamic list from `/zen/v1/models`, per-family chat routing; also fix Zen free list to exclude models whose route is not `/chat/completions`.
+- [x] T8 Remove keyless `opencodefree` provider and include free models in `opencodezen` (user approved 2026-09-25). Reason: keyless Zen free tier now returns `FreeTierError: OpenCode's free tier can only be used from within OpenCode` (reproduced with curl); `deepseek-v4-flash-free` also returns `Model is unavailable` upstream. Whether free models work with a Zen key is unverified (needs user key).
+- [x] T9 Groq cleanup (user approved 2026-09-25): static `groqModels.ts` keeps only models available today (gpt-oss-120b, gpt-oss-20b, gpt-oss-safeguard-20b, qwen/qwen3.8-27b with docs metadata); removed compound tool family (`isToolCapableModel`, `compoundToolPayload`, `PROVISIONAL_TOOL_MODELS`, `ToolFamily`), compound special cases in ChatArea/Footer; Footer fallback model -> `openai/gpt-oss-120b`. GPT-OSS built-in tools kept.
+- [x] T10 OpenCode Go usable from the app (2026-09-25): Go returns HTTP 400 "Request is missing x-opencode-session" (user report). Added `openCodeSessionHeaders` (stable per chat: `currentChatId`) for `opengo`/`opencodezen` in ChatContainer and Footer magic button. Go routing now from docs table via `goRouteFor` (gpt/grok/muse -> `/zen/go/v1/responses`, minimax/qwen incl. qwen3.8-max -> `/messages`, rest -> `/chat/completions`), replacing hardcoded `OPENCODE_GO_ANTHROPIC_MODELS`.
+- [x] T11 Web search fix (2026-09-25): Go rejected `tools[0].type: web_search` (HTTP 400, user report with glm-5.2). `supportsWebSearch` now returns false for `opengo`/`opencodezen`; ChatContainer only enables search tools when `supportsWebSearch(model, provider)` is true. `bun test` 40 pass, `bunx tsc -b` exit 0, build OK.
+- [x] T12 OpenCode on the published web (user chose Vercel, project `prompting`, 2026-09-25): `vercel.json` rewrites `/opencode-go-api/:path*` to `https://opencode.ai/:path*`; Vercel env `VITE_OPENCODE_PROXY_URL=/opencode-go-api`; `.vercelignore` excludes local tooling and env files. Background: CORS preflight (OPTIONS) to `opencode.ai/zen/v1/*` and `/zen/go/v1/*` returns 404 without CORS headers (verified 2026-09-25), so browsers cannot call OpenCode directly; Surge and GitHub Pages are static and cannot proxy. Needs a hosted proxy.
 
 ## Acceptance criteria
 - On startup, cached lists render immediately, then refresh in the background.
@@ -89,6 +94,12 @@ Impact on T1: `jev-1.13-free` and `muse-spark-1.3-contributor-free` are listed a
   - `bun test`: 42 pass, 0 fail. `bunx tsc -b`: exit 0. Biome: touched files clean (13 pre-existing warnings in untouched lines of `providers.ts`). Build: OK.
   - Live: free list 8 ids (jev/muse contributor excluded); paid list 69 ids.
   - Keyed chat calls pending (user, browser).
+- T8 done: removed `opencodefree` (provider, config, static catalog, `zenFreeFetcher`, keyless special cases in ChatContainer/Footer); `zenFetcher` keeps every id with a non-null route (free ones included, `jev-*` excluded); seed adds `big-pickle`; fallback provider = stored provider with key, else first provider with key, else `groq`; one-time removal of `modelCatalog:v1:opencodefree`.
+  - `bun test`: 37 pass, 0 fail. `bunx tsc -b`: exit 0. Build: OK. Live Zen parser: 79 ids incl. `big-pickle` and 8 `*-free`, `jev-*` excluded.
+  - Free models with a Zen key: unverified (user, browser).
+- Groq docs reviewed (models + deprecations, 2026-09-25): production = gpt-oss-120b, gpt-oss-20b, (llama-3.1-8b-instant, llama-3.3-70b-versatile now Enterprise only, shutdown 08/16/26 for developer plan); preview = qwen/qwen3.8-27b, openai/gpt-oss-safeguard-20b, minimaxai/minimax-m2.7 (Enterprise). Shut down: groq/compound and groq/compound-mini (09/21/26), qwen/qwen3.6-27b (09/14/26), qwen/qwen3-32b and llama-4-scout (07/17/26). Static `groqModels.ts` still lists these, and `groqTools.ts` depends on compound.
+- T9: `bun test` 37 pass, 0 fail; `bunx tsc -b` exit 0; build OK. `BuiltinToolId`/`ToolConfig` keys `visit_website`/`wolfram_alpha` left in place (now unused by any model).
+- T10: `bun test` 40 pass, 0 fail; `bunx tsc -b` exit 0; build OK. Live keyed check pending (user). Production proxy must forward/allow `x-opencode-session`.
 
 ## Next step
-User browser checks per provider with their keys; then deploy decision.
+Verify https://prompting.vercel.app with OpenCode Go and Zen keys.

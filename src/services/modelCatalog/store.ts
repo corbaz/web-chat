@@ -9,7 +9,6 @@ import { anthropicModels } from '../../components/HEADER/models/anthropicModels'
 import { geminiModels } from '../../components/HEADER/models/geminiModels'
 import { groqModels } from '../../components/HEADER/models/groqModels'
 import { openaiModels } from '../../components/HEADER/models/openaiModels'
-import { opencodeFreeModels } from '../../components/HEADER/models/opencodeFreeModels'
 import { opencodeZenModels } from '../../components/HEADER/models/opencodeZenModels'
 import { opengoModels } from '../../components/HEADER/models/opengoModels'
 import { routellmModels } from '../../components/HEADER/models/routellmModels'
@@ -24,7 +23,6 @@ export const PROVIDER_IDS: ProviderId[] = [
   'openai',
   'anthropic',
   'opengo',
-  'opencodefree',
   'opencodezen',
   'gemini',
 ]
@@ -35,7 +33,6 @@ const STATIC_MODELS: Record<ProviderId, readonly CatalogModel[]> = {
   openai: openaiModels,
   anthropic: anthropicModels,
   opengo: opengoModels,
-  opencodefree: opencodeFreeModels,
   opencodezen: opencodeZenModels,
   gemini: geminiModels,
 }
@@ -150,6 +147,13 @@ let initialized = false
 export function initModelCatalog(): void {
   if (initialized) return
   initialized = true
+  // Limpieza única del caché huérfano del proveedor `opencodefree`,
+  // eliminado del catálogo (ver T8 en odd/tasks/dynamic-model-catalog.md).
+  try {
+    localStorage.removeItem('modelCatalog:v1:opencodefree')
+  } catch {
+    // Entorno sin localStorage disponible; no es fatal.
+  }
   void refreshAll()
   window.addEventListener('apikey-changed', () => {
     void refreshAll()

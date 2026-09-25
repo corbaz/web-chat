@@ -12,6 +12,10 @@ export interface GroqModel {
   precio?: string
 }
 
+// Solo modelos disponibles hoy en el plan Developer según
+// https://console.groq.com/docs/models y https://console.groq.com/docs/deprecations
+// (revisado 2026-09-25). Los Llama 3.x pasaron a Enterprise y compound,
+// compound-mini, qwen3-32b, qwen3.6-27b y llama-4-scout fueron apagados.
 export const groqModels: GroqModel[] = [
   // OpenAI — Production (Recommended Flagship Default)
   {
@@ -35,84 +39,6 @@ export const groqModels: GroqModel[] = [
     precio: '0.075',
   },
 
-  // Meta — Production
-  {
-    id: 'llama-3.3-70b-versatile',
-    name: 'Meta Llama 3.3 70B Versatile',
-    developer: 'Meta',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '32768',
-    velocidad: '280',
-    precio: '0.59',
-  },
-  {
-    id: 'llama-3.1-8b-instant',
-    name: 'Meta Llama 3.1 8B Instant',
-    developer: 'Meta',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '131072',
-    velocidad: '560',
-    precio: '0.05',
-  },
-
-  // Alibaba Cloud — Preview
-  {
-    id: 'qwen/qwen3-32b',
-    name: 'Alibaba Cloud Qwen3 32B',
-    developer: 'Alibaba Cloud',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '40960',
-    velocidad: '400',
-    precio: '0.20',
-  },
-  {
-    id: 'qwen/qwen3.6-27b',
-    name: 'Alibaba Cloud Qwen3.6 27B',
-    developer: 'Alibaba Cloud',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '32768',
-    velocidad: '500',
-    precio: '0.60',
-  },
-
-  // Meta — Preview
-  {
-    id: 'meta-llama/llama-4-scout-17b-16e-instruct',
-    name: 'Meta Llama 4 Scout 17B 16E',
-    developer: 'Meta',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '8192',
-    velocidad: '750',
-    precio: '0.11',
-  },
-
-  // Groq Systems — Production
-  {
-    id: 'groq/compound',
-    name: 'Groq Compound',
-    developer: 'Groq',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '8192',
-    velocidad: '450',
-    precio: '0.00',
-  },
-  {
-    id: 'groq/compound-mini',
-    name: 'Groq Compound Mini',
-    developer: 'Groq',
-    contextWindow: '131072',
-    provider: 'groq',
-    maxCompletionTokens: '8192',
-    velocidad: '450',
-    precio: '0.00',
-  },
-
   // OpenAI — Preview
   {
     id: 'openai/gpt-oss-safeguard-20b',
@@ -123,5 +49,18 @@ export const groqModels: GroqModel[] = [
     maxCompletionTokens: '65536',
     velocidad: '1000',
     precio: '0.075',
+  },
+
+  // Alibaba Cloud — Preview
+  {
+    id: 'qwen/qwen3.8-27b',
+    name: 'Alibaba Cloud Qwen3.8 27B',
+    developer: 'Alibaba Cloud',
+    contextWindow: '131072',
+    provider: 'groq',
+    maxCompletionTokens: '16384',
+    maxFileSize: '20 MB',
+    velocidad: '450',
+    precio: '0.80',
   },
 ]

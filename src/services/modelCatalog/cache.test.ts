@@ -33,42 +33,42 @@ const sampleModels: CatalogModel[] = [
     id: 'big-pickle',
     name: 'Big Pickle Free',
     developer: 'Stealth',
-    provider: 'opencodefree',
+    provider: 'opencodezen',
   },
 ]
 
 describe('readCatalogCache / writeCatalogCache', () => {
   test('devuelve null si no hay nada cacheado', () => {
-    expect(readCatalogCache('opencodefree')).toBeNull()
+    expect(readCatalogCache('opencodezen')).toBeNull()
   })
 
   test('escribe y vuelve a leer los mismos modelos', () => {
-    writeCatalogCache('opencodefree', sampleModels)
-    const cached = readCatalogCache('opencodefree')
+    writeCatalogCache('opencodezen', sampleModels)
+    const cached = readCatalogCache('opencodezen')
     expect(cached).not.toBeNull()
     expect(cached?.models).toEqual(sampleModels)
     expect(typeof cached?.fetchedAt).toBe('number')
   })
 
   test('cachés de proveedores distintos no se pisan entre sí', () => {
-    writeCatalogCache('opencodefree', sampleModels)
+    writeCatalogCache('opencodezen', sampleModels)
     expect(readCatalogCache('groq')).toBeNull()
   })
 
   test('JSON corrupto se trata como caché ausente, sin lanzar', () => {
     ;(
       globalThis as unknown as { localStorage: LocalStorageStub }
-    ).localStorage.setItem('modelCatalog:v1:opencodefree', '{not valid json')
-    expect(readCatalogCache('opencodefree')).toBeNull()
+    ).localStorage.setItem('modelCatalog:v1:opencodezen', '{not valid json')
+    expect(readCatalogCache('opencodezen')).toBeNull()
   })
 
   test('entrada sin campo "models" válido se trata como ausente', () => {
     ;(
       globalThis as unknown as { localStorage: LocalStorageStub }
     ).localStorage.setItem(
-      'modelCatalog:v1:opencodefree',
+      'modelCatalog:v1:opencodezen',
       JSON.stringify({ foo: 'bar' }),
     )
-    expect(readCatalogCache('opencodefree')).toBeNull()
+    expect(readCatalogCache('opencodezen')).toBeNull()
   })
 })

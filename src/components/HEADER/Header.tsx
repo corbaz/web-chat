@@ -44,17 +44,15 @@ const Header: React.FC<HeaderProps> = ({
         'openai',
         'anthropic',
         'opengo',
-        'opencodefree',
         'opencodezen',
         'gemini',
       ]
       for (const provider of providers) {
-        if (provider === 'opencodefree') return provider
         const apiKey = localStorage.getItem(`${provider}ApiKey`)
         if (apiKey && apiKey.trim() !== '') return provider
       }
     }
-    return 'opencodefree'
+    return 'groq'
   })
 
   const selectedProvider = externalProvider || internalProvider

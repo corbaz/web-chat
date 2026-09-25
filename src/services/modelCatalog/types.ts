@@ -9,7 +9,6 @@ export type ProviderId =
   | 'openai'
   | 'anthropic'
   | 'opengo'
-  | 'opencodefree'
   | 'opencodezen'
   | 'gemini'
 
