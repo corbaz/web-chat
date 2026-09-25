@@ -1,0 +1,19 @@
+#!/bin/sh
+# Pre-commit hook: runs Biome on staged files, auto-fixes, and re-stages.
+# Aborts the commit if any unfixable lint error remains.
+
+echo "→ Running Biome on staged files..."
+
+bunx biome check --write --staged --no-errors-on-unmatched
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo "✗ Biome found errors that need manual fixing. Commit aborted."
+  exit 1
+fi
+
+# Re-stage files that Biome may have auto-fixed.
+git update-index --again
+
+echo "✓ Biome check passed."
+exit 0
