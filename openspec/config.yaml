@@ -1,0 +1,62 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: React 19 + TypeScript 6 + Vite 8 + Tailwind 4 (Bun 1.3 package manager)
+  Architecture: Provider-config pattern (src/config/providers.ts) — multi-provider LLM chat
+  Providers: groq, routellm, openai, anthropic, opengo, opencodefree, gemini
+  Persistence: localStorage; Lazy MarkdownRenderer; Neumorphic themed UI (ColorPalette)
+  Testing: NONE installed (no runner, no coverage, no testing-library)
+  Style: ESLint flat config + tsc strict + Prettier; Spanish comments & UI strings
+
+strict_tdd: false  # unavailable — no test runner detected (see testing section)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected providers/components (PROVIDERS record is the core seam)
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Document impact on ProviderConfig interface when changing provider payloads
+    - Include sequence diagrams for tool-call flows (client -> Groq -> tool result)
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns (React.FC, interfaces for props, Spanish comments)
+    - Run `bun run typecheck` and `bun run lint` after every change
+    - Do NOT add comments unless extending existing Spanish-comment convention
+  verify:
+    - Run `bun run typecheck` and `bun run lint` (no test runner exists)
+    - Manual smoke-test the Groq flow in `bun run dev` (HTTPS on :5173)
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas (large removals)
+
+testing:
+  strict_tdd: false
+  detected: 2026-07-14
+  note: "Strict TDD Mode unavailable — no test runner detected. Add vitest to enable."
+  test_runner:
+    command: ""
+    framework: "NOT FOUND"
+  test_layers:
+    unit: false
+    integration: false  # no @testing-library/*
+    e2e: false           # no playwright/cypress/selenium
+  coverage:
+    available: false
+    command: ""
+  quality_tools:
+    linter:
+      available: true
+      command: "bun run lint"        # eslint src --fix
+    type_checker:
+      available: true
+      command: "bun run typecheck"   # tsc --noEmit
+    formatter:
+      available: true
+      command: "bun run format:write"  # prettier --write src
