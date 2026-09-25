@@ -1,10 +1,10 @@
-import React from "react";
-import { ColorPalette } from "../../../interfaces/temas/temas";
+import type React from 'react'
+import type { ColorPalette } from '../../../interfaces/temas/temas'
 
 interface MenuButtonProps {
-  onClick: () => void;
-  ariaLabel: string;
-  theme: ColorPalette;
+  onClick: () => void
+  ariaLabel: string
+  theme: ColorPalette
 }
 
 const MenuButton: React.FC<MenuButtonProps> = ({
@@ -22,8 +22,8 @@ const MenuButton: React.FC<MenuButtonProps> = ({
         backgroundColor: theme.background,
         boxShadow: theme.shadow.outer,
         color: theme.text,
-        minWidth: "44px",
-        minHeight: "44px",
+        minWidth: '44px',
+        minHeight: '44px',
       }}
     >
       <svg
@@ -42,7 +42,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
         <line x1="3" y1="18" x2="21" y2="18" />
       </svg>
     </button>
-  );
-};
+  )
+}
 
-export default MenuButton;
+export default MenuButton

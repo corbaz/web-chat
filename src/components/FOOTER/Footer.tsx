@@ -1,34 +1,38 @@
-import React, { useState, useRef, useEffect, useImperativeHandle } from "react";
-import { ColorPalette } from "../../interfaces/temas/temas";
-import { isMobile } from "../../utils/mobileUtils";
-import LunaIcon from "../../assets/luna.svg";
-import EscobaIcon from "../../assets/escoba.svg";
-import TrashIcon from "../../assets/trash.svg";
-import VaritaIcon from "../../assets/varita_magica.svg";
-import { getProviderConfig, getApiKeyStorageKey } from "../../config/providers";
-import { CHAT_HISTORY_KEY } from "../../interfaces/chat/chatTypes";
-import axios from "axios";
+import axios from 'axios'
+import type React from 'react'
+import { useEffect, useImperativeHandle, useRef, useState } from 'react'
+import EscobaIcon from '../../assets/escoba.svg'
+import LunaIcon from '../../assets/luna.svg'
+import TrashIcon from '../../assets/trash.svg'
+import VaritaIcon from '../../assets/varita_magica.svg'
+import { getApiKeyStorageKey, getProviderConfig } from '../../config/providers'
+import { supportsWebSearch } from '../../config/webSearch'
+import { CHAT_HISTORY_KEY } from '../../interfaces/chat/chatTypes'
+import type { ColorPalette } from '../../interfaces/temas/temas'
+import { isMobile } from '../../utils/mobileUtils'
 
 interface FooterProps {
-  onSendMessage: (message: string) => void;
-  toggleTheme: () => void;
-  clearContext?: () => void;
-  hasContext?: boolean;
-  theme: ColorPalette;
-  isDarkTheme: boolean;
-  isLoading: boolean;
-  chatTitle?: string;
-  onUpdateChatTitle?: (newTitle: string) => void;
-  currentChatId?: string;
-  selectedModel?: string;
-  selectedProvider?: string;
-  onCloseMenus?: () => void;
-  ref?: React.Ref<FooterRef>;
+  onSendMessage: (message: string) => void
+  toggleTheme: () => void
+  clearContext?: () => void
+  hasContext?: boolean
+  theme: ColorPalette
+  isDarkTheme: boolean
+  isLoading: boolean
+  chatTitle?: string
+  onUpdateChatTitle?: (newTitle: string) => void
+  currentChatId?: string
+  selectedModel?: string
+  selectedProvider?: string
+  onCloseMenus?: () => void
+  ref?: React.Ref<FooterRef>
+  searchEnabled?: boolean
+  onToggleSearch?: () => void
 }
 
 export interface FooterRef {
-  focusTextarea: () => void;
-  setMessage: (msg: string) => void;
+  focusTextarea: () => void
+  setMessage: (msg: string) => void
 }
 
 const Footer: React.FC<FooterProps> = ({
@@ -46,90 +50,92 @@ const Footer: React.FC<FooterProps> = ({
   selectedProvider,
   onCloseMenus,
   ref,
+  searchEnabled = true,
+  onToggleSearch,
 }) => {
-  const [message, setMessage] = useState("");
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editTitleValue, setEditTitleValue] = useState("");
-  const [isMagicLoading, setIsMagicLoading] = useState(false);
-  const [showMagicResponse, setShowMagicResponse] = useState(false);
-  const [copyFeedback, setCopyFeedback] = useState(false);
-  const [pasteFeedback, setPasteFeedback] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const mobileDevice = typeof window !== "undefined" && isMobile();
+  const [message, setMessage] = useState('')
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editTitleValue, setEditTitleValue] = useState('')
+  const [isMagicLoading, setIsMagicLoading] = useState(false)
+  const [showMagicResponse, setShowMagicResponse] = useState(false)
+  const [copyFeedback, setCopyFeedback] = useState(false)
+  const [pasteFeedback, setPasteFeedback] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+  const mobileDevice = typeof window !== 'undefined' && isMobile()
 
   useImperativeHandle(ref, () => ({
     focusTextarea: () => {
-      if (textareaRef.current && !mobileDevice) textareaRef.current.focus();
+      if (textareaRef.current && !mobileDevice) textareaRef.current.focus()
     },
     setMessage: (msg: string) => {
-      setMessage(msg);
+      setMessage(msg)
       setTimeout(() => {
-        if (textareaRef.current) textareaRef.current.focus();
-      }, 50);
+        if (textareaRef.current) textareaRef.current.focus()
+      }, 50)
     },
-  }));
+  }))
 
   const adjustTextareaHeight = () => {
-    const el = textareaRef.current;
+    const el = textareaRef.current
     if (el) {
       el.style.cssText += `;height:auto;height:${Math.min(
         el.scrollHeight,
         120,
-      )}px`;
+      )}px`
     }
-  };
+  }
 
   useEffect(() => {
-    if (message === "" && textareaRef.current)
-      textareaRef.current.style.cssText += ";height:auto";
-  }, [message]);
+    if (message === '' && textareaRef.current)
+      textareaRef.current.style.cssText += ';height:auto'
+  }, [message])
 
   const updateDraftMessage = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    if (showMagicResponse) setShowMagicResponse(false);
-    adjustTextareaHeight();
-  };
+    setMessage(e.target.value)
+    if (showMagicResponse) setShowMagicResponse(false)
+    adjustTextareaHeight()
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const isTypingKey =
       e.key.length === 1 ||
-      ["Backspace", "Delete", "Enter", "Space"].includes(e.key);
-    if (isTypingKey && onCloseMenus) onCloseMenus();
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+      ['Backspace', 'Delete', 'Enter', 'Space'].includes(e.key)
+    if (isTypingKey && onCloseMenus) onCloseMenus()
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
     }
-  };
+  }
 
   const handleSendMessage = () => {
     if (message.trim() && !isLoading) {
-      onSendMessage(message);
-      setMessage("");
-      setShowMagicResponse(false);
+      onSendMessage(message)
+      setMessage('')
+      setShowMagicResponse(false)
       if (mobileDevice && document.activeElement instanceof HTMLElement)
-        document.activeElement.blur();
+        document.activeElement.blur()
     }
-  };
+  }
 
   const handleMagicButton = async () => {
     if (message.trim() && !isLoading && !isMagicLoading) {
       try {
-        setIsMagicLoading(true);
-        let modelToUse: string = selectedModel || "llama-3.3-70b-versatile";
+        setIsMagicLoading(true)
+        let modelToUse: string = selectedModel || 'llama-3.3-70b-versatile'
 
         if (!selectedModel && currentChatId) {
           try {
-            const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+            const raw = localStorage.getItem(CHAT_HISTORY_KEY)
             if (raw) {
-              const arr = JSON.parse(raw);
+              const arr = JSON.parse(raw)
               const chat = arr.find(
                 (c: { id: string }) => c.id === currentChatId,
-              );
-              if (chat?.model) modelToUse = chat.model;
+              )
+              if (chat?.model) modelToUse = chat.model
             }
           } catch (e) {
-            console.error("Error al obtener modelo del chat:", e);
+            console.error('Error al obtener modelo del chat:', e)
           }
         }
 
@@ -137,44 +143,44 @@ const Footer: React.FC<FooterProps> = ({
 asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
 
 Texto a mejorar:
-${message}`;
+${message}`
 
         const provider =
-          selectedProvider ||
-          localStorage.getItem("selectedProvider") ||
-          "groq";
-        const providerConfig = getProviderConfig(provider);
+          selectedProvider || localStorage.getItem('selectedProvider') || 'groq'
+        const providerConfig = getProviderConfig(provider)
         if (!providerConfig) {
-          setIsMagicLoading(false);
-          alert(`Proveedor no configurado: ${provider}`);
-          return;
+          setIsMagicLoading(false)
+          alert(`Proveedor no configurado: ${provider}`)
+          return
         }
 
         const apiKey =
-          provider === "opencodefree"
-            ? "free"
-            : localStorage.getItem(getApiKeyStorageKey(provider)) || "";
-        if ((!apiKey || !apiKey.trim()) && provider !== "opencodefree") {
-          setIsMagicLoading(false);
-          alert(`Falta API key para ${providerConfig.name}`);
-          return;
+          provider === 'opencodefree'
+            ? 'free'
+            : localStorage.getItem(getApiKeyStorageKey(provider)) || ''
+        if (!apiKey?.trim() && provider !== 'opencodefree') {
+          setIsMagicLoading(false)
+          alert(`Falta API key para ${providerConfig.name}`)
+          return
         }
 
+        // Varita mágica: sin herramientas integradas (Fase 1: undefined).
         const payload = providerConfig.payloadBuilder(
           modelToUse,
-          [{ role: "user", content: promptToSend }],
+          [{ role: 'user', content: promptToSend }],
           2048,
-        );
+          undefined,
+        )
         const response = await axios.post(
           providerConfig.endpoint(modelToUse),
           payload,
           {
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
               ...providerConfig.headerAuth(apiKey, modelToUse),
             },
           },
-        );
+        )
 
         let improved = providerConfig.parseResponse
           ? providerConfig
@@ -183,166 +189,166 @@ ${message}`;
                 modelToUse,
               )
               .trim()
-          : response.data.choices[0].message.content.trim();
-        improved = improved.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-        setMessage(improved);
-        setShowMagicResponse(true);
-        setTimeout(adjustTextareaHeight, 0);
-        textareaRef.current?.focus();
+          : response.data.choices[0].message.content.trim()
+        improved = improved.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+        setMessage(improved)
+        setShowMagicResponse(true)
+        setTimeout(adjustTextareaHeight, 0)
+        textareaRef.current?.focus()
       } catch (error) {
-        console.error("Error en varita mágica:", error);
+        console.error('Error en varita mágica:', error)
       } finally {
-        setIsMagicLoading(false);
+        setIsMagicLoading(false)
       }
     }
-  };
+  }
 
   const handleClearText = () => {
-    setMessage("");
-    setShowMagicResponse(false);
+    setMessage('')
+    setShowMagicResponse(false)
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.focus();
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.focus()
     }
-  };
+  }
 
   const handlePasteFromClipboard = async () => {
     const applyPastedText = (text: string) => {
-      if (!text) return;
-      setMessage(text);
-      if (showMagicResponse) setShowMagicResponse(false);
-      requestAnimationFrame(adjustTextareaHeight);
-    };
+      if (!text) return
+      setMessage(text)
+      if (showMagicResponse) setShowMagicResponse(false)
+      requestAnimationFrame(adjustTextareaHeight)
+    }
 
     const focusForManualPaste = () => {
-      const textarea = textareaRef.current;
+      const textarea = textareaRef.current
       if (textarea) {
-        textarea.focus();
-        const end = textarea.value.length;
-        textarea.setSelectionRange(end, end);
+        textarea.focus()
+        const end = textarea.value.length
+        textarea.setSelectionRange(end, end)
       }
-      setPasteFeedback(true);
-      setTimeout(() => setPasteFeedback(false), 2500);
-    };
+      setPasteFeedback(true)
+      setTimeout(() => setPasteFeedback(false), 2500)
+    }
 
     // Intentar primero con la Clipboard API moderna
-    if (navigator.clipboard && navigator.clipboard.readText) {
+    if (navigator.clipboard?.readText) {
       try {
-        const text = await navigator.clipboard.readText();
-        applyPastedText(text);
-        textareaRef.current?.focus();
-        return;
+        const text = await navigator.clipboard.readText()
+        applyPastedText(text)
+        textareaRef.current?.focus()
+        return
       } catch {
         // Si falla por permisos/origen no seguro, enfocamos el textarea para Ctrl+V.
-        focusForManualPaste();
-        return;
+        focusForManualPaste()
+        return
       }
     }
 
     // En HTTP/LAN los navegadores bloquean lectura programática del portapapeles.
-    focusForManualPaste();
-  };
+    focusForManualPaste()
+  }
 
   const handleCopyToClipboard = async () => {
-    if (!message.trim()) return;
+    if (!message.trim()) return
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(message);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message)
       } else {
         // Fallback execCommand
-        textareaRef.current?.select();
-        document.execCommand("copy");
+        textareaRef.current?.select()
+        document.execCommand('copy')
       }
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 1500);
+      setCopyFeedback(true)
+      setTimeout(() => setCopyFeedback(false), 1500)
     } catch (err) {
-      console.error("Error al copiar al portapapeles:", err);
+      console.error('Error al copiar al portapapeles:', err)
     }
-  };
+  }
 
   const handleTitleClick = () => {
     if (!isLoading && chatTitle && currentChatId && onUpdateChatTitle) {
-      setIsEditingTitle(true);
-      setEditTitleValue(chatTitle);
+      setIsEditingTitle(true)
+      setEditTitleValue(chatTitle)
     }
-  };
+  }
 
   const focusTitleInput = (el: HTMLInputElement | null) => {
-    titleInputRef.current = el;
+    titleInputRef.current = el
     if (el) {
-      el.focus();
-      el.select();
+      el.focus()
+      el.select()
     }
-  };
+  }
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditTitleValue(e.target.value);
-  };
+    setEditTitleValue(e.target.value)
+  }
 
   const handleTitleBlur = () => {
     if (editTitleValue.trim() && onUpdateChatTitle && currentChatId) {
-      onUpdateChatTitle(editTitleValue);
+      onUpdateChatTitle(editTitleValue)
       try {
-        const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+        const raw = localStorage.getItem(CHAT_HISTORY_KEY)
         if (raw) {
-          let arr = JSON.parse(raw);
+          let arr = JSON.parse(raw)
           arr = arr.map(
             (c: { id: string; title: string; date: Date; model?: string }) =>
               c.id === currentChatId ? { ...c, title: editTitleValue } : c,
-          );
-          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(arr));
+          )
+          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(arr))
         }
       } catch (error) {
-        console.error("Error al actualizar título:", error);
+        console.error('Error al actualizar título:', error)
       }
     }
-    setIsEditingTitle(false);
-  };
+    setIsEditingTitle(false)
+  }
 
   // ── Shared style helpers ─────────────────────────────────────────────────
   const iconFilter = isDarkTheme
-    ? "brightness(0) invert(1)"
-    : "brightness(0.35)";
+    ? 'brightness(0) invert(1)'
+    : 'brightness(0.35)'
 
   const nmBtnBase: React.CSSProperties = {
     backgroundColor: theme.background,
     boxShadow: theme.shadow.outer,
     color: theme.text,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: "44px",
-    minHeight: "44px",
-    padding: "10px",
-    borderRadius: "12px",
-    border: "none",
-    cursor: "pointer",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '44px',
+    minHeight: '44px',
+    padding: '10px',
+    borderRadius: '12px',
+    border: 'none',
+    cursor: 'pointer',
     flexShrink: 0,
-  };
+  }
 
   const nmBtnDisabled: React.CSSProperties = {
     ...nmBtnBase,
     opacity: 0.4,
-    cursor: "not-allowed",
-  };
+    cursor: 'not-allowed',
+  }
 
   const nmBtnAccent: React.CSSProperties = {
     ...nmBtnBase,
     background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentAlt})`,
     boxShadow: `${theme.shadow.sm}, ${theme.shadow.accent}`,
-    color: "#fff",
-  };
+    color: '#fff',
+  }
 
   const nmBtnAccentDisabled: React.CSSProperties = {
     ...nmBtnBase,
     opacity: 0.4,
-    cursor: "not-allowed",
+    cursor: 'not-allowed',
     background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentAlt})`,
-    color: "#fff",
-  };
+    color: '#fff',
+  }
 
-  const canSend = message.trim() && !isLoading;
-  const canMagic = message.trim() && !isLoading && !isMagicLoading;
+  const canSend = message.trim() && !isLoading
+  const canMagic = message.trim() && !isLoading && !isMagicLoading
 
   return (
     <footer
@@ -350,10 +356,9 @@ ${message}`;
       style={{
         backgroundColor: theme.background,
         boxShadow: `0 -4px 24px ${
-          isDarkTheme ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.10)"
+          isDarkTheme ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.10)'
         }`,
       }}
-      aria-label="Entrada de mensajes"
     >
       <div className="flex justify-center w-full">
         <div className="px-4 py-3 w-full md:max-w-3xl lg:max-w-4xl xl:max-w-6xl space-y-2">
@@ -396,21 +401,21 @@ ${message}`;
               style={{
                 color: showMagicResponse
                   ? isDarkTheme
-                    ? "#fbbf24"
-                    : "#dc2626"
+                    ? '#fbbf24'
+                    : '#dc2626'
                   : theme.input.text,
                 caretColor: theme.accent,
-                border: "none",
-                scrollbarWidth: "thin",
+                border: 'none',
+                scrollbarWidth: 'thin',
                 scrollbarColor: `${theme.accent} transparent`,
-                lineHeight: "1.6",
+                lineHeight: '1.6',
               }}
               disabled={isLoading || isMagicLoading}
               aria-label="Mensaje"
               rows={1}
               onFocus={() => {
                 if (!message.trim() && showMagicResponse)
-                  setShowMagicResponse(false);
+                  setShowMagicResponse(false)
               }}
             />
 
@@ -418,7 +423,7 @@ ${message}`;
             <button
               type="button"
               onClick={handleCopyToClipboard}
-              title={copyFeedback ? "¡Copiado!" : "Copiar al portapapeles"}
+              title={copyFeedback ? '¡Copiado!' : 'Copiar al portapapeles'}
               aria-label="Copiar al portapapeles"
               className="nm-press"
               style={message.trim() ? nmBtnBase : nmBtnDisabled}
@@ -465,13 +470,13 @@ ${message}`;
               onClick={handlePasteFromClipboard}
               title={
                 pasteFeedback
-                  ? "Portapapeles bloqueado: presiona Ctrl+V"
-                  : "Pegar desde el portapapeles"
+                  ? 'Portapapeles bloqueado: presiona Ctrl+V'
+                  : 'Pegar desde el portapapeles'
               }
               aria-label={
                 pasteFeedback
-                  ? "Portapapeles bloqueado: presiona Control V"
-                  : "Pegar desde el portapapeles"
+                  ? 'Portapapeles bloqueado: presiona Control V'
+                  : 'Pegar desde el portapapeles'
               }
               className="nm-press"
               style={{
@@ -536,6 +541,47 @@ ${message}`;
               )}
             </button>
 
+            {/* Toggle de búsqueda web */}
+            {selectedModel &&
+              supportsWebSearch(selectedModel, selectedProvider) &&
+              selectedModel !== 'groq/compound' && (
+                <button
+                  type="button"
+                  onClick={onToggleSearch}
+                  aria-pressed={searchEnabled}
+                  title={
+                    searchEnabled
+                      ? 'Búsqueda web activada'
+                      : 'Búsqueda web desactivada'
+                  }
+                  aria-label="Activar búsqueda web"
+                  className="nm-press"
+                  style={{
+                    ...nmBtnBase,
+                    color: searchEnabled ? theme.accent : theme.textMuted,
+                    boxShadow: searchEnabled
+                      ? theme.shadow.inset
+                      : theme.shadow.sm,
+                  }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="size-5 shrink-0"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                    <path d="M2 12h20" />
+                  </svg>
+                </button>
+              )}
+
             {/* Send button — accent gradient */}
             <button
               type="button"
@@ -569,7 +615,7 @@ ${message}`;
             style={{
               backgroundColor: theme.background,
               boxShadow: theme.shadow.sm,
-              height: "48px",
+              height: '48px',
             }}
           >
             {/* Clear context (broom) */}
@@ -583,9 +629,9 @@ ${message}`;
                   className="nm-press p-2 rounded-xl"
                   style={{
                     backgroundColor: theme.background,
-                    boxShadow: hasContext ? theme.shadow.sm : "none",
+                    boxShadow: hasContext ? theme.shadow.sm : 'none',
                     opacity: hasContext ? 1 : 0.35,
-                    cursor: hasContext ? "pointer" : "not-allowed",
+                    cursor: hasContext ? 'pointer' : 'not-allowed',
                   }}
                 >
                   <img
@@ -611,11 +657,11 @@ ${message}`;
                   title="Título del chat"
                   onBlur={handleTitleBlur}
                   onKeyDown={(e) => {
-                    e.stopPropagation();
-                    if (e.key === "Enter") handleTitleBlur();
-                    else if (e.key === "Escape") {
-                      setIsEditingTitle(false);
-                      setEditTitleValue(chatTitle || "");
+                    e.stopPropagation()
+                    if (e.key === 'Enter') handleTitleBlur()
+                    else if (e.key === 'Escape') {
+                      setIsEditingTitle(false)
+                      setEditTitleValue(chatTitle || '')
                     }
                   }}
                   onFocus={(e) => e.target.select()}
@@ -623,36 +669,31 @@ ${message}`;
                   style={{
                     borderColor: theme.accent,
                     color: theme.accent,
-                    maxWidth: "200px",
+                    maxWidth: '200px',
                   }}
                   maxLength={30}
                 />
               ) : (
                 chatTitle && (
-                  <span
-                    className="text-sm font-semibold cursor-pointer truncate max-w-60 select-none"
+                  <button
+                    type="button"
+                    className="text-sm font-semibold cursor-pointer truncate max-w-60 select-none bg-transparent border-0 p-0 text-left"
                     style={{ color: theme.textMuted }}
                     onClick={handleTitleClick}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        handleTitleClick();
-                    }}
-                    role="button"
-                    tabIndex={0}
                     title="Editar título"
                   >
                     {chatTitle.length > 25
-                      ? chatTitle.split(" ")[0] +
-                        (chatTitle.split(" ")[0].length < 25
-                          ? " " +
+                      ? chatTitle.split(' ')[0] +
+                        (chatTitle.split(' ')[0].length < 25
+                          ? ' ' +
                             chatTitle.substring(
-                              chatTitle.split(" ")[0].length + 1,
+                              chatTitle.split(' ')[0].length + 1,
                               25,
                             ) +
-                            "…"
-                          : "…")
+                            '…'
+                          : '…')
                       : chatTitle}
-                  </span>
+                  </button>
                 )
               )}
             </div>
@@ -674,10 +715,10 @@ ${message}`;
                 <span
                   className="absolute flex items-center justify-center size-6 rounded-full transition-transform duration-300"
                   style={{
-                    left: "4px",
+                    left: '4px',
                     transform: isDarkTheme
-                      ? "translateX(30px)"
-                      : "translateX(0)",
+                      ? 'translateX(30px)'
+                      : 'translateX(0)',
                     backgroundColor: theme.background,
                     boxShadow: theme.shadow.sm,
                   }}
@@ -688,7 +729,7 @@ ${message}`;
                     className="size-3.5 transition-opacity duration-300"
                     style={{
                       opacity: isDarkTheme ? 0 : 1,
-                      position: "absolute",
+                      position: 'absolute',
                       color: theme.accent,
                     }}
                     fill="none"
@@ -709,8 +750,8 @@ ${message}`;
                     className="size-3.5 transition-opacity duration-300"
                     style={{
                       opacity: isDarkTheme ? 1 : 0,
-                      position: "absolute",
-                      filter: "brightness(0) invert(1)",
+                      position: 'absolute',
+                      filter: 'brightness(0) invert(1)',
                     }}
                   />
                 </span>
@@ -719,12 +760,12 @@ ${message}`;
                 <span
                   className="absolute rounded-full transition-opacity duration-300"
                   style={{
-                    width: "4px",
-                    height: "4px",
+                    width: '4px',
+                    height: '4px',
                     backgroundColor: theme.accent,
                     opacity: 0.6,
-                    left: isDarkTheme ? "10px" : "auto",
-                    right: isDarkTheme ? "auto" : "10px",
+                    left: isDarkTheme ? '10px' : 'auto',
+                    right: isDarkTheme ? 'auto' : '10px',
                   }}
                 />
               </button>
@@ -733,7 +774,7 @@ ${message}`;
         </div>
       </div>
     </footer>
-  );
-};
+  )
+}
 
-export default Footer;
+export default Footer

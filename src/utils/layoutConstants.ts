@@ -4,15 +4,15 @@
  */
 
 // Alturas para dispositivos móviles
-export const HEADER_HEIGHT_MOBILE = 80;
-export const FOOTER_HEIGHT_MOBILE = 120;
+export const HEADER_HEIGHT_MOBILE = 80
+export const FOOTER_HEIGHT_MOBILE = 120
 
 // Alturas para dispositivos desktop
-const HEADER_HEIGHT_DESKTOP = 100;
-const FOOTER_HEIGHT_DESKTOP = 144;
+const HEADER_HEIGHT_DESKTOP = 100
+const FOOTER_HEIGHT_DESKTOP = 144
 
 // Breakpoint para cambiar entre dimensiones móvil y desktop
-const DESKTOP_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 768
 
 // Función para generar CSS con las variables
 export const generateLayoutCSS = (): string => {
@@ -30,5 +30,5 @@ export const generateLayoutCSS = (): string => {
       --footer-height: ${FOOTER_HEIGHT_DESKTOP}px; /* Altura para escritorio */
     }
   }
-  `;
-};
+  `
+}

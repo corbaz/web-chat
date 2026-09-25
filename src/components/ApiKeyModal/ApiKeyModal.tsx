@@ -1,194 +1,218 @@
-import { useEffect, useReducer, useRef } from "react";
-import Swal from "sweetalert2";
-import { ColorPalette } from "../../interfaces/temas/temas";
-import { APP_VERSION } from "../../App";
-import { isOpenCodeAvailable } from "../../config/providers";
+import { useEffect, useReducer, useRef } from 'react'
+import Swal from 'sweetalert2'
+import { isOpenCodeAvailable } from '../../config/providers'
+import { APP_VERSION } from '../../constants/appVersion'
+import type { ColorPalette } from '../../interfaces/temas/temas'
 
 interface ApiKeyModalProps {
-  theme: ColorPalette;
-  isDarkTheme: boolean;
-  onApiKeyProvided?: () => void;
+  theme: ColorPalette
+  isDarkTheme: boolean
+  onApiKeyProvided?: () => void
 }
 
 // Proveedores disponibles
 const PROVIDERS = [
-  { id: "groq", name: "Groq", link: "https://console.groq.com/keys" },
+  { id: 'groq', name: 'Groq', link: 'https://console.groq.com/keys' },
   {
-    id: "routellm",
-    name: "RouteLLM (Abacus.AI)",
-    link: "https://routellm.abacus.ai/",
+    id: 'routellm',
+    name: 'RouteLLM (Abacus.AI)',
+    link: 'https://routellm.abacus.ai/',
   },
   {
-    id: "openai",
-    name: "OpenAI",
-    link: "https://platform.openai.com/api-keys",
+    id: 'openai',
+    name: 'OpenAI',
+    link: 'https://platform.openai.com/api-keys',
   },
   {
-    id: "anthropic",
-    name: "Anthropic",
-    link: "https://console.anthropic.com/settings/keys",
+    id: 'anthropic',
+    name: 'Anthropic',
+    link: 'https://console.anthropic.com/settings/keys',
   },
   {
-    id: "opengo",
-    name: "OpenCode Go",
-    link: "https://opencode.ai/es/go",
+    id: 'opengo',
+    name: 'OpenCode Go',
+    link: 'https://opencode.ai/es/go',
   },
   {
-    id: "gemini",
-    name: "Gemini",
-    link: "https://aistudio.google.com/app/apikey",
+    id: 'opencodezen',
+    name: 'OpenCode Zen',
+    link: 'https://opencode.ai/docs/zen/',
   },
-] as const;
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    link: 'https://aistudio.google.com/app/apikey',
+  },
+] as const
 
 // Función para validar la API key con el proveedor
 const validateApiKey = async (
   apiKey: string,
   provider: string,
 ): Promise<boolean> => {
-  const timeout = 8000; // 8 segundos máximo
+  const timeout = 8000 // 8 segundos máximo
 
   try {
-    if (provider === "groq") {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+    if (provider === 'groq') {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
       try {
-        const res = await fetch("https://api.groq.com/openai/v1/models", {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
           headers: { Authorization: `Bearer ${apiKey}` },
           signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        return res.ok;
+        })
+        clearTimeout(timeoutId)
+        return res.ok
       } catch {
-        clearTimeout(timeoutId);
-        return false;
+        clearTimeout(timeoutId)
+        return false
       }
-    } else if (provider === "openai") {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+    } else if (provider === 'openai') {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
       try {
-        const res = await fetch("https://api.openai.com/v1/models", {
+        const res = await fetch('https://api.openai.com/v1/models', {
           headers: { Authorization: `Bearer ${apiKey}` },
           signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        return res.ok;
+        })
+        clearTimeout(timeoutId)
+        return res.ok
       } catch {
-        clearTimeout(timeoutId);
-        return false;
+        clearTimeout(timeoutId)
+        return false
       }
-    } else if (provider === "anthropic") {
+    } else if (provider === 'anthropic') {
       // Anthropic bloquea peticiones CORS desde el navegador,
       // por lo que validamos solo el formato de la clave.
       // Las claves de Anthropic siempre comienzan con "sk-ant-"
-      return apiKey.startsWith("sk-ant-") && apiKey.length >= 40;
-    } else if (provider === "routellm") {
+      return apiKey.startsWith('sk-ant-') && apiKey.length >= 40
+    } else if (provider === 'routellm') {
       // RouteLLM/Abacus.AI: Enviar un prompt de prueba sin especificar modelo
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
       try {
-        console.log("RouteLLM: Enviando prompt de validación");
+        console.log('RouteLLM: Enviando prompt de validación')
         console.log(
-          "Endpoint:",
-          "https://routellm.abacus.ai/v1/chat/completions",
-        );
-        console.log("API Key:", apiKey.substring(0, 10) + "...");
+          'Endpoint:',
+          'https://routellm.abacus.ai/v1/chat/completions',
+        )
+        console.log('API Key:', `${apiKey.substring(0, 10)}...`)
 
         const payload = {
           messages: [
             {
-              role: "user",
-              content: "test",
+              role: 'user',
+              content: 'test',
             },
           ],
           max_tokens: 10,
           stream: false,
-        };
+        }
 
-        console.log("Payload:", JSON.stringify(payload, null, 2));
+        console.log('Payload:', JSON.stringify(payload, null, 2))
 
         const res = await fetch(
-          "https://routellm.abacus.ai/v1/chat/completions",
+          'https://routellm.abacus.ai/v1/chat/completions',
           {
-            method: "POST",
+            method: 'POST',
             headers: {
               Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
             signal: controller.signal,
           },
-        );
+        )
 
-        clearTimeout(timeoutId);
-        console.log("RouteLLM Response Status:", res.status);
-        console.log("RouteLLM Response OK:", res.ok);
+        clearTimeout(timeoutId)
+        console.log('RouteLLM Response Status:', res.status)
+        console.log('RouteLLM Response OK:', res.ok)
 
-        const responseText = await res.text();
-        console.log("RouteLLM Response Body:", responseText);
+        const responseText = await res.text()
+        console.log('RouteLLM Response Body:', responseText)
 
         // Solo acepta 200 (éxito) o 400 (modelo inválido pero autenticado)
         // Rechaza 401 (credenciales inválidas), 403 (no autorizado)
-        const isValid = res.status === 200 || res.status === 400;
+        const isValid = res.status === 200 || res.status === 400
         console.log(
-          "RouteLLM Validation Result:",
+          'RouteLLM Validation Result:',
           isValid,
-          "(Status:",
+          '(Status:',
           res.status,
-          ")",
-        );
-        return isValid;
+          ')',
+        )
+        return isValid
       } catch (error) {
-        clearTimeout(timeoutId);
+        clearTimeout(timeoutId)
         console.log(
-          "RouteLLM Error:",
+          'RouteLLM Error:',
           error instanceof Error ? error.message : error,
-        );
-        return false;
+        )
+        return false
       }
-    } else if (provider === "opengo") {
+    } else if (provider === 'opengo') {
       // OpenCode Go bloquea peticiones CORS desde el navegador,
       // por lo que validamos que la clave tenga una longitud adecuada.
-      return apiKey.trim().length >= 20;
-    } else if (provider === "gemini") {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      return apiKey.trim().length >= 20
+    } else if (provider === 'opencodezen') {
+      // El listado de modelos de Zen (mismo endpoint usado por el catálogo
+      // dinámico) sí permite CORS desde el navegador, a diferencia del chat.
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
+        const res = await fetch('https://opencode.ai/zen/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey}` },
           signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        return res.ok;
+        })
+        clearTimeout(timeoutId)
+        return res.ok
       } catch {
-        clearTimeout(timeoutId);
-        return false;
+        clearTimeout(timeoutId)
+        return false
+      }
+    } else if (provider === 'gemini') {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+          {
+            signal: controller.signal,
+          },
+        )
+        clearTimeout(timeoutId)
+        return res.ok
+      } catch {
+        clearTimeout(timeoutId)
+        return false
       }
     }
-    return false;
+    return false
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 type ModalState = {
-  forceShow: boolean;
-  forcedProvider: string | null;
-};
+  forceShow: boolean
+  forcedProvider: string | null
+}
 
 type ModalAction =
-  | { type: "REQUEST_SHOW"; provider?: string }
-  | { type: "RESET" };
+  | { type: 'REQUEST_SHOW'; provider?: string }
+  | { type: 'RESET' }
 
 function modalReducer(state: ModalState, action: ModalAction): ModalState {
   switch (action.type) {
-    case "REQUEST_SHOW":
+    case 'REQUEST_SHOW':
       return {
         forceShow: true,
         forcedProvider: action.provider ?? state.forcedProvider,
-      };
-    case "RESET":
-      return { forceShow: false, forcedProvider: null };
+      }
+    case 'RESET':
+      return { forceShow: false, forcedProvider: null }
     default:
-      return state;
+      return state
   }
 }
 
@@ -197,52 +221,52 @@ const ApiKeyModal = ({
   isDarkTheme,
   onApiKeyProvided,
 }: ApiKeyModalProps) => {
-  const isModalLogicActiveRef = useRef(true);
+  const isModalLogicActiveRef = useRef(true)
   const [modalState, dispatchModal] = useReducer(modalReducer, {
     forceShow: false,
     forcedProvider: null,
-  });
+  })
 
   useEffect(() => {
     const handleRequestModal = (event: Event) => {
-      const detail = (event as CustomEvent<{ provider?: string }>).detail;
-      dispatchModal({ type: "REQUEST_SHOW", provider: detail?.provider });
-      isModalLogicActiveRef.current = true;
-    };
+      const detail = (event as CustomEvent<{ provider?: string }>).detail
+      dispatchModal({ type: 'REQUEST_SHOW', provider: detail?.provider })
+      isModalLogicActiveRef.current = true
+    }
 
-    window.addEventListener("request-apikey-modal", handleRequestModal);
+    window.addEventListener('request-apikey-modal', handleRequestModal)
     return () => {
-      window.removeEventListener("request-apikey-modal", handleRequestModal);
-    };
-  }, []);
+      window.removeEventListener('request-apikey-modal', handleRequestModal)
+    }
+  }, [])
 
   useEffect(() => {
-    let closeOnOutsideClickRef: (() => void) | null = null;
+    let closeOnOutsideClickRef: (() => void) | null = null
 
     const manageApiKeyModal = async () => {
-      if (!isModalLogicActiveRef.current) return;
+      if (!isModalLogicActiveRef.current) return
 
       const hasAnyKey =
         isOpenCodeAvailable() ||
-        PROVIDERS.some((p) => localStorage.getItem(`${p.id}ApiKey`));
+        PROVIDERS.some((p) => localStorage.getItem(`${p.id}ApiKey`))
       if (!hasAnyKey || modalState.forceShow) {
-        if (Swal.isVisible()) return;
-        const storedProvider = localStorage.getItem("selectedProvider");
+        if (Swal.isVisible()) return
+        const storedProvider = localStorage.getItem('selectedProvider')
         const defaultProvider =
-          modalState.forcedProvider || storedProvider || PROVIDERS[0].id;
+          modalState.forcedProvider || storedProvider || PROVIDERS[0].id
         const defaultProviderLink =
           PROVIDERS.find((p) => p.id === defaultProvider)?.link ||
-          PROVIDERS[0].link;
+          PROVIDERS[0].link
         const defaultProviderName =
           PROVIDERS.find((p) => p.id === defaultProvider)?.name ||
-          PROVIDERS[0].name;
+          PROVIDERS[0].name
         const optionsHtml = PROVIDERS.map(
           (p) =>
             `<option value="${p.id}" ${
-              p.id === defaultProvider ? "selected" : ""
+              p.id === defaultProvider ? 'selected' : ''
             }>${p.name}</option>`,
-        ).join("");
-        const TITULO = `PROMPTING  <span style="font-size: 12px">${APP_VERSION}</span>`;
+        ).join('')
+        const TITULO = `PROMPTING  <span style="font-size: 12px">${APP_VERSION}</span>`
 
         const result = await Swal.fire({
           title: TITULO,
@@ -272,7 +296,7 @@ const ApiKeyModal = ({
                                 ${PROVIDERS.map(
                                   (p) =>
                                     `<div class="nm-provider-option" data-value="${p.id}" style="padding: 8px 12px; margin: 6px auto; width: calc(100% - 4px); border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 400; color: ${theme.text}; background: ${theme.background}; transition: box-shadow 0.2s ease, color 0.2s ease, font-weight 0.2s ease; box-shadow: none; white-space: nowrap;">${p.name}</div>`,
-                                ).join("")}
+                                ).join('')}
                               </div>
                             </div>
                           </div>
@@ -310,36 +334,36 @@ const ApiKeyModal = ({
                         </div>
                       </div>
                     `,
-          width: "auto",
+          width: 'auto',
           focusConfirm: false,
           allowOutsideClick: false,
           allowEscapeKey: false,
           showCloseButton: hasAnyKey,
           showCancelButton: false,
-          confirmButtonText: "Guardar API Key",
+          confirmButtonText: 'Guardar API Key',
           confirmButtonColor: theme.button.background,
           background: theme.background,
           color: theme.text,
           scrollbarPadding: false,
           grow: false,
           customClass: {
-            popup: "swal-custom-popup api-key-modal-popup",
-            title: "swal-custom-title api-key-modal-title",
-            htmlContainer: "swal-custom-html api-key-modal-html",
-            confirmButton: "swal-custom-confirm-button api-key-modal-confirm",
-            input: "swal-custom-input api-key-modal-input",
-            container: "swal-container-no-scrollbar",
+            popup: 'swal-custom-popup api-key-modal-popup',
+            title: 'swal-custom-title api-key-modal-title',
+            htmlContainer: 'swal-custom-html api-key-modal-html',
+            confirmButton: 'swal-custom-confirm-button api-key-modal-confirm',
+            input: 'swal-custom-input api-key-modal-input',
+            container: 'swal-container-no-scrollbar',
           },
           didOpen: () => {
-            const modal = document.querySelector(".swal2-modal") as HTMLElement;
+            const modal = document.querySelector('.swal2-modal') as HTMLElement
             if (modal) {
               Object.assign(modal.style, {
-                maxWidth: "520px",
-                width: "520px",
-              });
+                maxWidth: '520px',
+                width: '520px',
+              })
             }
 
-            const styleEl = document.createElement("style");
+            const styleEl = document.createElement('style')
             styleEl.innerHTML = `
                           .swal2-container {
                             overflow: hidden !important;
@@ -470,33 +494,33 @@ const ApiKeyModal = ({
                             border: none !important;
                             outline: none !important;
                           }
-                        `;
-            document.head.appendChild(styleEl);
+                        `
+            document.head.appendChild(styleEl)
 
             const input = document.getElementById(
-              "swal-input-apikey-ue",
-            ) as HTMLInputElement | null;
+              'swal-input-apikey-ue',
+            ) as HTMLInputElement | null
             const select = document.getElementById(
-              "swal-select-provider",
-            ) as HTMLSelectElement | null;
+              'swal-select-provider',
+            ) as HTMLSelectElement | null
             const link = document.getElementById(
-              "provider-link",
-            ) as HTMLAnchorElement | null;
+              'provider-link',
+            ) as HTMLAnchorElement | null
             const toggleButton = document.getElementById(
-              "toggle-apikey-visibility-ue",
-            );
-            const trigger = document.getElementById("nm-provider-trigger");
-            const menu = document.getElementById("nm-provider-menu");
-            const labelEl = document.getElementById("nm-provider-label");
-            const arrow = document.getElementById("nm-provider-arrow");
-            const options = document.querySelectorAll(".nm-provider-option");
+              'toggle-apikey-visibility-ue',
+            )
+            const trigger = document.getElementById('nm-provider-trigger')
+            const menu = document.getElementById('nm-provider-menu')
+            const labelEl = document.getElementById('nm-provider-label')
+            const arrow = document.getElementById('nm-provider-arrow')
+            const options = document.querySelectorAll('.nm-provider-option')
 
             // Shadow values cached for DOM manipulation
-            const nmShadowInset = theme.shadow.inset;
-            const nmShadowSm = theme.shadow.sm;
-            const nmAccent = theme.accent;
-            const nmText = theme.text;
-            const nmTextMuted = theme.textMuted;
+            const nmShadowInset = theme.shadow.inset
+            const nmShadowSm = theme.shadow.sm
+            const nmAccent = theme.accent
+            const nmText = theme.text
+            const nmTextMuted = theme.textMuted
 
             if (
               select &&
@@ -508,144 +532,144 @@ const ApiKeyModal = ({
               arrow
             ) {
               const initialProvider =
-                modalState.forcedProvider || storedProvider || PROVIDERS[0].id;
-              select.value = initialProvider;
+                modalState.forcedProvider || storedProvider || PROVIDERS[0].id
+              select.value = initialProvider
               const providerMeta =
                 PROVIDERS.find((pr) => pr.id === initialProvider) ||
-                PROVIDERS[0];
-              labelEl.textContent = providerMeta.name;
-              link.href = providerMeta.link;
-              link.textContent = providerMeta.name;
-              input.placeholder = "Ingresa tu API Key de " + providerMeta.name;
-              const savedKey = localStorage.getItem(initialProvider + "ApiKey");
+                PROVIDERS[0]
+              labelEl.textContent = providerMeta.name
+              link.href = providerMeta.link
+              link.textContent = providerMeta.name
+              input.placeholder = `Ingresa tu API Key de ${providerMeta.name}`
+              const savedKey = localStorage.getItem(`${initialProvider}ApiKey`)
               if (savedKey) {
-                input.value = savedKey;
+                input.value = savedKey
               }
 
               // Highlight selected option
               const updateOptionStyles = () => {
                 options.forEach((opt) => {
-                  const el = opt as HTMLElement;
+                  const el = opt as HTMLElement
                   if (el.dataset.value === select.value) {
                     Object.assign(el.style, {
                       boxShadow: nmShadowInset,
                       color: nmAccent,
-                      fontWeight: "600",
-                    });
+                      fontWeight: '600',
+                    })
                   } else {
                     Object.assign(el.style, {
-                      boxShadow: "none",
+                      boxShadow: 'none',
                       color: nmText,
-                      fontWeight: "400",
-                    });
+                      fontWeight: '400',
+                    })
                   }
-                });
-              };
-              updateOptionStyles();
+                })
+              }
+              updateOptionStyles()
 
-              let isOpen = false;
+              let isOpen = false
               const toggleMenu = () => {
-                isOpen = !isOpen;
+                isOpen = !isOpen
                 Object.assign(menu.style, {
-                  display: isOpen ? "block" : "none",
-                });
+                  display: isOpen ? 'block' : 'none',
+                })
                 Object.assign(trigger.style, {
                   boxShadow: isOpen ? nmShadowInset : nmShadowSm,
-                });
+                })
                 Object.assign(arrow.style, {
                   transform: isOpen
-                    ? "translateY(-50%) rotate(180deg)"
-                    : "translateY(-50%) rotate(0deg)",
+                    ? 'translateY(-50%) rotate(180deg)'
+                    : 'translateY(-50%) rotate(0deg)',
                   color: isOpen ? nmAccent : nmTextMuted,
-                });
-              };
+                })
+              }
 
-              trigger.addEventListener("click", (e) => {
-                e.stopPropagation();
-                toggleMenu();
-              });
+              trigger.addEventListener('click', (e) => {
+                e.stopPropagation()
+                toggleMenu()
+              })
 
               // Option click
               options.forEach((opt) => {
-                const el = opt as HTMLElement;
-                el.addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  const val = el.dataset.value || PROVIDERS[0].id;
-                  select.value = val;
+                const el = opt as HTMLElement
+                el.addEventListener('click', (e) => {
+                  e.stopPropagation()
+                  const val = el.dataset.value || PROVIDERS[0].id
+                  select.value = val
                   const p =
-                    PROVIDERS.find((pr) => pr.id === val) || PROVIDERS[0];
-                  labelEl.textContent = p.name;
-                  link.href = p.link;
-                  link.textContent = p.name;
-                  input.placeholder = "Ingresa tu API Key de " + p.name;
-                  const existing = localStorage.getItem(p.id + "ApiKey");
-                  input.value = existing || "";
-                  updateOptionStyles();
-                  toggleMenu();
-                });
+                    PROVIDERS.find((pr) => pr.id === val) || PROVIDERS[0]
+                  labelEl.textContent = p.name
+                  link.href = p.link
+                  link.textContent = p.name
+                  input.placeholder = `Ingresa tu API Key de ${p.name}`
+                  const existing = localStorage.getItem(`${p.id}ApiKey`)
+                  input.value = existing || ''
+                  updateOptionStyles()
+                  toggleMenu()
+                })
                 // Hover effects (react-select style)
-                el.addEventListener("mouseenter", () => {
+                el.addEventListener('mouseenter', () => {
                   if (el.dataset.value !== select.value) {
                     Object.assign(el.style, {
                       boxShadow: nmShadowSm,
                       color: nmAccent,
-                    });
+                    })
                   }
-                });
-                el.addEventListener("mouseleave", () => {
+                })
+                el.addEventListener('mouseleave', () => {
                   if (el.dataset.value !== select.value) {
                     Object.assign(el.style, {
-                      boxShadow: "none",
+                      boxShadow: 'none',
                       color: nmText,
-                    });
+                    })
                   }
-                });
-              });
+                })
+              })
 
               // Close on click outside
               const closeOnOutsideClick = () => {
-                if (isOpen) toggleMenu();
-              };
-              closeOnOutsideClickRef = closeOnOutsideClick;
-              document.addEventListener("click", closeOnOutsideClick);
+                if (isOpen) toggleMenu()
+              }
+              closeOnOutsideClickRef = closeOnOutsideClick
+              document.addEventListener('click', closeOnOutsideClick)
             }
             if (input && toggleButton) {
               setTimeout(() => {
-                input.focus();
-              }, 100);
+                input.focus()
+              }, 100)
 
-              toggleButton.addEventListener("click", () => {
+              toggleButton.addEventListener('click', () => {
                 const type =
-                  input.getAttribute("type") === "password"
-                    ? "text"
-                    : "password";
-                input.setAttribute("type", type);
+                  input.getAttribute('type') === 'password'
+                    ? 'text'
+                    : 'password'
+                input.setAttribute('type', type)
 
                 const eyeOpen =
-                  '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>';
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>'
                 const eyeClosed =
-                  '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z"/><path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z"/></svg>';
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z"/><path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z"/></svg>'
                 toggleButton.innerHTML =
-                  type === "password" ? eyeOpen : eyeClosed;
+                  type === 'password' ? eyeOpen : eyeClosed
 
                 // Reapply all styling including shadows after type change
                 setTimeout(() => {
-                  forceInputStyling();
-                }, 0);
-              });
+                  forceInputStyling()
+                }, 0)
+              })
 
-              toggleButton.addEventListener("mouseenter", () => {
+              toggleButton.addEventListener('mouseenter', () => {
                 Object.assign(toggleButton.style, {
                   boxShadow: nmShadowInset,
                   color: nmAccent,
-                });
-              });
-              toggleButton.addEventListener("mouseleave", () => {
+                })
+              })
+              toggleButton.addEventListener('mouseleave', () => {
                 Object.assign(toggleButton.style, {
                   boxShadow: nmShadowSm,
                   color: nmTextMuted,
-                });
-              });
+                })
+              })
 
               // Force autofill styling - watch for changes and apply theme
               const forceInputStyling = () => {
@@ -653,61 +677,58 @@ const ApiKeyModal = ({
                   backgroundColor: theme.background,
                   color: theme.text,
                   boxShadow: `${theme.shadow.inset}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`,
-                });
-              };
+                })
+              }
 
-              input.addEventListener("change", forceInputStyling);
-              input.addEventListener("input", forceInputStyling);
-              input.addEventListener("autofill", forceInputStyling);
-              input.addEventListener("blur", forceInputStyling);
+              input.addEventListener('change', forceInputStyling)
+              input.addEventListener('input', forceInputStyling)
+              input.addEventListener('autofill', forceInputStyling)
+              input.addEventListener('blur', forceInputStyling)
 
               // Hover effect - raised but with depth
-              input.addEventListener("mouseenter", () => {
+              input.addEventListener('mouseenter', () => {
                 if (document.activeElement !== input) {
-                  input.style.boxShadow = `${theme.shadow.sm}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`;
+                  input.style.boxShadow = `${theme.shadow.sm}, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`
                 }
-              });
+              })
 
-              input.addEventListener("mouseleave", () => {
+              input.addEventListener('mouseleave', () => {
                 if (document.activeElement !== input) {
-                  forceInputStyling();
+                  forceInputStyling()
                 }
-              });
+              })
 
               // On focus, enhance the shadow
-              input.addEventListener("focus", () => {
-                input.style.boxShadow = `${theme.shadow.outer}, 0 0 0 2px ${theme.accent}40, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`;
-              });
+              input.addEventListener('focus', () => {
+                input.style.boxShadow = `${theme.shadow.outer}, 0 0 0 2px ${theme.accent}40, inset 0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.1)`
+              })
 
               // Monitor for autofill with interval
               const autofillChecker = setInterval(() => {
-                const computed = window.getComputedStyle(input);
-                if (
-                  computed.boxShadow &&
-                  computed.boxShadow.includes("rgb(255")
-                ) {
+                const computed = window.getComputedStyle(input)
+                if (computed.boxShadow?.includes('rgb(255')) {
                   // Autofill detected, force styling
-                  forceInputStyling();
+                  forceInputStyling()
                 }
-              }, 100);
+              }, 100)
 
               // Clean up on modal close
               const observer = new MutationObserver(() => {
                 if (!document.body.contains(input)) {
-                  clearInterval(autofillChecker);
-                  observer.disconnect();
+                  clearInterval(autofillChecker)
+                  observer.disconnect()
                 }
-              });
+              })
               observer.observe(document.body, {
                 childList: true,
                 subtree: true,
-              });
+              })
             }
           },
           willClose: () => {
             if (closeOnOutsideClickRef) {
-              document.removeEventListener("click", closeOnOutsideClickRef);
-              closeOnOutsideClickRef = null;
+              document.removeEventListener('click', closeOnOutsideClickRef)
+              closeOnOutsideClickRef = null
             }
           },
           preConfirm: async () => {
@@ -715,22 +736,22 @@ const ApiKeyModal = ({
             const applyErrorStyles = () => {
               setTimeout(() => {
                 const validationMessage = document.querySelector(
-                  ".swal2-validation-message",
-                );
+                  '.swal2-validation-message',
+                )
                 if (validationMessage) {
                   validationMessage.setAttribute(
-                    "style",
+                    'style',
                     `
                       background: ${
                         isDarkTheme
-                          ? "rgba(255, 60, 60, 0.1)"
-                          : "rgba(255, 0, 0, 0.05)"
+                          ? 'rgba(255, 60, 60, 0.1)'
+                          : 'rgba(255, 0, 0, 0.05)'
                       };
-                      color: ${isDarkTheme ? "#ff9999" : "#d32f2f"};
+                      color: ${isDarkTheme ? '#ff9999' : '#d32f2f'};
                       border-color: ${
                         isDarkTheme
-                          ? "rgba(255, 60, 60, 0.3)"
-                          : "rgba(255, 0, 0, 0.2)"
+                          ? 'rgba(255, 60, 60, 0.3)'
+                          : 'rgba(255, 0, 0, 0.2)'
                       };
                       padding: 0.75em;
                       margin-top: 0.75em;
@@ -742,126 +763,126 @@ const ApiKeyModal = ({
                       line-height: 1.4;
                       text-align: center;
                     `,
-                  );
+                  )
                 }
-              }, 0);
-            };
+              }, 0)
+            }
 
             const apiKeyInput = document.getElementById(
-              "swal-input-apikey-ue",
-            ) as HTMLInputElement | null;
+              'swal-input-apikey-ue',
+            ) as HTMLInputElement | null
             const select = document.getElementById(
-              "swal-select-provider",
-            ) as HTMLSelectElement | null;
-            const apiKey = apiKeyInput?.value;
-            const provider = select?.value || PROVIDERS[0].id;
+              'swal-select-provider',
+            ) as HTMLSelectElement | null
+            const apiKey = apiKeyInput?.value
+            const provider = select?.value || PROVIDERS[0].id
 
             // Validar que no esté vacío
-            if (!apiKey || apiKey.trim() === "") {
+            if (!apiKey || apiKey.trim() === '') {
               Swal.showValidationMessage(
                 `Por favor, ingresa una API Key válida`,
-              );
-              applyErrorStyles();
-              apiKeyInput?.focus();
-              return false;
+              )
+              applyErrorStyles()
+              apiKeyInput?.focus()
+              return false
             }
 
             // Validar longitud mínima
             if (apiKey.trim().length < 20) {
               Swal.showValidationMessage(
                 `La API Key parece demasiado corta. Verifica que sea correcta`,
-              );
-              applyErrorStyles();
-              apiKeyInput?.focus();
-              return false;
+              )
+              applyErrorStyles()
+              apiKeyInput?.focus()
+              return false
             }
 
             // Mostrar loading mientras valida con el proveedor
-            Swal.showLoading();
+            Swal.showLoading()
 
             // Validar con el proveedor
-            const isValid = await validateApiKey(apiKey.trim(), provider);
+            const isValid = await validateApiKey(apiKey.trim(), provider)
 
             if (!isValid) {
-              Swal.hideLoading();
+              Swal.hideLoading()
               const errorMsg =
-                provider === "anthropic"
+                provider === 'anthropic'
                   ? `API Key de Anthropic inválida. Debe comenzar con "sk-ant-". Por favor, verifica e intenta de nuevo.`
-                  : `API Key inválida. Por favor, verifica e intenta de nuevo.`;
-              Swal.showValidationMessage(errorMsg);
-              applyErrorStyles();
-              apiKeyInput!.value = "";
-              apiKeyInput?.focus();
-              return false;
+                  : `API Key inválida. Por favor, verifica e intenta de nuevo.`
+              Swal.showValidationMessage(errorMsg)
+              applyErrorStyles()
+              if (apiKeyInput) apiKeyInput.value = ''
+              apiKeyInput?.focus()
+              return false
             }
 
             // Si es válida, guardar
-            localStorage.setItem(`${provider}ApiKey`, apiKey.trim());
-            localStorage.setItem("selectedProvider", provider);
-            window.dispatchEvent(new Event("apikey-changed"));
+            localStorage.setItem(`${provider}ApiKey`, apiKey.trim())
+            localStorage.setItem('selectedProvider', provider)
+            window.dispatchEvent(new Event('apikey-changed'))
 
-            return { apiKey: apiKey.trim(), provider };
+            return { apiKey: apiKey.trim(), provider }
           },
-        });
+        })
 
         if (result.isConfirmed && result.value) {
           const { provider } = result.value as {
-            apiKey: string;
-            provider: string;
-          };
+            apiKey: string
+            provider: string
+          }
 
           // Limpiar estado
-          isModalLogicActiveRef.current = false;
-          dispatchModal({ type: "RESET" });
+          isModalLogicActiveRef.current = false
+          dispatchModal({ type: 'RESET' })
 
           // Mostrar confirmación de guardado
           Swal.fire({
-            title: "¡Guardada!",
+            title: '¡Guardada!',
             text: `Tu API Key de ${
               PROVIDERS.find((p) => p.id === provider)?.name || provider
             } ha sido guardada.`,
-            icon: "success",
+            icon: 'success',
             background: theme.background,
             color: theme.text,
             confirmButtonColor: theme.button.background,
             timer: 1500,
             timerProgressBar: true,
-          });
+          })
 
           if (onApiKeyProvided) {
-            onApiKeyProvided();
+            onApiKeyProvided()
           }
         } else if (result.isDismissed) {
-          isModalLogicActiveRef.current = false;
-          dispatchModal({ type: "RESET" });
+          isModalLogicActiveRef.current = false
+          dispatchModal({ type: 'RESET' })
         }
       } else {
-        isModalLogicActiveRef.current = false;
+        isModalLogicActiveRef.current = false
         if (onApiKeyProvided) {
-          onApiKeyProvided();
+          onApiKeyProvided()
         }
       }
-    };
+    }
 
-    manageApiKeyModal();
+    manageApiKeyModal()
     return () => {
       // No cierres SweetAlert desde el cleanup del effect.
       // En React StrictMode (dev/local), React ejecuta setup -> cleanup -> setup
       // para detectar efectos inseguros. Si cerramos acá, el modal de API key
       // se abre y se cierra solo en localhost, dejando apenas el fondo.
       if (closeOnOutsideClickRef) {
-        document.removeEventListener("click", closeOnOutsideClickRef);
+        document.removeEventListener('click', closeOnOutsideClickRef)
       }
-    };
+    }
   }, [
     onApiKeyProvided,
     theme,
     isDarkTheme,
     modalState.forceShow,
     modalState.forcedProvider,
-  ]);
+  ])
 
-  return null;
-};
+  return null
+}
 
-export default ApiKeyModal;
+export default ApiKeyModal

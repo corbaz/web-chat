@@ -1,24 +1,25 @@
-import React, { useState } from "react";
-import ModelSelector from "./ModelSelector";
-import ProviderSelector from "./ProviderSelector";
-import Title from "./menu/Title";
-import { ColorPalette } from "../../interfaces/temas/temas";
-import MenuButton from "./menu/MenuButton";
+import type React from 'react'
+import { useState } from 'react'
+import type { ColorPalette } from '../../interfaces/temas/temas'
+import ModelSelector from './ModelSelector'
+import MenuButton from './menu/MenuButton'
+import Title from './menu/Title'
+import ProviderSelector from './ProviderSelector'
 
 interface HeaderProps {
-  title: string;
-  version: string;
-  selectedModel: string;
-  onModelChange: (modelId: string) => void;
-  theme: ColorPalette;
-  isDarkTheme: boolean;
-  onToggleLeftMenu: () => void;
-  onToggleRightMenu: () => void;
-  chatId?: string;
-  onUpdateChatTitle?: (chatId: string, newTitle: string) => void;
-  editable?: boolean;
-  selectedProvider?: string;
-  onProviderChange?: (providerId: string) => void;
+  title: string
+  version: string
+  selectedModel: string
+  onModelChange: (modelId: string) => void
+  theme: ColorPalette
+  isDarkTheme: boolean
+  onToggleLeftMenu: () => void
+  onToggleRightMenu: () => void
+  chatId?: string
+  onUpdateChatTitle?: (chatId: string, newTitle: string) => void
+  editable?: boolean
+  selectedProvider?: string
+  onProviderChange?: (providerId: string) => void
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -38,29 +39,30 @@ const Header: React.FC<HeaderProps> = ({
   const [internalProvider, setInternalProvider] = useState<string>(() => {
     if (!externalProvider) {
       const providers = [
-        "groq",
-        "routellm",
-        "openai",
-        "anthropic",
-        "opengo",
-        "opencodefree",
-        "gemini",
-      ];
+        'groq',
+        'routellm',
+        'openai',
+        'anthropic',
+        'opengo',
+        'opencodefree',
+        'opencodezen',
+        'gemini',
+      ]
       for (const provider of providers) {
-        if (provider === "opencodefree") return provider;
-        const apiKey = localStorage.getItem(`${provider}ApiKey`);
-        if (apiKey && apiKey.trim() !== "") return provider;
+        if (provider === 'opencodefree') return provider
+        const apiKey = localStorage.getItem(`${provider}ApiKey`)
+        if (apiKey && apiKey.trim() !== '') return provider
       }
     }
-    return "opencodefree";
-  });
+    return 'opencodefree'
+  })
 
-  const selectedProvider = externalProvider || internalProvider;
+  const selectedProvider = externalProvider || internalProvider
 
   const handleProviderChange = (providerId: string) => {
-    setInternalProvider(providerId);
-    if (externalOnProviderChange) externalOnProviderChange(providerId);
-  };
+    setInternalProvider(providerId)
+    if (externalOnProviderChange) externalOnProviderChange(providerId)
+  }
 
   return (
     <header
@@ -68,12 +70,11 @@ const Header: React.FC<HeaderProps> = ({
       style={{
         backgroundColor: theme.background,
         boxShadow: `0 4px 16px ${
-          theme.background === "#1e2235"
-            ? "rgba(0,0,0,0.45)"
-            : "rgba(0,0,0,0.12)"
+          theme.background === '#1e2235'
+            ? 'rgba(0,0,0,0.45)'
+            : 'rgba(0,0,0,0.12)'
         }, ${theme.shadow.sm}`,
       }}
-      aria-label="Encabezado de la aplicación"
     >
       <div className="flex items-center justify-between gap-3">
         {/* Menú hamburguesa — historial */}
@@ -121,7 +122,7 @@ const Header: React.FC<HeaderProps> = ({
         />
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

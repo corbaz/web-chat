@@ -10,16 +10,16 @@
  * @returns Número estimado de tokens
  */
 const estimateTokens = (text: string): number => {
-  if (!text) return 0;
+  if (!text) return 0
 
   // Contar palabras (aproximadamente 4 caracteres por palabra)
-  const wordCount = text.trim().split(/\s+/).length;
+  const wordCount = text.trim().split(/\s+/).length
 
   // Aplicar factor de conversión palabra-token (aproximadamente 1.3 tokens por palabra)
-  const estimatedTokens = Math.ceil(wordCount * 1.3);
+  const estimatedTokens = Math.ceil(wordCount * 1.3)
 
-  return estimatedTokens;
-};
+  return estimatedTokens
+}
 
 /**
  * Estima tokens para mensajes de chat completos
@@ -31,29 +31,23 @@ export const estimateMessagesTokens = (
   messages: Array<{ role: string; content: string }>,
 ): number => {
   // Tokens base por cada mensaje (4 tokens por mensaje para metadata)
-  const baseTokensPerMessage = 4;
+  const baseTokensPerMessage = 4
 
   // Suma de tokens de todos los mensajes
-  let totalTokens = 0;
+  let totalTokens = 0
 
   for (const message of messages) {
     // Tokens del contenido
-    totalTokens += estimateTokens(message.content);
+    totalTokens += estimateTokens(message.content)
 
     // Tokens base por mensaje (metadata)
-    totalTokens += baseTokensPerMessage;
+    totalTokens += baseTokensPerMessage
   }
 
-  return totalTokens;
-};
+  return totalTokens
+}
 
-import { groqModels } from "../components/HEADER/models/groqModels";
-import { routellmModels } from "../components/HEADER/models/routellmModels";
-import { openaiModels } from "../components/HEADER/models/openaiModels";
-import { anthropicModels } from "../components/HEADER/models/anthropicModels";
-import { opengoModels } from "../components/HEADER/models/opengoModels";
-import { opencodeFreeModels } from "../components/HEADER/models/opencodeFreeModels";
-import { geminiModels } from "../components/HEADER/models/geminiModels";
+import { getAllModels } from '../services/modelCatalog/store'
 
 /**
  * Obtiene el límite de tokens para un modelo específico
@@ -61,55 +55,51 @@ import { geminiModels } from "../components/HEADER/models/geminiModels";
  * @param modelId ID del modelo
  * @returns Límite de tokens para el modelo (por defecto 8192 si no se conoce)
  */
-export const getModelTokenLimit = (modelId: string, provider?: string): number => {
+export const getModelTokenLimit = (
+  modelId: string,
+  provider?: string,
+): number => {
   // Buscar el modelo por su ID en todas las colecciones disponibles
-  const allModels = [
-    ...groqModels,
-    ...routellmModels,
-    ...openaiModels,
-    ...anthropicModels,
-    ...opengoModels,
-    ...opencodeFreeModels,
-    ...geminiModels,
-  ];
-  const model = allModels.find((m) => {
-    if (provider && m.provider !== provider) return false;
-    return m.id === modelId;
-  }) || allModels.find((m) => m.id === modelId);
+  const allModels = getAllModels()
+  const model =
+    allModels.find((m) => {
+      if (provider && m.provider !== provider) return false
+      return m.id === modelId
+    }) || allModels.find((m) => m.id === modelId)
 
-  if (!model) return 8192; // Valor por defecto
+  if (!model) return 8192 // Valor por defecto
 
   // Para modelos con maxTokens (OpenAI, Anthropic)
-  if ("maxTokens" in model) {
-    return model.maxTokens;
+  if (typeof model.maxTokens === 'number') {
+    return model.maxTokens
   }
 
   // Para modelos con contextWindow (Groq, RouteLLM)
-  if ("contextWindow" in model && model.contextWindow) {
+  if ('contextWindow' in model && model.contextWindow) {
     const contextWindow = model.contextWindow
-      .replace(/,/g, "") // Eliminar comas de formato
-      .toLowerCase();
+      .replace(/,/g, '') // Eliminar comas de formato
+      .toLowerCase()
 
-    let limit: number;
+    let limit: number
 
-    if (contextWindow.includes("k")) {
-      limit = parseFloat(contextWindow) * 1000;
-    } else if (contextWindow.includes("m")) {
-      limit = parseFloat(contextWindow) * 1000000;
+    if (contextWindow.includes('k')) {
+      limit = parseFloat(contextWindow) * 1000
+    } else if (contextWindow.includes('m')) {
+      limit = parseFloat(contextWindow) * 1000000
     } else {
-      limit = parseFloat(contextWindow) || 8192;
+      limit = parseFloat(contextWindow) || 8192
     }
 
-    return Math.round(limit);
+    return Math.round(limit)
   }
 
-  return 8192;
-};
+  return 8192
+}
 
 /**
  * Número máximo de tokens que reservaremos para la respuesta del modelo
  */
-export const MAX_RESPONSE_TOKENS = 2048;
+export const MAX_RESPONSE_TOKENS = 2048
 
 /**
  * Obtiene el porcentaje de uso de tokens formateado
@@ -122,11 +112,11 @@ export const getTokenUsageString = (
   usedTokens: number,
   totalTokens: number,
 ): string => {
-  const percentage = Math.round((usedTokens / totalTokens) * 100);
-  return `${usedTokens} / ${totalTokens} - Contexto Usado: ${percentage}%`;
-};
+  const percentage = Math.round((usedTokens / totalTokens) * 100)
+  return `${usedTokens} / ${totalTokens} - Contexto Usado: ${percentage}%`
+}
 
 /**
  * Factor de seguridad para evitar llegar al límite exacto (0.9 = usar el 90% del límite)
  */
-export const TOKEN_LIMIT_SAFETY_FACTOR = 0.9;
+export const TOKEN_LIMIT_SAFETY_FACTOR = 0.9

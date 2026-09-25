@@ -1,22 +1,20 @@
-import React from "react";
-import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
-import { groqModels } from "../models/groqModels";
-import { routellmModels } from "../models/routellmModels";
-import { openaiModels } from "../models/openaiModels";
-import { anthropicModels } from "../models/anthropicModels";
-import LunaIcon from "../../../assets/luna.svg";
-import PieBrand from "./PieBrand.tsx";
-import ApiKeyInput from "./ApiKeyInput.tsx";
+import type React from 'react'
+import LunaIcon from '../../../assets/luna.svg'
+import { supportsWebSearch } from '../../../config/webSearch'
+import type { ColorPalette } from '../../../interfaces/temas/temas.tsx'
+import { useModelCatalog } from '../../../services/modelCatalog/useModelCatalog'
+import ApiKeyInput from './ApiKeyInput.tsx'
+import PieBrand from './PieBrand.tsx'
 
 interface RightMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
-  theme: ColorPalette;
-  isDarkTheme: boolean;
-  toggleTheme: () => void;
-  selectedModel: string;
-  onModelChange: (modelId: string) => void;
-  selectedProvider?: string;
+  isOpen: boolean
+  onClose: () => void
+  theme: ColorPalette
+  isDarkTheme: boolean
+  toggleTheme: () => void
+  selectedModel: string
+  onModelChange: (modelId: string) => void
+  selectedProvider?: string
 }
 
 const RightMenu: React.FC<RightMenuProps> = ({
@@ -29,26 +27,25 @@ const RightMenu: React.FC<RightMenuProps> = ({
   onModelChange,
   selectedProvider,
 }) => {
-  if (!isOpen) return null;
+  // El hook debe llamarse siempre (regla de hooks), antes del return
+  // condicional de abajo: este componente permanece montado mientras
+  // `isOpen` alterna.
+  const allModels = useModelCatalog()
 
-  const allModels = [
-    ...groqModels,
-    ...routellmModels,
-    ...openaiModels,
-    ...anthropicModels,
-  ];
+  if (!isOpen) return null
+
   const filteredModels = selectedProvider
     ? allModels.filter((m) => m.provider === selectedProvider)
-    : allModels;
+    : allModels
 
   const sectionHeadingStyle: React.CSSProperties = {
     color: theme.accent,
-    fontSize: "0.7rem",
+    fontSize: '0.7rem',
     fontWeight: 700,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase" as const,
-    marginBottom: "0.75rem",
-  };
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
+    marginBottom: '0.75rem',
+  }
 
   return (
     <>
@@ -57,7 +54,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
         className="fixed inset-0 z-60 transition-opacity duration-300"
         style={{
           opacity: isOpen ? 1 : 0,
-          pointerEvents: isOpen ? "auto" : "none",
+          pointerEvents: isOpen ? 'auto' : 'none',
         }}
         onClick={onClose}
         aria-hidden="true"
@@ -66,12 +63,12 @@ const RightMenu: React.FC<RightMenuProps> = ({
       {/* Sidebar panel */}
       <div
         className={`fixed top-0 right-0 h-full w-full sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+          isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{
           backgroundColor: theme.background,
           boxShadow: `-8px 0 32px ${
-            isDarkTheme ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.18)"
+            isDarkTheme ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.18)'
           }`,
         }}
         role="dialog"
@@ -84,7 +81,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
             className="p-4 flex justify-between items-center"
             style={{
               borderBottom: `1px solid ${
-                isDarkTheme ? "rgba(124,133,245,0.12)" : "rgba(91,110,245,0.12)"
+                isDarkTheme ? 'rgba(124,133,245,0.12)' : 'rgba(91,110,245,0.12)'
               }`,
             }}
           >
@@ -132,7 +129,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                   className="text-sm font-medium"
                   style={{ color: theme.text }}
                 >
-                  {isDarkTheme ? "Tema Oscuro" : "Tema Claro"}
+                  {isDarkTheme ? 'Tema Oscuro' : 'Tema Claro'}
                 </span>
 
                 {/* Neumorphic toggle switch */}
@@ -151,10 +148,10 @@ const RightMenu: React.FC<RightMenuProps> = ({
                   <span
                     className="absolute flex items-center justify-center size-6 rounded-full transition-transform duration-300"
                     style={{
-                      left: "4px",
+                      left: '4px',
                       transform: isDarkTheme
-                        ? "translateX(30px)"
-                        : "translateX(0)",
+                        ? 'translateX(30px)'
+                        : 'translateX(0)',
                       backgroundColor: theme.background,
                       boxShadow: theme.shadow.sm,
                     }}
@@ -165,7 +162,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                       className="size-3.5 transition-opacity duration-300"
                       style={{
                         opacity: isDarkTheme ? 0 : 1,
-                        position: "absolute",
+                        position: 'absolute',
                         color: theme.accent,
                       }}
                       fill="none"
@@ -186,8 +183,8 @@ const RightMenu: React.FC<RightMenuProps> = ({
                       className="size-3.5 transition-opacity duration-300"
                       style={{
                         opacity: isDarkTheme ? 1 : 0,
-                        position: "absolute",
-                        filter: "brightness(0) invert(1)",
+                        position: 'absolute',
+                        filter: 'brightness(0) invert(1)',
                       }}
                     />
                   </span>
@@ -196,12 +193,12 @@ const RightMenu: React.FC<RightMenuProps> = ({
                   <span
                     className="absolute rounded-full transition-opacity duration-300"
                     style={{
-                      width: "4px",
-                      height: "4px",
+                      width: '4px',
+                      height: '4px',
                       backgroundColor: theme.accent,
                       opacity: 0.6,
-                      left: isDarkTheme ? "10px" : "auto",
-                      right: isDarkTheme ? "auto" : "10px",
+                      left: isDarkTheme ? '10px' : 'auto',
+                      right: isDarkTheme ? 'auto' : '10px',
                     }}
                   />
                 </button>
@@ -213,7 +210,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
               <p style={sectionHeadingStyle}>Modelo de IA</p>
               <div className="space-y-1.5">
                 {filteredModels.map((model) => {
-                  const isSelected = selectedModel === model.id;
+                  const isSelected = selectedModel === model.id
                   return (
                     <label
                       key={model.id}
@@ -225,7 +222,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                           : theme.shadow.sm,
                         borderLeft: isSelected
                           ? `3px solid ${theme.accent}`
-                          : "3px solid transparent",
+                          : '3px solid transparent',
                       }}
                     >
                       <input
@@ -252,14 +249,33 @@ const RightMenu: React.FC<RightMenuProps> = ({
                           />
                         )}
                       </span>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div
-                          className="text-sm font-medium truncate"
+                          className="text-sm font-medium truncate flex items-center gap-1.5 justify-between w-full"
                           style={{
                             color: isSelected ? theme.accent : theme.text,
                           }}
                         >
-                          {model.name}
+                          <span className="truncate">{model.name}</span>
+                          {supportsWebSearch(model.id, model.provider) && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="size-3.5 shrink-0"
+                              style={{ color: theme.accent }}
+                              aria-hidden="true"
+                            >
+                              <title>Búsqueda web nativa disponible</title>
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                              <path d="M2 12h20" />
+                            </svg>
+                          )}
                         </div>
                         <div
                           className="text-xs"
@@ -271,7 +287,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                         </div>
                       </div>
                     </label>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -306,7 +322,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default RightMenu;
+export default RightMenu

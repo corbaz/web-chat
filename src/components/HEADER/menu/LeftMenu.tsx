@@ -1,56 +1,57 @@
-import React, { useState, useRef, useEffect } from "react";
-import { ColorPalette } from "../../../interfaces/temas/temas.tsx";
-import Swal from "sweetalert2";
-import { createTitleEditHandlers } from "../../../utils/titleUtils";
-import { CHAT_HISTORY_KEY } from "../../../interfaces/chat/chatTypes";
-import PenIcon from "../../../assets/pen.svg";
-import TrashIcon from "../../../assets/trash.svg";
-import PieBrand from "./PieBrand.tsx";
+import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Swal from 'sweetalert2'
+import PenIcon from '../../../assets/pen.svg'
+import TrashIcon from '../../../assets/trash.svg'
+import { CHAT_HISTORY_KEY } from '../../../interfaces/chat/chatTypes'
+import type { ColorPalette } from '../../../interfaces/temas/temas.tsx'
+import { createTitleEditHandlers } from '../../../utils/titleUtils'
+import PieBrand from './PieBrand.tsx'
 
 interface LeftMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
-  theme: ColorPalette;
-  isDarkTheme: boolean;
-  chatHistory: { id: string; title: string; date: Date }[];
-  onSelectChat: (chatId: string) => void;
-  onNewChat: () => void;
-  currentChatId?: string;
-  onUpdateChatTitle?: (chatId: string, newTitle: string) => void;
-  onDeleteChat?: (chatId: string) => void;
+  isOpen: boolean
+  onClose: () => void
+  theme: ColorPalette
+  isDarkTheme: boolean
+  chatHistory: { id: string; title: string; date: Date }[]
+  onSelectChat: (chatId: string) => void
+  onNewChat: () => void
+  currentChatId?: string
+  onUpdateChatTitle?: (chatId: string, newTitle: string) => void
+  onDeleteChat?: (chatId: string) => void
 }
 
 const readStoredHistory = (): {
-  id: string;
-  title: string;
-  date: Date | string;
-  model?: string;
+  id: string
+  title: string
+  date: Date | string
+  model?: string
 }[] => {
-  const raw = localStorage.getItem(CHAT_HISTORY_KEY);
-  return raw ? JSON.parse(raw) : [];
-};
+  const raw = localStorage.getItem(CHAT_HISTORY_KEY)
+  return raw ? JSON.parse(raw) : []
+}
 
 const writeStoredHistory = (
   arr: { id: string; title: string; date: Date | string; model?: string }[],
 ): void => {
-  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(arr));
-};
+  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(arr))
+}
 
 const formatChatDate = (date: Date): string => {
-  const d = new Date(date);
-  const dias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-  const fecha = d.toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-  const hora = d.toLocaleTimeString("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
+  const d = new Date(date)
+  const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const fecha = d.toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+  const hora = d.toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
-  });
-  return `${dias[d.getDay()]} ${fecha} · ${hora}`;
-};
+  })
+  return `${dias[d.getDay()]} ${fecha} · ${hora}`
+}
 
 const LeftMenu: React.FC<LeftMenuProps> = ({
   isOpen,
@@ -64,112 +65,112 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
   onUpdateChatTitle,
   onDeleteChat,
 }) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>("");
-  const editInputRef = useRef<HTMLInputElement>(null);
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState<string>('')
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (editingId !== null) {
-      editInputRef.current?.focus();
+      editInputRef.current?.focus()
     }
-  }, [editingId]);
+  }, [editingId])
 
   const { handleEditKeyDown, truncateTitle } = createTitleEditHandlers({
     maxLength: 40,
     onUpdateTitle: (chatId: string, newTitle: string) => {
-      if (onUpdateChatTitle) onUpdateChatTitle(chatId, newTitle);
+      if (onUpdateChatTitle) onUpdateChatTitle(chatId, newTitle)
     },
-  });
+  })
 
   const handleEditClick = (chat: { id: string; title: string }) => {
-    setEditingId(chat.id);
-    setEditValue(chat.title);
-  };
+    setEditingId(chat.id)
+    setEditValue(chat.title)
+  }
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditValue(e.target.value);
-  };
+    setEditValue(e.target.value)
+  }
 
   const handleEditBlur = (chat: { id: string; title: string }) => {
     if (editValue.trim()) {
-      const arr = readStoredHistory();
+      const arr = readStoredHistory()
       const updated = arr.map((c) =>
         c.id === chat.id ? { ...c, title: editValue } : c,
-      );
-      writeStoredHistory(updated);
-      if (onUpdateChatTitle) onUpdateChatTitle(chat.id, editValue);
+      )
+      writeStoredHistory(updated)
+      if (onUpdateChatTitle) onUpdateChatTitle(chat.id, editValue)
     }
-    setEditingId(null);
-  };
+    setEditingId(null)
+  }
 
   const handleKeyDownInLeftMenu = (
     e: React.KeyboardEvent<HTMLInputElement>,
     chat: { id: string; title: string },
   ) => {
     handleEditKeyDown(e, chat.id, editValue, () => {
-      setEditingId(null);
-      if (e.key === "Escape") setEditValue(chat.title);
-    });
-  };
+      setEditingId(null)
+      if (e.key === 'Escape') setEditValue(chat.title)
+    })
+  }
 
   const handleDeleteChat = (chatId: string) => {
-    const arr = readStoredHistory();
-    const filtered = arr.filter((c) => c.id !== chatId);
-    writeStoredHistory(filtered);
-    if (onDeleteChat) onDeleteChat(chatId);
-  };
+    const arr = readStoredHistory()
+    const filtered = arr.filter((c) => c.id !== chatId)
+    writeStoredHistory(filtered)
+    if (onDeleteChat) onDeleteChat(chatId)
+  }
 
   const showDeleteConfirmation = async (chatId: string, chatTitle: string) => {
     const result = await Swal.fire({
-      title: "¿Eliminar este Chat?",
+      title: '¿Eliminar este Chat?',
       text: `¿Estás seguro de que quieres eliminar "${chatTitle}"?`,
-      icon: "question",
+      icon: 'question',
       iconColor: theme.accent,
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: 'Sí, eliminar',
       confirmButtonColor: theme.accent,
-      cancelButtonText: "Cancelar",
+      cancelButtonText: 'Cancelar',
       cancelButtonColor: isDarkTheme ? theme.surface : theme.secondary,
       background: theme.background,
       color: theme.text,
-    });
+    })
     if (result.isConfirmed) {
-      handleDeleteChat(chatId);
+      handleDeleteChat(chatId)
       Swal.fire({
-        title: "¡Eliminado!",
-        text: "El Chat ha sido eliminado.",
-        icon: "success",
+        title: '¡Eliminado!',
+        text: 'El Chat ha sido eliminado.',
+        icon: 'success',
         iconColor: theme.accent,
         timer: 1500,
         confirmButtonColor: theme.accent,
         background: theme.background,
         color: theme.text,
-      });
+      })
     }
-  };
+  }
 
   const handleNewChat = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation()
     const result = await Swal.fire({
-      title: "Nuevo Chat",
-      text: "¿Desea continuar con la creación del Chat?",
-      icon: "question",
+      title: 'Nuevo Chat',
+      text: '¿Desea continuar con la creación del Chat?',
+      icon: 'question',
       iconColor: theme.accent,
       showCancelButton: true,
-      confirmButtonText: "Sí, continuar",
+      confirmButtonText: 'Sí, continuar',
       confirmButtonColor: theme.accent,
-      cancelButtonText: "Cancelar",
+      cancelButtonText: 'Cancelar',
       cancelButtonColor: isDarkTheme ? theme.surface : theme.secondary,
       background: theme.background,
       color: theme.text,
-    });
+    })
     if (result.isConfirmed) {
-      onNewChat();
-      onClose();
+      onNewChat()
+      onClose()
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   // Neumorphic sidebar item styles
   const itemActiveStyle: React.CSSProperties = {
@@ -177,27 +178,27 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
     color: theme.accent,
     boxShadow: theme.shadow.inset,
     borderLeft: `3px solid ${theme.accent}`,
-    borderRadius: "12px",
-  };
+    borderRadius: '12px',
+  }
 
   const itemStyle: React.CSSProperties = {
     backgroundColor: theme.background,
     color: theme.text,
     boxShadow: theme.shadow.sm,
     borderLeft: `3px solid transparent`,
-    borderRadius: "12px",
-  };
+    borderRadius: '12px',
+  }
 
   const iconBtnStyle: React.CSSProperties = {
     backgroundColor: theme.background,
     boxShadow: theme.shadow.sm,
-    borderRadius: "8px",
-    padding: "5px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: '8px',
+    padding: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     flexShrink: 0,
-  };
+  }
 
   return (
     <>
@@ -206,7 +207,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         className="fixed inset-0 z-60 transition-opacity duration-300"
         style={{
           opacity: isOpen ? 1 : 0,
-          pointerEvents: isOpen ? "auto" : "none",
+          pointerEvents: isOpen ? 'auto' : 'none',
         }}
         onClick={onClose}
         aria-hidden="true"
@@ -215,12 +216,12 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
       {/* Sidebar panel */}
       <div
         className={`fixed top-0 left-0 h-full w-full sm:w-1/3 md:w-1/4 lg:w-1/5 z-1050 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
           backgroundColor: theme.background,
           boxShadow: `8px 0 32px ${
-            isDarkTheme ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.18)"
+            isDarkTheme ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.18)'
           }`,
         }}
         role="dialog"
@@ -233,7 +234,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
             className="p-4 flex justify-between items-center"
             style={{
               borderBottom: `1px solid ${
-                isDarkTheme ? "rgba(124,133,245,0.12)" : "rgba(91,110,245,0.12)"
+                isDarkTheme ? 'rgba(124,133,245,0.12)' : 'rgba(91,110,245,0.12)'
               }`,
             }}
           >
@@ -335,6 +336,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                       />
                     </div>
                   ) : (
+                    // biome-ignore lint/a11y/useSemanticElements: this row contains nested buttons (edit/delete); converting to <button> would nest interactive elements, which is invalid HTML
                     <div
                       role="button"
                       tabIndex={0}
@@ -343,13 +345,13 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                         currentChatId === chat.id ? itemActiveStyle : itemStyle
                       }
                       onClick={() => {
-                        onSelectChat(chat.id);
-                        onClose();
+                        onSelectChat(chat.id)
+                        onClose()
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          onSelectChat(chat.id);
-                          onClose();
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          onSelectChat(chat.id)
+                          onClose()
                         }
                       }}
                     >
@@ -375,19 +377,19 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                           className="nm-press"
                           style={iconBtnStyle}
                           onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditClick(chat);
+                            e.stopPropagation()
+                            handleEditClick(chat)
                           }}
                         >
                           <img
                             src={PenIcon}
                             alt="Editar"
                             style={{
-                              width: "13px",
-                              height: "13px",
+                              width: '13px',
+                              height: '13px',
                               filter: isDarkTheme
-                                ? "brightness(0) invert(1)"
-                                : "brightness(0.4)",
+                                ? 'brightness(0) invert(1)'
+                                : 'brightness(0.4)',
                             }}
                           />
                         </button>
@@ -400,19 +402,19 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
                           className="nm-press"
                           style={iconBtnStyle}
                           onClick={(e) => {
-                            e.stopPropagation();
-                            showDeleteConfirmation(chat.id, chat.title);
+                            e.stopPropagation()
+                            showDeleteConfirmation(chat.id, chat.title)
                           }}
                         >
                           <img
                             src={TrashIcon}
                             alt="Eliminar"
                             style={{
-                              width: "13px",
-                              height: "13px",
+                              width: '13px',
+                              height: '13px',
                               filter: isDarkTheme
-                                ? "brightness(0) invert(1)"
-                                : "brightness(0.4)",
+                                ? 'brightness(0) invert(1)'
+                                : 'brightness(0.4)',
                             }}
                           />
                         </button>
@@ -438,7 +440,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default LeftMenu;
+export default LeftMenu

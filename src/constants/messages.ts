@@ -8,7 +8,7 @@
  * Mensaje de bienvenida que se muestra cuando se inicia un nuevo chat
  */
 const WELCOME_MESSAGE =
-  "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?";
+  '¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?'
 
 /**
  * Crea un objeto de mensaje de bienvenida estándar
@@ -17,19 +17,19 @@ const WELCOME_MESSAGE =
  */
 export const createWelcomeMessage = (modelName?: string) => {
   const welcomeMessage = {
-    id: "intro-message",
-    role: "assistant" as const,
+    id: 'intro-message',
+    role: 'assistant' as const,
     content: WELCOME_MESSAGE,
     timestamp: Date.now(),
-  };
+  }
 
   // Si se proporciona un nombre de modelo, lo incluimos en el objeto
   if (modelName) {
     return {
       ...welcomeMessage,
       modelName,
-    };
+    }
   }
 
-  return welcomeMessage;
-};
+  return welcomeMessage
+}

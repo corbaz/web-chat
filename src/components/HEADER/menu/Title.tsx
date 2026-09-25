@@ -1,17 +1,18 @@
-import React, { useRef, useState } from "react";
-import { ColorPalette } from "../../../interfaces/temas/temas";
+import type React from 'react'
+import { useRef, useState } from 'react'
+import type { ColorPalette } from '../../../interfaces/temas/temas'
 import {
   createTitleEditHandlers,
   TITLE_LIMITS,
-} from "../../../utils/titleUtils";
+} from '../../../utils/titleUtils'
 
 interface TitleProps {
-  title: string;
-  version: string;
-  theme: ColorPalette;
-  chatId?: string;
-  onUpdateChatTitle?: (chatId: string, newTitle: string) => void;
-  editable?: boolean;
+  title: string
+  version: string
+  theme: ColorPalette
+  chatId?: string
+  onUpdateChatTitle?: (chatId: string, newTitle: string) => void
+  editable?: boolean
 }
 
 const Title: React.FC<TitleProps> = ({
@@ -22,51 +23,51 @@ const Title: React.FC<TitleProps> = ({
   onUpdateChatTitle,
   editable = false,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState("");
-  const editInputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState('')
+  const editInputRef = useRef<HTMLInputElement | null>(null)
 
   const { handleEditKeyDown, truncateTitle } = createTitleEditHandlers({
     maxLength: TITLE_LIMITS.TOOLBAR,
     onUpdateTitle: (id, newTitle) => {
       if (onUpdateChatTitle && id) {
-        onUpdateChatTitle(id, newTitle);
+        onUpdateChatTitle(id, newTitle)
       }
     },
-  });
+  })
 
   const handleEditClick = () => {
     if (editable && chatId) {
-      setIsEditing(true);
-      setEditValue(title);
+      setIsEditing(true)
+      setEditValue(title)
       queueMicrotask(() => {
-        editInputRef.current?.focus();
-        editInputRef.current?.select();
-      });
+        editInputRef.current?.focus()
+        editInputRef.current?.select()
+      })
     }
-  };
+  }
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditValue(e.target.value);
-  };
+    setEditValue(e.target.value)
+  }
 
   const handleEditBlur = () => {
     if (isEditing && editValue.trim() && chatId && onUpdateChatTitle) {
-      onUpdateChatTitle(chatId, editValue);
+      onUpdateChatTitle(chatId, editValue)
     }
-    setIsEditing(false);
-  };
+    setIsEditing(false)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (chatId) {
       handleEditKeyDown(e, chatId, editValue, () => {
-        setIsEditing(false);
-        if (e.key === "Escape") {
-          setEditValue(title);
+        setIsEditing(false)
+        if (e.key === 'Escape') {
+          setEditValue(title)
         }
-      });
+      })
     }
-  };
+  }
 
   return (
     <div className="flex items-end">
@@ -91,17 +92,17 @@ const Title: React.FC<TitleProps> = ({
       ) : (
         <h1
           className={`text-2xl sm:text-3xl md:text-4xl font-bold text-center ${
-            editable && chatId ? "cursor-pointer hover:opacity-80" : ""
+            editable && chatId ? 'cursor-pointer hover:opacity-80' : ''
           }`}
           style={{ color: theme.title.color }}
           onClick={handleEditClick}
           onKeyDown={(e) => {
-            if ((e.key === "Enter" || e.key === " ") && editable && chatId)
-              handleEditClick();
+            if ((e.key === 'Enter' || e.key === ' ') && editable && chatId)
+              handleEditClick()
           }}
-          role={editable && chatId ? "button" : undefined}
+          role={editable && chatId ? 'button' : undefined}
           tabIndex={editable && chatId ? 0 : undefined}
-          title={editable ? "Haz clic para editar el título" : undefined}
+          title={editable ? 'Haz clic para editar el título' : undefined}
         >
           {truncateTitle(title, TITLE_LIMITS.TOOLBAR)}
         </h1>
@@ -110,7 +111,7 @@ const Title: React.FC<TitleProps> = ({
         {version}
       </span>
     </div>
-  );
-};
+  )
+}
 
-export default Title;
+export default Title

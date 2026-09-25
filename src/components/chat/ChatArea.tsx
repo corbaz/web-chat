@@ -1,14 +1,20 @@
-import React, { useRef, useEffect } from "react";
-import { ColorPalette } from "../../interfaces/temas/temas";
-import ChatMessage from "../chat/ChatMessage";
-import { ChatMessageType } from "../../interfaces/chat/chatTypes";
+import type React from 'react'
+import { useEffect, useRef } from 'react'
+import { supportsWebSearch } from '../../config/webSearch'
+import type { ChatMessageType } from '../../interfaces/chat/chatTypes'
+import type { ColorPalette } from '../../interfaces/temas/temas'
+import ChatMessage from '../chat/ChatMessage'
 
 interface ChatAreaProps {
-  messages: ChatMessageType[];
-  isLoading: boolean;
-  theme: ColorPalette;
-  isDarkTheme: boolean;
-  onRepeatMessage?: (message: string) => void;
+  messages: ChatMessageType[]
+  isLoading: boolean
+  theme: ColorPalette
+  isDarkTheme: boolean
+  onRepeatMessage?: (message: string) => void
+  onDeleteMessage?: (messageId: string) => void
+  searchEnabled?: boolean
+  selectedModel?: string
+  selectedProvider?: string
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -17,44 +23,48 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   theme,
   isDarkTheme,
   onRepeatMessage,
+  onDeleteMessage,
+  searchEnabled = true,
+  selectedModel,
+  selectedProvider,
 }) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isInitialMount = useRef(true)
 
   // Hacer scroll al fondo absoluto cuando cambian los mensajes
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    const el = containerRef.current
+    if (!el) return
 
     if (isInitialMount.current) {
       // Primer mount: esperar layout y llevar directo al fondo
       // Luego estabilizar el fondo durante varios frames por si el contenido sigue creciendo
       const stabilizeBottom = () => {
-        let frames = 0;
-        const maxFrames = 24; // ~400ms a 60fps
+        let frames = 0
+        const maxFrames = 24 // ~400ms a 60fps
         const step = () => {
-          const node = containerRef.current;
-          if (!node) return;
-          node.scrollTop = node.scrollHeight;
-          frames++;
-          if (frames < maxFrames) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      };
+          const node = containerRef.current
+          if (!node) return
+          node.scrollTop = node.scrollHeight
+          frames++
+          if (frames < maxFrames) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+      }
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
-          stabilizeBottom();
-          isInitialMount.current = false;
-        });
-      });
+          el.scrollTop = el.scrollHeight
+          stabilizeBottom()
+          isInitialMount.current = false
+        })
+      })
     } else {
       // Nuevos mensajes: scroll suave
-      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }
-  }, [messages]);
+  }, [messages, isLoading])
 
   return (
     <div className="flex justify-center w-full h-full">
@@ -68,43 +78,72 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         aria-relevant="additions"
       >
         {messages.map((message, index) => (
-          <div key={message.id} className={index === 0 ? "mt-4" : ""}>
+          <div key={message.id} className={index === 0 ? 'mt-4' : ''}>
             <ChatMessage
               message={message}
               theme={theme}
               isDarkTheme={isDarkTheme}
               onRepeatMessage={onRepeatMessage}
+              onDeleteMessage={onDeleteMessage}
+              isDeleteDisabled={isLoading}
             />
           </div>
         ))}
 
         {isLoading && (
           <div
-            className="flex justify-center items-center p-3 rounded-lg my-24"
+            className="flex flex-col items-center justify-center p-3.5 rounded-2xl my-12 gap-2 mx-auto max-w-[200px]"
             style={{
               backgroundColor: theme.messages.user.background,
+              boxShadow: theme.shadow.sm,
             }}
           >
-            <div className="flex items-center gap-2 p-2">
-              <span
-                className="size-2.5 rounded-full inline-block opacity-60 animate-typing"
-                style={{
-                  backgroundColor: theme.messages.user.text,
-                }}
-              ></span>
-              <span
-                className="size-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]"
-                style={{
-                  backgroundColor: theme.messages.user.text,
-                }}
-              ></span>
-              <span
-                className="size-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]"
-                style={{
-                  backgroundColor: theme.messages.user.text,
-                }}
-              ></span>
-            </div>
+            {selectedModel &&
+            supportsWebSearch(selectedModel, selectedProvider) &&
+            searchEnabled &&
+            selectedModel !== 'groq/compound-mini' ? (
+              <div
+                className="flex items-center gap-1.5 text-xs font-semibold animate-pulse"
+                style={{ color: theme.accent }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4 animate-spin"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                  <path d="M2 12h20" />
+                </svg>
+                <span>Buscando en la web...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-2">
+                <span
+                  className="size-2.5 rounded-full inline-block opacity-60 animate-typing"
+                  style={{
+                    backgroundColor: theme.messages.user.text,
+                  }}
+                ></span>
+                <span
+                  className="size-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[200ms]"
+                  style={{
+                    backgroundColor: theme.messages.user.text,
+                  }}
+                ></span>
+                <span
+                  className="size-2.5 rounded-full inline-block opacity-60 animate-typing animation-delay-[400ms]"
+                  style={{
+                    backgroundColor: theme.messages.user.text,
+                  }}
+                ></span>
+              </div>
+            )}
           </div>
         )}
 
@@ -112,7 +151,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <div ref={messagesEndRef} />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ChatArea;
+export default ChatArea

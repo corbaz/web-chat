@@ -9,9 +9,9 @@
  */
 export const formatResponseTime = (milliseconds: number): string => {
   if (milliseconds < 1000) {
-    return `${milliseconds}ms`;
+    return `${milliseconds}ms`
   } else {
-    const seconds = (milliseconds / 1000).toFixed(2);
-    return `${seconds}s`;
+    const seconds = (milliseconds / 1000).toFixed(2)
+    return `${seconds}s`
   }
-};
+}

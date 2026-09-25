@@ -248,6 +248,28 @@ API Key: https://console.groq.com/keys [![Groq](https://img.shields.io/badge/Gro
 
 ---
 
+### Catálogo dinámico de modelos
+
+La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar la app y cada vez que se agrega o cambia una API key (evento `apikey-changed`). El resultado se guarda en `localStorage` (`modelCatalog:v1:<proveedor>`), así que la app arranca con la última lista conocida y la actualiza en segundo plano. Si la API falla o devuelve una lista vacía, se conserva la lista anterior o, en su defecto, el catálogo estático de `src/components/HEADER/models/`.
+
+| Proveedor | Endpoint | Key | Filtro |
+|---|---|---|---|
+| OpenCode Zen free | `opencode.ai/zen/v1/models` | No | IDs `-free` o `big-pickle` que usan `/chat/completions` |
+| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos pagos de chat (se excluye `jev-*`) |
+| OpenCode Go | `opencode.ai/zen/go/v1/models` | Sí | Todos |
+| Groq | `api.groq.com/openai/v1/models` | Sí | Activos, sin audio, TTS ni guards |
+| Gemini | `generativelanguage.googleapis.com/v1beta/models` | Sí | Solo Flash / Flash Lite con `generateContent` |
+| OpenAI | `api.openai.com/v1/models` | Sí | `gpt-*`, `chatgpt-*` y serie o, sin snapshots fechados |
+| Anthropic | `api.anthropic.com/v1/models` | Sí | Todos |
+
+RouteLLM usa solo su catálogo estático.
+
+Los modelos que ya están en el catálogo estático conservan sus metadatos (nombre, contexto, precio); los nuevos se muestran con un nombre derivado del ID. En OpenCode Zen, el endpoint de chat depende de la familia del modelo (`src/services/modelCatalog/zenRoute.ts`): Claude y Qwen usan `/messages`, GPT, Grok y Muse usan `/responses`, Gemini usa `/models/<id>` y el resto `/chat/completions`.
+
+Código: `src/services/modelCatalog/`. Tests: `bun test`.
+
+---
+
 ### Repositorio en GitHub
 Repositorio: https://github.com/corbaz/web-chat [![GitHub](https://img.shields.io/badge/GitHub-Repo-blue?style=flat&logo=github)](https://github.com/corbaz/web-chat)
 
