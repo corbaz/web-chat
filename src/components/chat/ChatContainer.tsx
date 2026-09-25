@@ -22,6 +22,12 @@ import {
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import {
+  markModelUnavailable,
+  PROVIDER_IDS,
+} from '../../services/modelCatalog/store'
+import type { ProviderId } from '../../services/modelCatalog/types'
+import { isModelUnavailableMessage } from '../../services/modelCatalog/unavailableModels'
+import {
   FOOTER_HEIGHT_MOBILE,
   HEADER_HEIGHT_MOBILE,
 } from '../../utils/layoutConstants'
@@ -950,6 +956,21 @@ const ChatContainer = ({
               }`
             }
           }
+        }
+
+        // Modelo rechazado como no usable (bloqueado, retirado, sin acceso):
+        // se oculta del selector para no volver a elegirlo por error.
+        const rawServerMessage =
+          axios.isAxiosError(error) && error.response
+            ? getApiErrorMessage(error.response.data)
+            : ''
+        if (
+          rawServerMessage &&
+          isModelUnavailableMessage(rawServerMessage) &&
+          PROVIDER_IDS.includes(provider as ProviderId)
+        ) {
+          markModelUnavailable(provider as ProviderId, selectedModel)
+          errorMessage += `\n\nEl modelo ${selectedModel} se ocultó del selector porque ${providerConfig?.name || 'el proveedor'} no permite usarlo con tu cuenta. Vuelve a aparecer si guardas de nuevo la API key.`
         }
 
         // Añadir mensaje de error

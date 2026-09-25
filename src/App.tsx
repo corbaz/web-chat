@@ -16,7 +16,13 @@ import {
   TOOLS_STORAGE_KEY,
 } from './interfaces/chat/chatTypes'
 import { darkTheme, lightTheme } from './interfaces/temas/temas.tsx'
-import { getModels, initModelCatalog } from './services/modelCatalog/store'
+import {
+  PROVIDER_IDS as CATALOG_PROVIDER_IDS,
+  getModels,
+  initModelCatalog,
+} from './services/modelCatalog/store'
+import type { ProviderId } from './services/modelCatalog/types'
+import { useModelCatalog } from './services/modelCatalog/useModelCatalog'
 import { generateLayoutCSS } from './utils/layoutConstants'
 import { setupMobileKeyboardHandler } from './utils/mobileUtils'
 
@@ -101,6 +107,21 @@ export const App = () => {
     )
     return models[0]?.id || selectedModel
   }
+
+  // Si el modelo elegido desaparece del catálogo (refresh o modelo rechazado
+  // por el proveedor), se pasa al primero disponible del mismo proveedor.
+  const providerModels = useModelCatalog(
+    CATALOG_PROVIDER_IDS.includes(selectedProvider as ProviderId)
+      ? (selectedProvider as ProviderId)
+      : 'groq',
+  )
+  useEffect(() => {
+    if (providerModels.length === 0) return
+    if (providerModels.some((model) => model.id === selectedModel)) return
+    const fallback = providerModels[0].id
+    setSelectedModel(fallback)
+    localStorage.setItem('selectedModel', fallback)
+  }, [providerModels, selectedModel])
 
   const handleProviderChange = (providerId: string) => {
     setSelectedProvider(providerId)

@@ -16,6 +16,10 @@ import { readCatalogCache, writeCatalogCache } from './cache'
 import { mergeWithStatic } from './mergeWithStatic'
 import { FETCHER_REGISTRY } from './registry'
 import type { CatalogModel, ProviderId } from './types'
+import {
+  readUnavailableModels,
+  writeUnavailableModels,
+} from './unavailableModels'
 
 export const PROVIDER_IDS: ProviderId[] = [
   'groq',
@@ -51,6 +55,32 @@ const catalog: Record<ProviderId, CatalogModel[]> = PROVIDER_IDS.reduce(
   {} as Record<ProviderId, CatalogModel[]>,
 )
 
+// Modelos ocultos porque el proveedor los rechazó como no usables (ver
+// unavailableModels.ts). `visible` se recalcula en cada cambio para que
+// getModels devuelva siempre la misma referencia entre notificaciones
+// (requisito de useSyncExternalStore).
+const unavailable: Record<ProviderId, Set<string>> = PROVIDER_IDS.reduce(
+  (acc, provider) => {
+    acc[provider] = readUnavailableModels(provider)
+    return acc
+  },
+  {} as Record<ProviderId, Set<string>>,
+)
+
+function computeVisible(provider: ProviderId): CatalogModel[] {
+  const hidden = unavailable[provider]
+  if (hidden.size === 0) return catalog[provider]
+  return catalog[provider].filter((model) => !hidden.has(model.id))
+}
+
+const visible: Record<ProviderId, CatalogModel[]> = PROVIDER_IDS.reduce(
+  (acc, provider) => {
+    acc[provider] = computeVisible(provider)
+    return acc
+  },
+  {} as Record<ProviderId, CatalogModel[]>,
+)
+
 type Listener = () => void
 const listeners = new Set<Listener>()
 
@@ -58,6 +88,8 @@ let version = 0
 let allModelsCache: { version: number; models: CatalogModel[] } | null = null
 
 function notify(): void {
+  for (const provider of PROVIDER_IDS)
+    visible[provider] = computeVisible(provider)
   version += 1
   for (const listener of listeners) listener()
   try {
@@ -76,14 +108,34 @@ export function subscribeToModelCatalog(listener: Listener): () => void {
 }
 
 export function getModels(provider: ProviderId): CatalogModel[] {
-  return catalog[provider]
+  return visible[provider]
+}
+
+/** Oculta un modelo que el proveedor rechazó como no usable. */
+export function markModelUnavailable(provider: ProviderId, id: string): void {
+  if (unavailable[provider].has(id)) return
+  unavailable[provider].add(id)
+  writeUnavailableModels(provider, unavailable[provider])
+  notify()
+}
+
+/** Vuelve a mostrar todos los modelos ocultos (p. ej. al cambiar una key). */
+export function clearUnavailableModels(): void {
+  let changed = false
+  for (const provider of PROVIDER_IDS) {
+    if (unavailable[provider].size === 0) continue
+    unavailable[provider].clear()
+    writeUnavailableModels(provider, unavailable[provider])
+    changed = true
+  }
+  if (changed) notify()
 }
 
 export function getAllModels(): CatalogModel[] {
   if (allModelsCache && allModelsCache.version === version) {
     return allModelsCache.models
   }
-  const models = PROVIDER_IDS.flatMap((provider) => catalog[provider])
+  const models = PROVIDER_IDS.flatMap((provider) => visible[provider])
   allModelsCache = { version, models }
   return models
 }
@@ -92,9 +144,9 @@ export function findModel(
   id: string,
   provider?: ProviderId,
 ): CatalogModel | undefined {
-  if (provider) return catalog[provider].find((model) => model.id === id)
+  if (provider) return visible[provider].find((model) => model.id === id)
   for (const p of PROVIDER_IDS) {
-    const found = catalog[p].find((model) => model.id === id)
+    const found = visible[p].find((model) => model.id === id)
     if (found) return found
   }
   return undefined
@@ -156,6 +208,9 @@ export function initModelCatalog(): void {
   }
   void refreshAll()
   window.addEventListener('apikey-changed', () => {
+    // Una key nueva puede habilitar modelos antes rechazados (otro proyecto
+    // o permisos cambiados en la consola del proveedor).
+    clearUnavailableModels()
     void refreshAll()
   })
 }

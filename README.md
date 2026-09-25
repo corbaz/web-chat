@@ -269,6 +269,8 @@ Los modelos que ya están en el catálogo estático conservan sus metadatos (nom
 
 En OpenCode Go (`src/services/modelCatalog/zenRoute.ts`, `goRouteFor`) GPT, Grok y Muse usan `/responses`, MiniMax y Qwen usan `/messages` y el resto `/chat/completions`. Go exige el header `x-opencode-session`, estable por conversación: la app envía el ID del chat. La búsqueda web está desactivada para OpenCode Go y Zen.
 
+Si un proveedor rechaza un modelo que igual aparece en su `/models` (por ejemplo Groq con "blocked at the project level" o un modelo retirado), la app lo oculta del selector y lo recuerda en `localStorage` (`modelCatalog:v1:unavailable:<proveedor>`). Guardar de nuevo una API key vuelve a mostrar todos los modelos ocultos.
+
 Código: `src/services/modelCatalog/`. Tests: `bun test`.
 
 ---
