@@ -1,6 +1,11 @@
 import type React from 'react'
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import type { ColorPalette } from '../../../interfaces/temas/temas'
+import {
+  DEFAULT_OPENCODE_FREE_URL,
+  getOpenCodeFreeServerUrl,
+  setOpenCodeFreeServerUrl,
+} from '../../../services/opencodeLocal/settings'
 
 interface ApiKeyInputProps {
   theme: ColorPalette
@@ -71,6 +76,20 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     ? state.localProvider
     : selectedProvider || state.localProvider
 
+  // Campo extra solo para OpenCode Free: URL del servidor local (T3, ver
+  // odd/tasks/opencode-free-local.md).
+  const [serverUrl, setServerUrl] = useState(() => getOpenCodeFreeServerUrl())
+
+  useEffect(() => {
+    if (provider === 'opencodefree') setServerUrl(getOpenCodeFreeServerUrl())
+  }, [provider])
+
+  const handleServerUrlBlur = () => {
+    setOpenCodeFreeServerUrl(serverUrl)
+    setServerUrl(getOpenCodeFreeServerUrl())
+    window.dispatchEvent(new Event('apikey-changed'))
+  }
+
   const prevProviderRef = useRef<string>(provider)
 
   useEffect(() => {
@@ -125,9 +144,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             ? 'OpenCode Go'
             : id === 'opencodezen'
               ? 'OpenCode Zen'
-              : id === 'gemini'
-                ? 'Gemini'
-                : 'Anthropic'
+              : id === 'opencodefree'
+                ? 'OpenCode Free'
+                : id === 'gemini'
+                  ? 'Gemini'
+                  : 'Anthropic'
 
   const providerLink = (id: string) =>
     id === 'groq'
@@ -140,9 +161,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             ? 'https://opencode.ai/es/go'
             : id === 'opencodezen'
               ? 'https://opencode.ai/docs/zen/'
-              : id === 'gemini'
-                ? 'https://aistudio.google.com/app/apikey'
-                : 'https://console.anthropic.com/settings/keys'
+              : id === 'opencodefree'
+                ? 'https://opencode.ai'
+                : id === 'gemini'
+                  ? 'https://aistudio.google.com/app/apikey'
+                  : 'https://console.anthropic.com/settings/keys'
 
   return (
     <div className="mb-6">
@@ -194,6 +217,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <option value="anthropic">Anthropic</option>
             <option value="opengo">OpenCode Go</option>
             <option value="opencodezen">OpenCode Zen</option>
+            <option value="opencodefree">OpenCode Free</option>
             <option value="gemini">Gemini</option>
           </select>
           {/* Chevron */}
@@ -211,6 +235,32 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         </div>
       </div>
 
+      {/* Servidor local — solo OpenCode Free */}
+      {provider === 'opencodefree' && (
+        <div className="mb-3">
+          <label
+            htmlFor="opencodefree-server-url"
+            className="block text-xs font-medium mb-1.5"
+            style={{ color: theme.textMuted }}
+          >
+            Servidor local
+          </label>
+          <input
+            id="opencodefree-server-url"
+            name="opencodefreeServerUrl"
+            type="text"
+            value={serverUrl}
+            onChange={(e) => setServerUrl(e.target.value)}
+            onBlur={handleServerUrlBlur}
+            placeholder={DEFAULT_OPENCODE_FREE_URL}
+            className="w-full px-3 py-2.5 text-sm"
+            style={nmInputStyle}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+      )}
+
       {/* API Key field */}
       <div className="space-y-2">
         <div className="relative">
@@ -221,7 +271,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             value={state.apiKey}
             readOnly
             placeholder={
-              state.apiKey ? '' : `Sin API Key de ${providerName(provider)}`
+              state.apiKey
+                ? ''
+                : provider === 'opencodefree'
+                  ? 'Sin contraseña del servidor local'
+                  : `Sin API Key de ${providerName(provider)}`
             }
             className="w-full px-3 py-2.5 pr-10 text-sm cursor-default"
             style={{

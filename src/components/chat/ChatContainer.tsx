@@ -29,6 +29,19 @@ import {
 import type { ProviderId } from '../../services/modelCatalog/types'
 import { isModelUnavailableMessage } from '../../services/modelCatalog/unavailableModels'
 import {
+  createSession as createOpenCodeFreeSession,
+  sendMessage as sendOpenCodeFreeMessage,
+} from '../../services/opencodeLocal/client'
+import { askOpenCodeFreePermission } from '../../services/opencodeLocal/permissionModal'
+import {
+  getOpenCodeFreeSessionId,
+  setOpenCodeFreeSessionId,
+} from '../../services/opencodeLocal/sessionMap'
+import {
+  getOpenCodeFreePassword,
+  getOpenCodeFreeServerUrl,
+} from '../../services/opencodeLocal/settings'
+import {
   FOOTER_HEIGHT_MOBILE,
   HEADER_HEIGHT_MOBILE,
 } from '../../utils/layoutConstants'
@@ -535,6 +548,124 @@ const ChatContainer = ({
 
       const providerConfig = getProviderConfig(provider)
 
+      // OpenCode Free (servidor local, ver odd/tasks/opencode-free-local.md):
+      // no encaja en el flujo axios/payloadBuilder genérico de abajo (una
+      // sesión por chat, historial en el servidor, permisos bloqueantes), así
+      // que se maneja aparte y se retorna antes de llegar a ese flujo.
+      if (provider === 'opencodefree') {
+        const baseUrl = getOpenCodeFreeServerUrl()
+        const password = getOpenCodeFreePassword()
+
+        if (!password.trim()) {
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content:
+              'Falta la password de OpenCode Free. Guárdala en el menú de configuración antes de enviar mensajes.',
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+          return
+        }
+
+        try {
+          const appChatId = currentChatId || requestId
+          let sessionId = getOpenCodeFreeSessionId(appChatId)
+          if (!sessionId) {
+            sessionId = await createOpenCodeFreeSession(
+              baseUrl,
+              password,
+              appChatId,
+            )
+            setOpenCodeFreeSessionId(appChatId, sessionId)
+          }
+
+          // Solo se envía el último mensaje: OpenCode mantiene el historial
+          // del lado del servidor por sessionId (ver Scope en el feature doc).
+          const result = await sendOpenCodeFreeMessage(
+            baseUrl,
+            password,
+            sessionId,
+            selectedModel,
+            filteredContent,
+            {
+              onPermission: (permission) =>
+                askOpenCodeFreePermission(theme, isDarkTheme, permission),
+            },
+          )
+
+          const filteredFreeResponse = result.text
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim()
+
+          if (!filteredFreeResponse) {
+            throw new Error('EMPTY_PROVIDER_RESPONSE')
+          }
+
+          const endTime = Date.now()
+          const responseTime =
+            endTime - (requestStartTimeRef.current[requestId] || endTime)
+          const formattedTime = formatResponseTime(responseTime)
+
+          const assistantMessage: ChatMessageType = {
+            id: `assistant_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: filteredFreeResponse,
+            timestamp: Date.now(),
+            responseTime: formattedTime,
+            tokensUsed: result.tokens.input,
+            tokenLimit: getModelTokenLimit(selectedModel, provider),
+            modelName: selectedModel,
+            requestedModelId: selectedModel,
+            promptTokens: result.tokens.input,
+            completionTokens: result.tokens.output,
+          }
+
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            assistantMessage,
+          ])
+        } catch (error) {
+          let errorMessage =
+            'Error al obtener respuesta. Por favor, intenta de nuevo.'
+          if (
+            error instanceof Error &&
+            error.message === 'EMPTY_PROVIDER_RESPONSE'
+          ) {
+            errorMessage =
+              'OpenCode Free devolvió una respuesta sin texto. No se guardó como respuesta válida; vuelve a intentarlo.'
+          } else if (error instanceof Error && error.message) {
+            errorMessage = `OpenCode Free: ${error.message}`
+          }
+
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: errorMessage,
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+        } finally {
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+        }
+        return
+      }
+
       try {
         if (
           (provider === 'opengo' || provider === 'opencodezen') &&
@@ -1025,6 +1156,8 @@ const ChatContainer = ({
       setMessages,
       prepareMessagesForApi,
       searchEnabled,
+      theme,
+      isDarkTheme,
     ],
   )
 

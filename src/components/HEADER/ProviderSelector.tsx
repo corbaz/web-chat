@@ -22,6 +22,7 @@ const allProviders: ProviderOption[] = [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'opengo', label: 'OpenCode Go' },
   { value: 'opencodezen', label: 'OpenCode Zen' },
+  { value: 'opencodefree', label: 'OpenCode Free' },
   { value: 'gemini', label: 'Gemini' },
 ]
 

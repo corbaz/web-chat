@@ -268,7 +268,12 @@ const Footer: React.FC<FooterProps> = ({
   }
 
   const handleMagicButton = async () => {
-    if (message.trim() && !isLoading && !isMagicLoading) {
+    if (
+      message.trim() &&
+      !isLoading &&
+      !isMagicLoading &&
+      selectedProvider !== 'opencodefree'
+    ) {
       try {
         setIsMagicLoading(true)
         let modelToUse: string = selectedModel || 'openai/gpt-oss-120b'
@@ -499,7 +504,11 @@ ${message}`
 
   const canClearText = message.trim() && !isLoading
   const canSend = (message.trim() || pendingImages.length > 0) && !isLoading
-  const canMagic = message.trim() && !isLoading && !isMagicLoading
+  const canMagic =
+    message.trim() &&
+    !isLoading &&
+    !isMagicLoading &&
+    selectedProvider !== 'opencodefree'
 
   return (
     <footer

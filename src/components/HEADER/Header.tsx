@@ -4,6 +4,7 @@ import type { ColorPalette } from '../../interfaces/temas/temas'
 import ModelSelector from './ModelSelector'
 import MenuButton from './menu/MenuButton'
 import Title from './menu/Title'
+import { OpenCodeFreeStatus } from './OpenCodeFreeStatus'
 import ProviderSelector from './ProviderSelector'
 
 interface HeaderProps {
@@ -45,6 +46,7 @@ const Header: React.FC<HeaderProps> = ({
         'anthropic',
         'opengo',
         'opencodezen',
+        'opencodefree',
         'gemini',
       ]
       for (const provider of providers) {
@@ -102,10 +104,14 @@ const Header: React.FC<HeaderProps> = ({
                 providerFilter={selectedProvider}
               />
             </div>
-            <div className="w-auto">
+            <div className="w-auto flex items-center gap-1.5">
               <ProviderSelector
                 selectedProvider={selectedProvider}
                 onProviderChange={handleProviderChange}
+                theme={theme}
+              />
+              <OpenCodeFreeStatus
+                active={selectedProvider === 'opencodefree'}
                 theme={theme}
               />
             </div>

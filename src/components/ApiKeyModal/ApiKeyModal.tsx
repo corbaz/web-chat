@@ -3,6 +3,14 @@ import Swal from 'sweetalert2'
 import { isOpenCodeAvailable } from '../../config/providers'
 import { APP_VERSION } from '../../constants/appVersion'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import {
+  checkServer,
+  type ServerCheck,
+} from '../../services/opencodeLocal/client'
+
+// Último diagnóstico del servidor local de OpenCode Free, para elegir el
+// mensaje de error (contraseña incorrecta vs. servidor inalcanzable).
+let lastOpenCodeFreeCheck: ServerCheck = 'unreachable'
 
 interface ApiKeyModalProps {
   theme: ColorPalette
@@ -37,6 +45,11 @@ const PROVIDERS = [
     id: 'opencodezen',
     name: 'OpenCode Zen',
     link: 'https://opencode.ai/docs/zen/',
+  },
+  {
+    id: 'opencodefree',
+    name: 'OpenCode Free',
+    link: 'https://opencode.ai',
   },
   {
     id: 'gemini',
@@ -170,6 +183,15 @@ const validateApiKey = async (
         clearTimeout(timeoutId)
         return false
       }
+    } else if (provider === 'opencodefree') {
+      // GET /global/health exige Basic auth (verificado en vivo
+      // 2026-09-26: sin credenciales devuelve 401), así que se valida la
+      // password real contra el servidor local configurado.
+      const baseUrl =
+        localStorage.getItem('opencodefreeServerUrl')?.trim() ||
+        'http://127.0.0.1:4096'
+      lastOpenCodeFreeCheck = await checkServer(baseUrl, apiKey.trim())
+      return lastOpenCodeFreeCheck === 'ok'
     } else if (provider === 'gemini') {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -191,6 +213,15 @@ const validateApiKey = async (
   } catch {
     return false
   }
+}
+
+// OpenCode Free no usa API key sino la contraseña del servidor local.
+const confirmLabelFor = (provider: string): string =>
+  provider === 'opencodefree' ? 'Guardar contraseña' : 'Guardar API Key'
+
+const setConfirmLabel = (provider: string): void => {
+  const button = Swal.getConfirmButton()
+  if (button) button.textContent = confirmLabelFor(provider)
 }
 
 type ModalState = {
@@ -340,7 +371,7 @@ const ApiKeyModal = ({
           allowEscapeKey: false,
           showCloseButton: hasAnyKey,
           showCancelButton: false,
-          confirmButtonText: 'Guardar API Key',
+          confirmButtonText: confirmLabelFor(defaultProvider),
           confirmButtonColor: theme.button.background,
           background: theme.background,
           color: theme.text,
@@ -540,7 +571,11 @@ const ApiKeyModal = ({
               labelEl.textContent = providerMeta.name
               link.href = providerMeta.link
               link.textContent = providerMeta.name
-              input.placeholder = `Ingresa tu API Key de ${providerMeta.name}`
+              input.placeholder =
+                providerMeta.id === 'opencodefree'
+                  ? 'Contraseña del servidor local'
+                  : `Ingresa tu API Key de ${providerMeta.name}`
+              setConfirmLabel(providerMeta.id)
               const savedKey = localStorage.getItem(`${initialProvider}ApiKey`)
               if (savedKey) {
                 input.value = savedKey
@@ -601,7 +636,11 @@ const ApiKeyModal = ({
                   labelEl.textContent = p.name
                   link.href = p.link
                   link.textContent = p.name
-                  input.placeholder = `Ingresa tu API Key de ${p.name}`
+                  input.placeholder =
+                    p.id === 'opencodefree'
+                      ? 'Contraseña del servidor local'
+                      : `Ingresa tu API Key de ${p.name}`
+                  setConfirmLabel(p.id)
                   const existing = localStorage.getItem(`${p.id}ApiKey`)
                   input.value = existing || ''
                   updateOptionStyles()
@@ -780,15 +819,18 @@ const ApiKeyModal = ({
             // Validar que no esté vacío
             if (!apiKey || apiKey.trim() === '') {
               Swal.showValidationMessage(
-                `Por favor, ingresa una API Key válida`,
+                provider === 'opencodefree'
+                  ? 'Por favor, ingresa la contraseña del servidor local'
+                  : `Por favor, ingresa una API Key válida`,
               )
               applyErrorStyles()
               apiKeyInput?.focus()
               return false
             }
 
-            // Validar longitud mínima
-            if (apiKey.trim().length < 20) {
+            // Validar longitud mínima (no aplica a la contraseña del servidor
+            // local de OpenCode Free: la valida el propio servidor).
+            if (provider !== 'opencodefree' && apiKey.trim().length < 20) {
               Swal.showValidationMessage(
                 `La API Key parece demasiado corta. Verifica que sea correcta`,
               )
@@ -808,7 +850,11 @@ const ApiKeyModal = ({
               const errorMsg =
                 provider === 'anthropic'
                   ? `API Key de Anthropic inválida. Debe comenzar con "sk-ant-". Por favor, verifica e intenta de nuevo.`
-                  : `API Key inválida. Por favor, verifica e intenta de nuevo.`
+                  : provider === 'opencodefree'
+                    ? lastOpenCodeFreeCheck === 'unauthorized'
+                      ? `Contraseña incorrecta. No es la API key de Zen: usá la contraseña de %LOCALAPPDATA%\\prompting\\opencode-free\\password.txt (o corré "bun run opencode:free:password" para copiarla al portapapeles).`
+                      : `No se pudo conectar con el servidor local. Verificá que esté corriendo ("bun run opencode:free:install") y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
+                    : `API Key inválida. Por favor, verifica e intenta de nuevo.`
               Swal.showValidationMessage(errorMsg)
               applyErrorStyles()
               if (apiKeyInput) apiKeyInput.value = ''
@@ -838,9 +884,12 @@ const ApiKeyModal = ({
           // Mostrar confirmación de guardado
           Swal.fire({
             title: '¡Guardada!',
-            text: `Tu API Key de ${
-              PROVIDERS.find((p) => p.id === provider)?.name || provider
-            } ha sido guardada.`,
+            text:
+              provider === 'opencodefree'
+                ? 'La contraseña del servidor local de OpenCode Free ha sido guardada.'
+                : `Tu API Key de ${
+                    PROVIDERS.find((p) => p.id === provider)?.name || provider
+                  } ha sido guardada.`,
             icon: 'success',
             background: theme.background,
             color: theme.text,

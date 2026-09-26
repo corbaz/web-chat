@@ -33,6 +33,7 @@ const PROVIDER_IDS = [
   'anthropic',
   'opengo',
   'opencodezen',
+  'opencodefree',
   'gemini',
 ] as const
 
@@ -55,9 +56,6 @@ export const App = () => {
 
   const getInitialProvider = () => {
     const stored = localStorage.getItem('selectedProvider')
-    // Un `selectedProvider` heredado de 'opencodefree' (proveedor retirado,
-    // ver T8) se trata como si no hubiera valor guardado: nunca coincide con
-    // ningún elemento de PROVIDER_IDS, así que cae al loop de abajo.
     if (stored) {
       if (!isOpenCodeGatedProvider(stored) || isOpenCodeAvailable()) {
         const key = localStorage.getItem(`${stored}ApiKey`)

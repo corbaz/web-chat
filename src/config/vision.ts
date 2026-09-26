@@ -30,6 +30,9 @@ function fallbackSupportsVision(modelId: string, provider: string): boolean {
       )
     case 'opengo':
       return modelId.includes('vision') || modelId.includes('omni')
+    case 'opencodefree':
+      // Sin imágenes en v1 (ver odd/tasks/opencode-free-local.md).
+      return false
     default:
       return false
   }

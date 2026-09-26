@@ -7,6 +7,7 @@ import { anthropicModels } from '../../components/HEADER/models/anthropicModels'
 import { geminiModels } from '../../components/HEADER/models/geminiModels'
 import { groqModels } from '../../components/HEADER/models/groqModels'
 import { openaiModels } from '../../components/HEADER/models/openaiModels'
+import { opencodeFreeModels } from '../../components/HEADER/models/opencodeFreeModels'
 import { opencodeZenModels } from '../../components/HEADER/models/opencodeZenModels'
 import { opengoModels } from '../../components/HEADER/models/opengoModels'
 import { fetchAnthropicModelIds } from './fetchers/anthropicFetcher'
@@ -14,6 +15,7 @@ import { fetchGeminiModelIds } from './fetchers/geminiFetcher'
 import { fetchGroqModelIds } from './fetchers/groqFetcher'
 import { fetchOpenAIModelIds } from './fetchers/openaiFetcher'
 import { fetchOpenCodeGoModelIds } from './fetchers/openCodeGoFetcher'
+import { fetchOpenCodeFreeModelIds } from './fetchers/opencodeFreeFetcher'
 import { fetchOpenCodeZenModelIds } from './fetchers/zenFetcher'
 import type { CatalogModel, ProviderId } from './types'
 
@@ -54,6 +56,11 @@ export const FETCHER_REGISTRY: Partial<Record<ProviderId, ProviderFetcher>> = {
   opencodezen: {
     fetchIds: fetchOpenCodeZenModelIds,
     staticModels: opencodeZenModels,
+    requiresKey: true,
+  },
+  opencodefree: {
+    fetchIds: fetchOpenCodeFreeModelIds,
+    staticModels: opencodeFreeModels,
     requiresKey: true,
   },
 }

@@ -34,7 +34,11 @@
     "preview": "vite preview --host",
     "deploy": "surge docs --domain deepchat.surge.sh",
     "deploy:vercel": "vercel deploy --prod",
-    "update:vision": "bun scripts/update-vision-models.ts"
+    "update:vision": "bun scripts/update-vision-models.ts",
+    "opencode:free": "bun scripts/opencode-free/start.ts",
+    "opencode:free:install": "bun scripts/opencode-free/install.ts",
+    "opencode:free:uninstall": "bun scripts/opencode-free/uninstall.ts",
+    "opencode:free:password": "bun scripts/opencode-free/password.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",

@@ -10,6 +10,7 @@ export type ProviderId =
   | 'anthropic'
   | 'opengo'
   | 'opencodezen'
+  | 'opencodefree'
   | 'gemini'
 
 export interface CatalogModel {
