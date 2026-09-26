@@ -40,6 +40,11 @@ describe('isModelUnavailableMessage', () => {
         'Upstream request failed: Model is unavailable.',
       ),
     ).toBe(true)
+    expect(
+      isModelUnavailableMessage(
+        "OpenCode's free tier can only be used from within OpenCode",
+      ),
+    ).toBe(true)
   })
 
   test('no confunde otros errores', () => {

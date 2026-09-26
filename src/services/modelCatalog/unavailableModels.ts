@@ -6,7 +6,7 @@
 import type { ProviderId } from './types'
 
 const UNAVAILABLE_PATTERN =
-  /blocked at the project level|decommissioned|model_not_found|does not exist or you do not have access|do not have access to (the )?model|model is unavailable/i
+  /blocked at the project level|decommissioned|model_not_found|does not exist or you do not have access|do not have access to (the )?model|model is unavailable|free tier can only be used from within opencode/i
 
 /** Indica si un mensaje de error del proveedor significa "modelo no usable". */
 export function isModelUnavailableMessage(message: string): boolean {

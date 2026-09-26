@@ -1,19 +1,22 @@
 // Fetcher/parser de OpenCode Zen (con API key propia de Zen).
 // GET https://opencode.ai/zen/v1/models (Bearer) → {data:[{id}]}.
-// Con key de Zen, el mismo endpoint sirve tanto modelos pagos como los
-// "free" del plan (ids que terminan en "-free" o "big-pickle"): el tier
-// keyless dedicado (proveedor `opencodefree`) fue retirado porque OpenCode
-// Zen ahora rechaza cualquier cliente que no sea OpenCode mismo (ver T8 en
-// odd/tasks/dynamic-model-catalog.md). Solo se descartan los ids sin ruta
-// de chat conocida (ver zenRoute.ts, p. ej. `jev-*`).
+// Se descartan los modelos "free" (ids que terminan en "-free" o
+// "big-pickle"): OpenCode solo los sirve desde su propia app y responde
+// `FreeTierError` a cualquier otro cliente, incluso con API key de Zen
+// (verificado 2026-09-26). También se descartan los ids sin ruta de chat
+// conocida (ver zenRoute.ts, p. ej. `jev-*`).
 
 import { zenRouteFor } from '../zenRoute'
 import { fetchJson, parseDataIds } from './http'
 
 const ZEN_MODELS_URL = 'https://opencode.ai/zen/v1/models'
 
+export function isZenFreeModel(id: string): boolean {
+  return id.endsWith('-free') || id === 'big-pickle'
+}
+
 export function isZenChatModel(id: string): boolean {
-  return zenRouteFor(id) !== null
+  return !isZenFreeModel(id) && zenRouteFor(id) !== null
 }
 
 /** Devuelve solo los IDs de modelos de chat del payload de /zen/v1/models. */
