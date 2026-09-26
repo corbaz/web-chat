@@ -33,7 +33,8 @@
     "build": "tsc -b && vite build --outDir ./docs",
     "preview": "vite preview --host",
     "deploy": "surge docs --domain deepchat.surge.sh",
-    "deploy:vercel": "vercel deploy --prod"
+    "deploy:vercel": "vercel deploy --prod",
+    "update:vision": "bun scripts/update-vision-models.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",

@@ -46,6 +46,8 @@ The app is text-only: `Message.content` is a `string` in `src/config/providers.t
 - [x] T3 Footer paste/attach, preview, downscale; only for vision models.
 - [x] T4 Show images in user messages; strip images from persisted history.
 - [x] T5 README + verification.
+- [x] T6 Vision capability from models.dev (user request 2026-09-25): `scripts/update-vision-models.ts` generates `src/config/visionModels.generated.ts` from https://models.dev/api.json (`modalities.input` includes `image`), mapping groq->groq, openai->openai, anthropic->anthropic, gemini->google, opencodezen->opencode, opengo->opencode-go. `supportsVision`: known vision id -> true, known text-only id -> false, unknown id -> previous heuristics. Snapshot 2026-09-25: Go 26/42 vision, Zen 65/81, Groq 1/4.
+- [x] T7 Vision marker in the model selector: eye icon in `theme.accentAlt` next to vision models (options and selected value), tooltip "Acepta imágenes".
 
 ## Acceptance criteria
 - Pasting an image with a vision model selected shows a preview and sends it; the model answers about it.
@@ -59,6 +61,8 @@ The app is text-only: `Message.content` is a `string` in `src/config/providers.t
   - `bun test`: 65 pass, 0 fail. `bunx tsc -b`: exit 0. Biome: touched files clean (pre-existing warnings only). Build: OK. Payload shapes printed for the four protocols.
   - Notes: GIFs lose animation (canvas captures the first frame).
   - Live check (user, 2026-09-25): Groq `qwen/qwen3.8-27b` answered correctly about a pasted image. Other providers not yet checked live.
+- T6-T7 done: `scripts/update-vision-models.ts` + `bun run update:vision`, generated `src/config/visionModels.generated.ts`, `supportsVision` uses it with prefix fallback; eye icon (`accentAlt`) in ModelSelector options/value and RightMenu list; README updated. `bun test` 63 pass, 0 fail; `bunx tsc -b` exit 0; build OK. Uncommitted.
+  - Risk: models.dev marks many OpenCode Go/Zen models as vision; each still needs a live check (sent through chat, messages or responses routes).
 
 ## Next step
 Optional live checks with a Claude, a GPT and a Gemini model.

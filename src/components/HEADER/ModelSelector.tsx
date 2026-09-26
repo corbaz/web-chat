@@ -9,6 +9,7 @@ import Select, {
   type StylesConfig,
 } from 'react-select'
 
+import { supportsVision } from '../../config/vision'
 import { supportsWebSearch } from '../../config/webSearch'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
@@ -43,6 +44,26 @@ const GlobeIcon: React.FC<{ className?: string }> = ({
     <circle cx="12" cy="12" r="10" />
     <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
     <path d="M2 12h20" />
+  </svg>
+)
+
+// Ojo: marca los modelos que aceptan imágenes (ver config/vision.ts).
+const EyeIcon: React.FC<{ className?: string }> = ({
+  className = 'size-3.5',
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 )
 
@@ -82,7 +103,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       '',
     )
     // ~7.5px por carácter a 0.85rem + padding para indicador
-    const baseWidth = longestLabel.length * 7.5 + 52
+    const baseWidth = longestLabel.length * 7.5 + 52 + 36 // +36: íconos de visión y búsqueda
     const withPadding = Math.round(baseWidth * 1.2)
     return `${Math.max(withPadding, 180)}px`
   }, [filteredModels])
@@ -217,19 +238,34 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             props.data.value,
             props.data.provider,
           )
+          const hasVision = supportsVision(
+            props.data.value,
+            props.data.provider,
+          )
           return (
             <components.Option {...props}>
               <div className="flex items-center justify-between w-full">
                 <span>{props.data.label}</span>
-                {hasSearch && (
-                  <span
-                    className="ml-2 flex items-center shrink-0"
-                    style={{ color: theme.accent }}
-                    title="Búsqueda web nativa disponible"
-                  >
-                    <GlobeIcon />
-                  </span>
-                )}
+                <span className="ml-2 flex items-center gap-1 shrink-0">
+                  {hasVision && (
+                    <span
+                      className="flex items-center"
+                      style={{ color: theme.accentAlt }}
+                      title="Acepta imágenes"
+                    >
+                      <EyeIcon />
+                    </span>
+                  )}
+                  {hasSearch && (
+                    <span
+                      className="flex items-center"
+                      style={{ color: theme.accent }}
+                      title="Búsqueda web nativa disponible"
+                    >
+                      <GlobeIcon />
+                    </span>
+                  )}
+                </span>
               </div>
             </components.Option>
           )
@@ -241,10 +277,23 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             props.data.value,
             props.data.provider,
           )
+          const hasVision = supportsVision(
+            props.data.value,
+            props.data.provider,
+          )
           return (
             <components.SingleValue {...props}>
               <div className="flex items-center gap-1.5">
                 <span>{props.data.label}</span>
+                {hasVision && (
+                  <span
+                    className="flex items-center shrink-0"
+                    style={{ color: theme.accentAlt }}
+                    title="Acepta imágenes"
+                  >
+                    <EyeIcon className="size-3" />
+                  </span>
+                )}
                 {hasSearch && (
                   <span
                     className="flex items-center shrink-0"

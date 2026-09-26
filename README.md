@@ -254,7 +254,7 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 
 | Proveedor | Endpoint | Key | Filtro |
 |---|---|---|---|
-| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos de chat, incluidos los gratis (`-free`, `big-pickle`); se excluye `jev-*` |
+| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos de chat pagos; se excluyen los gratis (`-free`, `big-pickle`) y `jev-*` |
 | OpenCode Go | `opencode.ai/zen/go/v1/models` | Sí | Todos |
 | Groq | `api.groq.com/openai/v1/models` | Sí | Activos, sin audio, TTS ni guards |
 | Gemini | `generativelanguage.googleapis.com/v1beta/models` | Sí | Solo Flash / Flash Lite con `generateContent` |
@@ -263,7 +263,7 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 
 RouteLLM usa solo su catálogo estático.
 
-El acceso a OpenCode Zen sin API key fue retirado: OpenCode rechaza su nivel gratuito fuera de su propia app (`FreeTierError`). Los modelos gratis se usan con la API key de Zen.
+Los modelos gratis de OpenCode Zen no están disponibles en esta app: OpenCode solo los sirve desde su propia app y responde `FreeTierError` a cualquier otro cliente, con o sin API key.
 
 Los modelos que ya están en el catálogo estático conservan sus metadatos (nombre, contexto, precio); los nuevos se muestran con un nombre derivado del ID. En OpenCode Zen, el endpoint de chat depende de la familia del modelo (`src/services/modelCatalog/zenRoute.ts`): Claude y Qwen usan `/messages`, GPT, Grok y Muse usan `/responses`, Gemini usa `/models/<id>` y el resto `/chat/completions`.
 
@@ -279,17 +279,11 @@ Código: `src/services/modelCatalog/`. Tests: `bun test`.
 
 Con un modelo compatible con visión seleccionado aparece un botón de adjuntar en el footer (📎) y se puede pegar una imagen con Ctrl+V; se admiten hasta 4 imágenes por mensaje en `image/png`, `image/jpeg`, `image/webp` e `image/gif`. Las imágenes se redimensionan en el navegador (canvas) a un lado largo máximo de 2048&nbsp;px y, si el base64 resultante supera ~3.5&nbsp;MB, se reenconden a JPEG calidad 0.85 (Groq limita 4&nbsp;MB de base64 por petición). También se puede enviar solo una imagen sin texto: el mensaje viaja con un texto por defecto ("Describe la imagen.") únicamente en la petición a la API, no en lo que se muestra en el chat.
 
-Modelos con visión habilitados (`src/config/vision.ts`, `supportsVision`):
+Qué modelos aceptan imágenes sale de [models.dev](https://models.dev), que publica por modelo las modalidades de entrada. `bun run update:vision` descarga esa información y regenera `src/config/visionModels.generated.ts`; conviene correrlo cuando los proveedores suman modelos. Para un modelo que models.dev todavía no conoce se usa una regla por prefijo (`claude-*`, `gemini-*`, `gpt-4o*`/`gpt-4.1*`/`gpt-5*`/`o3*`/`o4*`, o IDs con `vision`/`omni`).
 
-| Proveedor | Modelos con visión |
-|---|---|
-| Groq | Solo `qwen/qwen3.8-27b` |
-| OpenAI | `gpt-4o*`, `gpt-4.1*`, `gpt-5*`, `o3*`, `o4*` |
-| Anthropic | Todos los `claude-*` |
-| Gemini | Todos |
-| OpenCode Zen | `claude-*`, `gpt-*`, `gemini-*`, o ids con `vision`/`omni` |
-| OpenCode Go | Solo ids con `vision`/`omni` |
-| RouteLLM | Ninguno |
+En el selector de modelos y en el menú derecho, los modelos con visión llevan un ícono de ojo en violeta (`accentAlt` del tema), junto al globo de búsqueda web.
+
+Estado al 2026-09-25: Groq 1 de 4 modelos del catálogo (`qwen/qwen3.8-27b`), OpenCode Go 26 de 42, OpenCode Zen 65 de 81, todos los Claude y los Gemini del catálogo. RouteLLM no tiene modelos con visión.
 
 Con un modelo sin visión no se muestra el botón de adjuntar y pegar una imagen no hace nada especial (el pegado de texto normal sigue funcionando igual). Cada proveedor recibe las imágenes en el formato de su protocolo: `image_url` (Chat Completions: Groq, OpenCode Go/Zen genérico, RouteLLM), `input_image` (Responses API: OpenAI, OpenCode Go/Zen `responses`), bloques `image` en base64 (Anthropic Messages: Anthropic, OpenCode Go/Zen `messages`) o `inline_data` (Gemini `generateContent`: Gemini, OpenCode Zen `gemini`). Si la búsqueda web de Gemini está activa y el mensaje lleva imágenes, la petición usa `generateContent` en vez del endpoint `interactions` de búsqueda, porque este último no acepta imágenes.
 
