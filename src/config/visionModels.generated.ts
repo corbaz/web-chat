@@ -1,6 +1,6 @@
 // Archivo generado por scripts/update-vision-models.ts desde models.dev.
 // No editar a mano: correr `bun run update:vision`.
-// Generado: 2026-09-25
+// Generado: 2026-09-26
 
 export const VISION_MODELS: Record<string, Set<string>> = {
   groq: new Set<string>(['qwen/qwen3.6-27b', 'qwen/qwen3.8-27b']),
@@ -161,6 +161,7 @@ export const VISION_MODELS: Record<string, Set<string>> = {
     'kimi-k2.6',
     'kimi-k2.7-code',
     'kimi-k3',
+    'longcat-2.5-preview-free',
     'mimo-v2-omni-free',
     'mimo-v2.5-free',
     'mimo-v2.6-flash-free',
@@ -191,6 +192,7 @@ export const VISION_MODELS: Record<string, Set<string>> = {
     'kimi-k2.6',
     'kimi-k2.7-code',
     'kimi-k3',
+    'longcat-2.5-preview-free',
     'mimo-v2-omni',
     'mimo-v2.5',
     'mimo-v2.6-flash',

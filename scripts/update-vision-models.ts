@@ -1,9 +1,14 @@
-// Regenera src/config/visionModels.generated.ts a partir de models.dev, que
-// publica por modelo las modalidades de entrada (`modalities.input`).
-// Uso: bun run update:vision
+// Regenera, a partir de models.dev:
+// - src/config/visionModels.generated.ts (modalidades de entrada: visión)
+// - src/config/modelLimits.generated.ts (contexto y salida máxima)
+// Uso: bun run update:models (alias: bun run update:vision)
 
 const SOURCE_URL = 'https://models.dev/api.json'
 const OUTPUT = new URL('../src/config/visionModels.generated.ts', import.meta.url)
+const LIMITS_OUTPUT = new URL(
+  '../src/config/modelLimits.generated.ts',
+  import.meta.url,
+)
 
 // Proveedor de la app -> proveedor en models.dev
 const PROVIDER_MAP = {
@@ -17,6 +22,7 @@ const PROVIDER_MAP = {
 
 interface ModelsDevModel {
   modalities?: { input?: string[] }
+  limit?: { context?: number; output?: number }
 }
 
 const response = await fetch(SOURCE_URL)
@@ -59,6 +65,32 @@ const lines = [
 ]
 
 await Bun.write(OUTPUT, lines.join('\n'))
+
+// Límites: [contexto, salida máxima] por proveedor e ID (0 = sin dato).
+const limits: Record<string, Record<string, [number, number]>> = {}
+for (const [appProvider, devProvider] of Object.entries(PROVIDER_MAP)) {
+  const models = data[devProvider]?.models ?? {}
+  const entries: Record<string, [number, number]> = {}
+  for (const id of Object.keys(models).sort()) {
+    const context = models[id].limit?.context
+    if (typeof context === 'number' && context > 0) {
+      entries[id] = [context, models[id].limit?.output ?? 0]
+    }
+  }
+  limits[appProvider] = entries
+}
+
+const limitLines = [
+  '// Archivo generado por scripts/update-vision-models.ts desde models.dev.',
+  '// No editar a mano: correr `bun run update:models`.',
+  `// Generado: ${new Date().toISOString().slice(0, 10)}`,
+  '// Formato: [contexto, salida máxima] en tokens (0 = sin dato de salida).',
+  '',
+  `export const MODEL_LIMITS: Record<string, Record<string, [number, number]>> = ${JSON.stringify(limits, null, 2)}`,
+  '',
+]
+await Bun.write(LIMITS_OUTPUT, limitLines.join('\n'))
+
 for (const p of Object.keys(PROVIDER_MAP)) {
   console.log(
     `${p}: ${vision[p].length} con visión, ${textOnly[p].length} solo texto`,

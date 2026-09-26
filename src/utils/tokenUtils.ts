@@ -47,6 +47,7 @@ export const estimateMessagesTokens = (
   return totalTokens
 }
 
+import { MODEL_LIMITS } from '../config/modelLimits.generated'
 import { getAllModels } from '../services/modelCatalog/store'
 
 /**
@@ -59,7 +60,15 @@ export const getModelTokenLimit = (
   modelId: string,
   provider?: string,
 ): number => {
-  // Buscar el modelo por su ID en todas las colecciones disponibles
+  // 1) Contexto real según models.dev (ver scripts/update-vision-models.ts).
+  //    OpenCode Free sirve los modelos gratis de Zen: comparte sus límites.
+  const limitsProvider = provider === 'opencodefree' ? 'opencodezen' : provider
+  const known = limitsProvider
+    ? MODEL_LIMITS[limitsProvider]?.[modelId]
+    : undefined
+  if (known) return known[0]
+
+  // 2) Metadatos del catálogo estático.
   const allModels = getAllModels()
   const model =
     allModels.find((m) => {
