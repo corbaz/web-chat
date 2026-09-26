@@ -4,6 +4,7 @@
 
 import { spawn } from 'node:child_process'
 import {
+  CONFIG_HOME_DIR,
   ensureConfigFile,
   ensurePassword,
   SANDBOX_DIR,
@@ -31,7 +32,11 @@ function main(): void {
     cwd: SANDBOX_DIR,
     stdio: 'inherit',
     shell: true,
-    env: { ...process.env, OPENCODE_SERVER_PASSWORD: password },
+    env: {
+      ...process.env,
+      OPENCODE_SERVER_PASSWORD: password,
+      XDG_CONFIG_HOME: CONFIG_HOME_DIR,
+    },
   })
 
   child.on('exit', (code) => {

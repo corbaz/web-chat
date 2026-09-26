@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, writeFileSync } from 'node:fs'
 import {
+  CONFIG_HOME_DIR,
   CORS_ORIGINS,
   HOSTNAME,
   LAUNCHER_PATH,
@@ -35,6 +36,7 @@ export function writeLauncher(password: string): void {
     'Set shell = CreateObject("WScript.Shell")',
     `shell.CurrentDirectory = "${vbsEscape(SANDBOX_DIR)}"`,
     `shell.Environment("Process")("OPENCODE_SERVER_PASSWORD") = "${vbsEscape(password)}"`,
+    `shell.Environment("Process")("XDG_CONFIG_HOME") = "${vbsEscape(CONFIG_HOME_DIR)}"`,
     `shell.Run "${vbsEscape(commandLine)}", 0, False`,
     '',
   ].join('\r\n')

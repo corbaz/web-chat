@@ -46,30 +46,52 @@ export const STARTUP_LAUNCHER_PATH = join(
 // hasta que se responda vía POST /session/:id/permissions/:permissionID
 // (ver src/services/opencodeLocal/client.ts). Verificado 2026-09-25/26: sin
 // este archivo, OpenCode responde FreeTierError a los modelos gratuitos.
+const ASK_PERMISSIONS = {
+  bash: 'ask',
+  edit: 'ask',
+  webfetch: 'ask',
+  external_directory: 'ask',
+}
+
+// Agente "chat" por defecto: las herramientas siguen declaradas (el filtro de
+// modelos gratis lo exige) pero el prompt le indica no usarlas. Verificado
+// 2026-09-26: big-pickle deja de pedir comandos y la entrada baja de ~38k a
+// ~27k tokens al no cargar la configuración global del usuario.
 const SANDBOX_OPENCODE_CONFIG = {
   $schema: 'https://opencode.ai/config.json',
-  permission: {
-    bash: 'ask',
-    edit: 'ask',
-    webfetch: 'ask',
-    external_directory: 'ask',
+  default_agent: 'chat',
+  agent: {
+    chat: {
+      mode: 'primary',
+      description: 'Asistente de chat general',
+      prompt:
+        'Sos un asistente de chat general dentro de una app web. Respondé directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos, no leas ni edites archivos y no uses herramientas: el usuario no está programando en esta máquina. Si algo requiere información que no tenés, decilo.',
+      permission: ASK_PERMISSIONS,
+    },
   },
+  permission: ASK_PERMISSIONS,
 }
+
+// Configuración global vacía para el servidor (XDG_CONFIG_HOME): evita cargar
+// los agentes, plugins e instrucciones globales del usuario. Los datos
+// (credencial de OpenCode) se comparten: aislarlos rompe los modelos gratis
+// ("Invalid credential", verificado 2026-09-26).
+export const CONFIG_HOME_DIR = join(SANDBOX_DIR, 'config-home')
 
 export function ensureSandboxDir(): void {
   if (!existsSync(SANDBOX_DIR)) mkdirSync(SANDBOX_DIR, { recursive: true })
 }
 
 /** Crea `opencode.json` con permisos "ask" solo si todavía no existe. */
+/** Escribe (o actualiza) `opencode.json` del sandbox; lo gestiona la app. */
 export function ensureConfigFile(): void {
   ensureSandboxDir()
-  if (!existsSync(CONFIG_PATH)) {
-    writeFileSync(
-      CONFIG_PATH,
-      JSON.stringify(SANDBOX_OPENCODE_CONFIG, null, 2),
-      'utf8',
-    )
-  }
+  if (!existsSync(CONFIG_HOME_DIR)) mkdirSync(CONFIG_HOME_DIR, { recursive: true })
+  writeFileSync(
+    CONFIG_PATH,
+    JSON.stringify(SANDBOX_OPENCODE_CONFIG, null, 2),
+    'utf8',
+  )
 }
 
 /** Genera la contraseña una sola vez y la reutiliza en corridas siguientes. */

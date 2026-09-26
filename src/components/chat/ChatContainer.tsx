@@ -589,6 +589,7 @@ const ChatContainer = ({
 
           // Solo se envía el último mensaje: OpenCode mantiene el historial
           // del lado del servidor por sessionId (ver Scope en el feature doc).
+          let rejectedTools = 0
           const result = await sendOpenCodeFreeMessage(
             baseUrl,
             password,
@@ -596,8 +597,15 @@ const ChatContainer = ({
             selectedModel,
             filteredContent,
             {
-              onPermission: (permission) =>
-                askOpenCodeFreePermission(theme, isDarkTheme, permission),
+              onPermission: async (permission) => {
+                const answer = await askOpenCodeFreePermission(
+                  theme,
+                  isDarkTheme,
+                  permission,
+                )
+                if (answer === 'reject') rejectedTools += 1
+                return answer
+              },
             },
           )
 
@@ -606,7 +614,11 @@ const ChatContainer = ({
             .trim()
 
           if (!filteredFreeResponse) {
-            throw new Error('EMPTY_PROVIDER_RESPONSE')
+            throw new Error(
+              rejectedTools > 0
+                ? 'OPENCODE_FREE_TOOLS_REJECTED'
+                : 'EMPTY_PROVIDER_RESPONSE',
+            )
           }
 
           const endTime = Date.now()
@@ -643,6 +655,12 @@ const ChatContainer = ({
           ) {
             errorMessage =
               'OpenCode Free devolvió una respuesta sin texto. No se guardó como respuesta válida; vuelve a intentarlo.'
+          } else if (
+            error instanceof Error &&
+            error.message === 'OPENCODE_FREE_TOOLS_REJECTED'
+          ) {
+            errorMessage =
+              'El modelo intentó ejecutar comandos en tu PC, se rechazaron y no llegó a responder. Reformulá la pregunta para que responda con lo que sabe (por ejemplo: "sin ejecutar nada, explicame...") o probá con otro modelo.'
           } else if (error instanceof Error && error.message) {
             errorMessage = `OpenCode Free: ${error.message}`
           }
