@@ -31,9 +31,11 @@ export const defaultToolConfig: ToolConfig = {
 
 // IDs verificados live (tarea 1.1) como tool-capables en la familia gpt-oss.
 // Solo estos dos ejecutaron herramientas en la verificación. NO usar prefix
-// match: openai/gpt-oss-20b está en el catálogo pero NO fue verificado.
+// match: cada ID nuevo debe verificarse en vivo (gpt-oss-20b se verificó el
+// 2026-09-26 con browser_search).
 const VERIFIED_GPT_OSS_TOOL_MODELS = new Set<string>([
   'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
   'openai/gpt-oss-safeguard-20b',
 ])
 
@@ -43,7 +45,7 @@ const VERIFIED_GPT_OSS_TOOL_MODELS = new Set<string>([
 // verificarse live antes de clasificarse (evita habilitar herramientas para
 // modelos no verificados que podrían no aceptar o ejecutar tools).
 // - openai/gpt-oss-120b, openai/gpt-oss-safeguard-20b → gpt-oss (verificados:
-//   ejecutaron herramientas). openai/gpt-oss-20b NO está verificado → null.
+//   ejecutaron herramientas). openai/gpt-oss-20b → gpt-oss (verificado 2026-09-26).
 export const isToolCapableModel = (model: string): ToolFamily | null => {
   if (VERIFIED_GPT_OSS_TOOL_MODELS.has(model)) return 'gpt-oss'
   return null

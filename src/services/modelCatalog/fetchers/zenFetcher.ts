@@ -15,8 +15,14 @@ export function isZenFreeModel(id: string): boolean {
   return id.endsWith('-free') || id === 'big-pickle'
 }
 
+// Con API key, Zen lista los modelos del workspace e incluye endpoints
+// internos de prueba (`test`, `test-novita-dsf4.1`, visto 2026-09-26).
+export function isZenTestModel(id: string): boolean {
+  return id === 'test' || id.startsWith('test-')
+}
+
 export function isZenChatModel(id: string): boolean {
-  return !isZenFreeModel(id) && zenRouteFor(id) !== null
+  return !isZenFreeModel(id) && !isZenTestModel(id) && zenRouteFor(id) !== null
 }
 
 /** Devuelve solo los IDs de modelos de chat del payload de /zen/v1/models. */

@@ -769,7 +769,9 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
         ...(toolsConfig?.searchEnabled === true && {
           tools: [
             {
-              type: 'web_search',
+              // Go en /chat/completions acepta `web_search_preview`, no
+              // `web_search` (verificado 2026-09-26).
+              type: 'web_search_preview',
             },
           ],
         }),

@@ -254,8 +254,9 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 
 | Proveedor | Endpoint | Key | Filtro |
 |---|---|---|---|
-| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos de chat pagos; se excluyen los gratis (`-free`, `big-pickle`) y `jev-*` |
+| OpenCode Zen | `opencode.ai/zen/v1/models` | Sí | Modelos de chat pagos del workspace; se excluyen los gratis (`-free`, `big-pickle`), `jev-*` y los internos de prueba (`test*`) |
 | OpenCode Go | `opencode.ai/zen/go/v1/models` | Sí | Todos |
+| OpenCode Free | `<servidor local>/config/providers` | Sí (password del servidor local) | Ids `-free` y `big-pickle` del provider `opencode`, sin `jev-*` |
 | Groq | `api.groq.com/openai/v1/models` | Sí | Activos, sin audio, TTS ni guards |
 | Gemini | `generativelanguage.googleapis.com/v1beta/models` | Sí | Solo Flash / Flash Lite con `generateContent` |
 | OpenAI | `api.openai.com/v1/models` | Sí | `gpt-*`, `chatgpt-*` y serie o, sin snapshots fechados |
@@ -263,15 +264,41 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 
 RouteLLM usa solo su catálogo estático.
 
-Los modelos gratis de OpenCode Zen no están disponibles en esta app: OpenCode solo los sirve desde su propia app y responde `FreeTierError` a cualquier otro cliente, con o sin API key.
+Los modelos gratis de OpenCode Zen (ids `-free`, `big-pickle`) no están disponibles por API directa: OpenCode solo los sirve a peticiones que parecen un agente de código con herramientas declaradas y responde `FreeTierError` a cualquier otro cliente, con o sin API key. Están disponibles igual a través de un servidor local (`opencode serve`) como proveedor "OpenCode Free": ver sección propia más abajo.
 
 Los modelos que ya están en el catálogo estático conservan sus metadatos (nombre, contexto, precio); los nuevos se muestran con un nombre derivado del ID. En OpenCode Zen, el endpoint de chat depende de la familia del modelo (`src/services/modelCatalog/zenRoute.ts`): Claude y Qwen usan `/messages`, GPT, Grok y Muse usan `/responses`, Gemini usa `/models/<id>` y el resto `/chat/completions`.
 
-En OpenCode Go (`src/services/modelCatalog/zenRoute.ts`, `goRouteFor`) GPT, Grok y Muse usan `/responses`, MiniMax y Qwen usan `/messages` y el resto `/chat/completions`. Go exige el header `x-opencode-session`, estable por conversación: la app envía el ID del chat. La búsqueda web está desactivada para OpenCode Go y Zen.
+En OpenCode Go (`src/services/modelCatalog/zenRoute.ts`, `goRouteFor`) GPT, Grok y Muse usan `/responses`, MiniMax y Qwen usan `/messages` y el resto `/chat/completions`. Go exige el header `x-opencode-session`, estable por conversación: la app envía el ID del chat. La búsqueda web se habilita solo en los modelos de Go que buscaron en la prueba en vivo (GPT Luna, Grok 4.6/4.7, Hy3, Hy4, Kimi K2.6/K3, MiMo V2.5, MiniMax M3); en `/chat/completions` Go usa la herramienta `web_search_preview`. En Zen está desactivada hasta poder verificarla.
 
 Si un proveedor rechaza un modelo que igual aparece en su `/models` (por ejemplo Groq con "blocked at the project level" o un modelo retirado), la app lo oculta del selector y lo recuerda en `localStorage` (`modelCatalog:v1:unavailable:<proveedor>`). Guardar de nuevo una API key vuelve a mostrar todos los modelos ocultos.
 
 Código: `src/services/modelCatalog/`. Tests: `bun test`.
+
+---
+
+### OpenCode Free (servidor local)
+
+OpenCode solo sirve sus modelos gratis (`opencode.ai/zen`, ids `-free` y `big-pickle`) a peticiones que parecen un agente de código con herramientas declaradas; el resto recibe `FreeTierError`. La app los usa igual arrancando un `opencode serve` propio, aislado, en la PC del usuario, con permisos `ask` en `bash`/`edit`/`webfetch`/`external_directory`: eso hace que OpenCode los sirva, pero ninguna herramienta se ejecuta sin autorización explícita (ver Permisos más abajo).
+
+Instalación (Windows, requiere [OpenCode](https://opencode.ai) instalado):
+
+```bash
+bun run opencode:free:install   # registra el autoarranque y arranca el servidor ahora
+bun run opencode:free           # alternativa: correrlo en primer plano, para debug manual
+bun run opencode:free:uninstall # quita el autoarranque y detiene el servidor
+```
+
+`opencode:free:install` copia un lanzador oculto a la carpeta Inicio de Windows (arranca solo al iniciar sesión, sin permisos de administrador), inicia el servidor ahora e imprime la URL (`http://127.0.0.1:4096` por defecto) y una password generada una sola vez. Esos dos valores se pegan en Configuración > OpenCode Free.
+
+El servidor corre en una carpeta dedicada (`%LOCALAPPDATA%\prompting\opencode-free`) con su propio `opencode.json` (permisos `ask`) y su propia password (Basic auth, usuario `opencode`); nunca en la carpeta del proyecto ni compartiendo configuración con OpenCode Desktop. Queda atado a `127.0.0.1`, así que solo responde a peticiones desde la misma PC: el sitio en Vercel funciona con este proveedor únicamente si el navegador permite que esa pestaña llame a `127.0.0.1` (Private Network Access puede bloquearlo; en desarrollo local (`https://localhost:5173`) siempre funciona).
+
+**Permisos**: cuando el modelo pide ejecutar algo (por ejemplo un comando de `bash`), la respuesta queda bloqueada hasta que el usuario responde un modal ("El modelo quiere ejecutar: …") con **Rechazar** (por defecto) o **Permitir una vez**. Nada se ejecuta sin ese permiso explícito.
+
+`opencode:free:password` copia la contraseña al portapapeles para pegarla en la app. Para usar una contraseña propia: `bun run opencode:free:password MiClave` (mínimo 6 caracteres, sin espacios); guarda la clave, actualiza el lanzador y reinicia el servidor. En la app, OpenCode Free pide esa contraseña, no una API key.
+
+`opencode:free:uninstall` quita el lanzador de la carpeta Inicio y detiene el proceso, pero solo si sigue escuchando en el puerto del sandbox (127.0.0.1:4096) y su nombre de proceso contiene "opencode": nunca toca OpenCode Desktop.
+
+Código: `scripts/opencode-free/` (autoarranque), `src/services/opencodeLocal/` (cliente + settings + mapa de sesiones), `src/components/HEADER/OpenCodeFreeStatus.tsx` (indicador de conexión). Tests: `bun test`.
 
 ---
 

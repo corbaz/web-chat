@@ -1,7 +1,10 @@
 import type { Citation } from '../interfaces/chat/chatTypes'
 
+// Verificado en vivo 2026-09-26 (Groq browser_search): los tres GPT-OSS
+// buscan; qwen/qwen3.8-27b lo rechaza.
 const WEB_SEARCH_CAPABLE_MODELS = new Set<string>([
   'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
   'openai/gpt-oss-safeguard-20b',
   'gemini-3.5-flash',
   'gemini-3.1-flash-lite',
@@ -17,11 +20,30 @@ const WEB_SEARCH_CAPABLE_MODELS = new Set<string>([
   'claude-opus-4-20250514',
 ])
 
+// OpenCode Go: modelos que buscaron en la web en la prueba en vivo del
+// 2026-09-26, cada uno por su ruta (responses: `web_search`; messages:
+// `web_search_20250305`; chat: `web_search_preview`). El resto responde sin
+// buscar o rechaza la herramienta.
+const GO_WEB_SEARCH_MODELS = new Set<string>([
+  'gpt-5.6-luna',
+  'gpt-6-luna',
+  'grok-4.6',
+  'grok-4.7',
+  'hy3',
+  'hy4-preview',
+  'kimi-k2.6',
+  'kimi-k3',
+  'mimo-v2.5',
+  'minimax-m3',
+])
+
 export function supportsWebSearch(modelId: string, provider?: string): boolean {
   if (!modelId || provider === 'routellm') return false
-  // OpenCode Go/Zen: sin búsqueda web. Go rechaza `tools[0].type: web_search`
-  // (HTTP 400, verificado 2026-09-25) y el soporte en Zen no está verificado.
-  if (provider === 'opengo' || provider === 'opencodezen') return false
+  if (provider === 'opengo') return GO_WEB_SEARCH_MODELS.has(modelId)
+  // OpenCode Zen: sin verificar (la cuenta no tenía saldo al probar).
+  // OpenCode Free (servidor local): sin búsqueda web en v1 (ver
+  // odd/tasks/opencode-free-local.md).
+  if (provider === 'opencodezen' || provider === 'opencodefree') return false
   if (WEB_SEARCH_CAPABLE_MODELS.has(modelId)) return true
   return (
     modelId.startsWith('gpt-') ||

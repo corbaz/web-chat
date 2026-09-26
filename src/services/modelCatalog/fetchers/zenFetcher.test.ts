@@ -22,6 +22,13 @@ describe('parseZenModelIds', () => {
     ])
   })
 
+  test('descarta los endpoints internos de prueba (test, test-*)', () => {
+    const payload = {
+      data: [{ id: 'test' }, { id: 'test-novita-dsf4.1' }, { id: 'kimi-k3' }],
+    }
+    expect(parseZenModelIds(payload)).toEqual(['kimi-k3'])
+  })
+
   test('descarta ids sin ruta de chat conocida (jev-*)', () => {
     const payload = {
       data: [{ id: 'jev-1.13' }, { id: 'jev-1.13-free' }, { id: 'kimi-k3' }],
