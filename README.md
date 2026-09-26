@@ -72,10 +72,10 @@ bun create vite@latest web-chat
         "bun-upgrade": "bun upgrade && bunx -y npm-check-updates",
         "ncu": "npx -y npm-check-updates -u && bun update",
         "dev": "vite --host",
-        "build": "tsc -b && vite build --outDir ./docs",
+        "build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview --host",
-        "deploy": "surge docs --domain deepchat.surge.sh"
+        "deploy": "vercel deploy --prod"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.1.6",
@@ -326,18 +326,16 @@ Repositorio: https://github.com/corbaz/web-chat [![GitHub](https://img.shields.i
 ---
 
 ### Deploy
-Deploy en surge: https://deepchat.surge.sh/ [![Surge](https://img.shields.io/badge/Surge-Deploy-blue?style=flat&logo=surge)](https://deepchat.surge.sh/)
+Deploy en Vercel: https://prompting-chat.vercel.app/ [![Vercel](https://img.shields.io/badge/Vercel-Deploy-black?style=flat&logo=vercel)](https://prompting-chat.vercel.app/)
 
-Deploy en github pages: https://corbaz.github.io/web-chat/
+Vercel es el único hosting: Surge (`deepchat.surge.sh`) y GitHub Pages se dieron de baja el 2026-09-26. El build va a `dist/` (ignorado en git) y ya no se commitea.
 
-Deploy en Vercel: https://prompting-chat.vercel.app/
-
-OpenCode (Go y Zen) no acepta llamadas directas desde el navegador (CORS), por eso necesita un intermediario. En desarrollo lo hace el proxy de Vite (`/opencode-go-api`). En producción solo Vercel lo tiene: `vercel.json` reenvía `/opencode-go-api/*` a `https://opencode.ai/*`, y el proyecto de Vercel define `VITE_OPENCODE_PROXY_URL=/opencode-go-api`. En Surge y GitHub Pages, que son hosting estático, OpenCode se oculta.
+OpenCode (Go y Zen) no acepta llamadas directas desde el navegador (CORS), por eso necesita un intermediario. En desarrollo lo hace el proxy de Vite (`/opencode-go-api`). En producción solo Vercel lo tiene: `vercel.json` reenvía `/opencode-go-api/*` a `https://opencode.ai/*`, y el proyecto de Vercel define `VITE_OPENCODE_PROXY_URL=/opencode-go-api`.
 
 El proyecto de Vercel está conectado al repositorio: cada push a `main` publica automáticamente. Para publicar a mano:
 
 ```bash
-bun run deploy:vercel
-``` [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deploy-blue?style=flat&logo=github)](https://corbaz.github.io/web-chat/)
+bun run deploy
+```
   
 ---

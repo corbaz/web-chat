@@ -43,8 +43,8 @@ export default defineConfig({
         }
     },
     build: {
-        // Directorio de salida para GitHub Pages
-        outDir: 'docs',
+        // Directorio de salida (ignorado en git; Vercel arma el build solo)
+        outDir: 'dist',
         // Límite de advertencia de tamaño de chunk a 500kB
         chunkSizeWarningLimit: 500,
         rollupOptions: {
