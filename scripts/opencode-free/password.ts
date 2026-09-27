@@ -21,6 +21,9 @@ import {
 import { waitForHealth } from './processUtils'
 
 const MIN_LENGTH = 6
+// Mismas reglas en los tres instaladores (Bun, windows.bat, mac.sh): sin
+// espacios, comillas ni caracteres que rompan el .bat o el plist (XML).
+const PASSWORD_PATTERN = /^[A-Za-z0-9._*@#+=?-]{6,}$/
 
 function copyToClipboard(password: string): void {
   const result = spawnSync('clip.exe', { input: password })
@@ -34,9 +37,9 @@ function copyToClipboard(password: string): void {
 }
 
 async function setPassword(password: string): Promise<void> {
-  if (password.length < MIN_LENGTH || /\s/.test(password)) {
+  if (!PASSWORD_PATTERN.test(password)) {
     console.error(
-      `La contraseña debe tener al menos ${MIN_LENGTH} caracteres y no llevar espacios.`,
+      `La contraseña debe tener al menos ${MIN_LENGTH} caracteres: letras, números o . _ - * @ # + = ?`,
     )
     process.exitCode = 1
     return

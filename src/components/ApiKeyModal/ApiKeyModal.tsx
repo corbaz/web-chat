@@ -852,8 +852,8 @@ const ApiKeyModal = ({
                   ? `API Key de Anthropic inválida. Debe comenzar con "sk-ant-". Por favor, verifica e intenta de nuevo.`
                   : provider === 'opencodefree'
                     ? lastOpenCodeFreeCheck === 'unauthorized'
-                      ? `Contraseña incorrecta. No es la API key de Zen: usá la contraseña de %LOCALAPPDATA%\\prompting\\opencode-free\\password.txt (o corré "bun run opencode:free:password" para copiarla al portapapeles).`
-                      : `No se pudo conectar con el servidor local. Verificá que esté corriendo ("bun run opencode:free:install") y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
+                      ? `Contraseña incorrecta: tiene que ser exactamente la misma con la que arrancó el servidor local (no la API key de Zen). "windows.bat password" (Windows) o "bash mac.sh password" (Mac) la copian al portapapeles.`
+                      : `No se pudo conectar con el servidor local. Verificá que esté corriendo (en Windows: "windows.bat"; en Mac: "bash mac.sh", ver README) y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
                     : `API Key inválida. Por favor, verifica e intenta de nuevo.`
               Swal.showValidationMessage(errorMsg)
               applyErrorStyles()

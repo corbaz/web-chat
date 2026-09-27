@@ -22,8 +22,9 @@ export function showOpenCodeFreeUnreachableModal(theme: ColorPalette): void {
       <p style="text-align:left; margin-bottom: 0.75em;">No se pudo conectar con el servidor local. Pasos:</p>
       <ol style="text-align:left; padding-left: 1.2em; line-height: 1.6;">
         <li>Si no tenés OpenCode instalado, instalalo desde <a href="https://opencode.ai" target="_blank" rel="noopener noreferrer">opencode.ai</a>.</li>
-        <li>Ejecutá <code>bun run opencode:free:install</code> en la carpeta del proyecto.</li>
-        <li>Pegá la contraseña impresa en Configuración &gt; OpenCode Free.</li>
+        <li>Abrí OpenCode una vez y mandá un mensaje con un modelo gratis.</li>
+        <li>Descargá y corré el instalador desde <a href="https://github.com/corbaz/web-chat/tree/main/scripts/opencode-free" target="_blank" rel="noopener noreferrer">scripts/opencode-free</a>: <code>windows.bat</code> en Windows o <code>bash mac.sh</code> en Mac.</li>
+        <li>Pegá la contraseña (queda en el portapapeles) en Configuración &gt; OpenCode Free.</li>
       </ol>
     `,
     icon: 'warning',

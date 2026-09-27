@@ -73,7 +73,7 @@ bun run dev      # https://localhost:5173 (certificado local de Vite)
 | `bun run deploy` | Publica en Vercel a mano (`vercel deploy --prod`) |
 | `bun run update:models` | Regenera visión y límites desde models.dev (alias: `update:vision`) |
 | `bun run ncu` | Actualiza dependencias a su última versión |
-| `bun run opencode:free:install` | Instala y arranca el servidor local de OpenCode Free |
+| `bun run opencode:free:install` | Instala y arranca el servidor local de OpenCode Free (Windows; en Mac usar `scripts/opencode-free/mac.sh`) |
 | `bun run opencode:free:password [clave]` | Copia la contraseña al portapapeles, o la cambia |
 | `bun run opencode:free:uninstall` | Quita el servidor local de OpenCode Free |
 | `bun run opencode:free` | Corre el servidor local en primer plano (debug) |
@@ -147,21 +147,25 @@ Código: `src/config/vision.ts`, `src/config/providers.ts`, `src/components/FOOT
 
 OpenCode solo entrega sus modelos gratis (`-free`, `big-pickle`) a pedidos que parecen de un **agente de programación con herramientas**. Por API directa, con o sin key, responde `FreeTierError`. La app los usa a través de un `opencode serve` que corre en tu PC.
 
-**Instalación** (Windows, requiere [OpenCode](https://opencode.ai) instalado):
+**Instalación** (requiere [OpenCode](https://opencode.ai) instalado y abierto al menos una vez con un modelo gratis). Hay instaladores de un solo archivo, que no necesitan Bun ni el repo:
 
-```bash
-bun run opencode:free:install    # arranque automático con Windows + arranca ahora
-bun run opencode:free:password   # copia la contraseña al portapapeles
-```
+| Sistema | Instalar | Contraseña | Desinstalar |
+|---|---|---|---|
+| Windows | `windows.bat` | `windows.bat password [NUEVA]` | `windows.bat uninstall` |
+| macOS | `bash mac.sh` | `bash mac.sh password [NUEVA]` | `bash mac.sh uninstall` |
+| Windows, desde el repo | `bun run opencode:free:install` | `bun run opencode:free:password [NUEVA]` | `bun run opencode:free:uninstall` |
+
+Los archivos están en [`scripts/opencode-free/`](scripts/opencode-free/). Sin argumento, `password` copia la contraseña al portapapeles; con una clave nueva, la cambia y reinicia el servidor. La contraseña puede tener letras, números y `. _ - * @ # + = ?`, con un mínimo de 6 caracteres.
+
+- **Windows:** crea `%LOCALAPPDATA%\prompting\opencode-free` y pone un lanzador oculto en la carpeta Inicio, así el servidor arranca solo al iniciar sesión (no necesita administrador).
+- **macOS:** crea `~/Library/Application Support/prompting/opencode-free` y registra un LaunchAgent (`com.prompting.opencode-free`), que arranca el servidor al iniciar sesión y lo reinicia si se cae. El log queda en `server.log` dentro de esa carpeta.
 
 Después, en la app: elegir **OpenCode Free**, pegar la contraseña y **Guardar contraseña**. Al lado del selector de proveedor, un punto indica si el servidor responde (🟢) o no (🔴).
 
-- **Arranque automático:** un lanzador oculto en la carpeta Inicio de Windows (no necesita administrador).
-- **Carpeta propia:** `%LOCALAPPDATA%\prompting\opencode-free`, con su `opencode.json` y su contraseña. Solo escucha en `127.0.0.1:4096`, y solo acepta la app desde `https://localhost:5173` y `https://prompting-chat.vercel.app`.
-- **Contraseña propia:** `bun run opencode:free:password MiClave` (mínimo 6 caracteres, sin espacios) la cambia y reinicia el servidor.
+- **Carpeta propia**, con su `opencode.json` y su contraseña. Solo escucha en `127.0.0.1:4096`, y solo acepta la app desde `https://localhost:5173` y `https://prompting-chat.vercel.app`.
 - **Agente "chat":** el servidor usa un agente que le indica al modelo responder sin usar herramientas, y no carga tu configuración global de OpenCode (`XDG_CONFIG_HOME` apunta a una carpeta vacía). Las herramientas siguen declaradas en modo "preguntar", porque sin eso OpenCode no entrega los modelos gratis.
 - **Permisos:** si un modelo igual pide ejecutar algo, la app muestra "El modelo quiere ejecutar: …" con **Rechazar** (por defecto) o **Permitir una vez**. Nada se ejecuta sin tu permiso.
-- **Desinstalar:** `bun run opencode:free:uninstall` quita el arranque automático y apaga el servidor, sin tocar OpenCode Desktop.
+- **Desinstalar:** quita el arranque automático y apaga el servidor, sin tocar OpenCode Desktop.
 
 Límites: funciona solo en la PC donde corre el servidor, sin imágenes, búsqueda web ni varita mágica. Cada mensaje incluye ~25.000 tokens de contexto interno de OpenCode.
 

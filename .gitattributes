@@ -1,0 +1,4 @@
+# Instaladores de OpenCode Free: el .bat necesita CRLF (cmd falla al buscar
+# etiquetas con LF) y el .sh necesita LF para correr en macOS.
+*.bat -text
+*.sh text eol=lf
