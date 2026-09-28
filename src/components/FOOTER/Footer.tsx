@@ -315,8 +315,6 @@ ${message}`
             password,
             'haiku',
             claudePrompt,
-            undefined,
-            false,
           )
 
           if (result.isError || !result.text.trim()) {

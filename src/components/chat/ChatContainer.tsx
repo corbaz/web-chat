@@ -23,7 +23,12 @@ import {
   type ToolConfig,
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
-import { sendMessage as sendClaudeCodeMessage } from '../../services/claudeBridge/client'
+import {
+  type ClaudePendingPermission,
+  listPermissions as listClaudeCodePermissions,
+  respondPermission as respondClaudeCodePermission,
+  sendMessage as sendClaudeCodeMessage,
+} from '../../services/claudeBridge/client'
 import {
   getClaudeCodeSessionId,
   setClaudeCodeSessionId,
@@ -51,6 +56,7 @@ import {
   getOpenCodeFreePassword,
   getOpenCodeFreeServerUrl,
 } from '../../services/opencodeLocal/settings'
+import { askPermission } from '../../services/permissionModal'
 import {
   FOOTER_HEIGHT_MOBILE,
   HEADER_HEIGHT_MOBILE,
@@ -96,6 +102,7 @@ interface ChatContainerProps {
   selectedProvider?: string // Proveedor seleccionado en el header
   onRepeatMessage?: (message: string) => void // Callback para repetir mensaje en footer
   searchEnabled: boolean // Estado de la búsqueda web para el chat
+  yoloEnabled?: boolean // T7: auto-aprobar herramientas locales sin preguntar (claudecode)
 }
 
 const FRESH_WEB_EVIDENCE_PATTERN =
@@ -109,6 +116,17 @@ const requiresFreshWebEvidence = (messages: GroqMessageType[]): boolean =>
         message.role !== 'system' &&
         FRESH_WEB_EVIDENCE_PATTERN.test(message.content),
     )
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
+
+// T7: descripción corta para el modal de permiso de Claude (suscripción).
+const describeClaudePermission = (
+  permission: ClaudePendingPermission,
+): string => {
+  const detail = permission.command?.trim() || permission.description?.trim()
+  return detail ? `${permission.tool}: ${detail}` : permission.tool
+}
 
 const ChatContainer = ({
   messages,
@@ -136,6 +154,7 @@ const ChatContainer = ({
   selectedProvider,
   onRepeatMessage,
   searchEnabled,
+  yoloEnabled = false,
 }: ChatContainerProps) => {
   // Ref para almacenar tiempos de inicio de solicitudes
   const requestStartTimeRef = useRef<Record<string, number>>({})
@@ -608,11 +627,14 @@ const ChatContainer = ({
             filteredContent,
             {
               onPermission: async (permission) => {
-                const answer = await askOpenCodeFreePermission(
-                  theme,
-                  isDarkTheme,
-                  permission,
-                )
+                // YOLO (T7 follow-up): 'once' automático, sin modal.
+                const answer = yoloEnabled
+                  ? 'once'
+                  : await askOpenCodeFreePermission(
+                      theme,
+                      isDarkTheme,
+                      permission,
+                    )
                 if (answer === 'reject') rejectedTools += 1
                 return answer
               },
@@ -724,8 +746,6 @@ const ChatContainer = ({
         try {
           const appChatId = currentChatId || requestId
           const sessionId = getClaudeCodeSessionId(appChatId)
-          const effectiveClaudeSearch =
-            searchEnabled && supportsWebSearch(selectedModel, provider)
           const effort = resolveEffort(provider, selectedModel) || undefined
           // Visión (T5): solo las imágenes del último mensaje (recién
           // compuesto, en memoria); el bridge las valida (mime + máx. 4).
@@ -744,16 +764,65 @@ const ChatContainer = ({
             (claudeImages && claudeImages.length > 1
               ? 'Describe las imágenes.'
               : 'Describe la imagen.')
-          const result = await sendClaudeCodeMessage(
-            baseUrl,
-            password,
-            selectedModel,
-            claudeText,
-            sessionId,
-            effectiveClaudeSearch,
-            effort,
-            claudeImages,
-          )
+
+          // T7: mientras el /chat esté en curso, sondear los permisos
+          // pendientes (Bash preguntándole al usuario) cada ~1s y mostrar el
+          // modal existente. Con YOLO no hace falta: el bridge auto-aprueba
+          // (autoApprove abajo) y nunca deja un permiso pendiente.
+          let polling = !yoloEnabled
+          const seenPermissionIds = new Set<string>()
+          const pollPermissions = async (): Promise<void> => {
+            while (polling) {
+              await sleep(1000)
+              if (!polling) break
+              let pending: ClaudePendingPermission[]
+              try {
+                pending = await listClaudeCodePermissions(baseUrl, password)
+              } catch {
+                continue
+              }
+              for (const permission of pending) {
+                if (seenPermissionIds.has(permission.id)) continue
+                seenPermissionIds.add(permission.id)
+                const decision = await askPermission(
+                  theme,
+                  isDarkTheme,
+                  describeClaudePermission(permission),
+                )
+                try {
+                  await respondClaudeCodePermission(
+                    baseUrl,
+                    password,
+                    permission.id,
+                    decision,
+                  )
+                } catch {
+                  // Falló la respuesta (red/servidor): se reintenta en la
+                  // próxima vuelta del sondeo, tratándolo como si no se
+                  // hubiera visto.
+                  seenPermissionIds.delete(permission.id)
+                }
+              }
+            }
+          }
+          const pollPromise = pollPermissions()
+
+          let result: Awaited<ReturnType<typeof sendClaudeCodeMessage>>
+          try {
+            result = await sendClaudeCodeMessage(
+              baseUrl,
+              password,
+              selectedModel,
+              claudeText,
+              sessionId,
+              effort,
+              claudeImages,
+              yoloEnabled,
+            )
+          } finally {
+            polling = false
+            await pollPromise
+          }
 
           if (result.isError) {
             throw new Error(

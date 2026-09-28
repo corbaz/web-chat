@@ -40,10 +40,10 @@ const GO_WEB_SEARCH_MODELS = new Set<string>([
 export function supportsWebSearch(modelId: string, provider?: string): boolean {
   if (!modelId || provider === 'routellm') return false
   if (provider === 'opengo') return GO_WEB_SEARCH_MODELS.has(modelId)
-  // Claude (suscripción, bridge local a `claude -p`): los 4 alias buscan vía
-  // `--tools WebSearch --allowedTools WebSearch` (ver Verified facts en
-  // odd/tasks/claude-subscription-bridge.md).
-  if (provider === 'claudecode') return true
+  // Claude (suscripción, bridge local a `claude -p`): WebSearch/WebFetch ya
+  // no dependen de este toggle (T7) — el bridge siempre las ofrece y las
+  // auto-aprueba sin preguntar. El globo queda oculto para este proveedor.
+  if (provider === 'claudecode') return false
   // OpenCode Zen: sin verificar (la cuenta no tenía saldo al probar).
   // OpenCode Free (servidor local): sin búsqueda web en v1 (ver
   // odd/tasks/opencode-free-local.md).

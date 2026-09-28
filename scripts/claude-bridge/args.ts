@@ -124,17 +124,6 @@ export function buildChatArgv(input: ChatArgsInput): string[] {
     CHAT_SYSTEM_PROMPT,
   ]
 
-  appendCommonChatFlags(argv, input)
-
-  return argv
-}
-
-/** Flags compartidas por buildChatArgv y buildStreamChatArgv (T5): mismo
- * comportamiento de effort/búsqueda web/resume en ambos modos. */
-function appendCommonChatFlags(
-  argv: string[],
-  input: Pick<ChatArgsInput, 'effort' | 'webSearch' | 'sessionId'>,
-): void {
   if (input.effort) {
     argv.push('--effort', input.effort)
   }
@@ -148,21 +137,53 @@ function appendCommonChatFlags(
   if (input.sessionId) {
     argv.push('--resume', input.sessionId)
   }
+
+  return argv
 }
+
+/** Flags compartidas por buildStreamChatArgv (T7): effort/resume. El manejo
+ * de `--tools` es fijo ahí (Bash,WebFetch,WebSearch + permission-prompt-tool
+ * stdio), así que no se comparte con buildChatArgv (modo viejo sin permisos,
+ * T1-T6, todavía usado por sus propios tests). */
+function appendCommonChatFlags(
+  argv: string[],
+  input: Pick<StreamChatArgsInput, 'effort' | 'sessionId'>,
+): void {
+  if (input.effort) {
+    argv.push('--effort', input.effort)
+  }
+
+  if (input.sessionId) {
+    argv.push('--resume', input.sessionId)
+  }
+}
+
+// Herramientas con permiso (T7, ver Verified facts en el feature doc):
+// nunca Edit/Write/Read/NotebookEdit. Bash siempre pregunta; WebSearch y
+// WebFetch se auto-aprueban en la política del bridge (solo lectura web),
+// ver policyForTool más abajo.
+export const PERMISSION_TOOLS = ['Bash', 'WebFetch', 'WebSearch'] as const
+export type PermissionTool = (typeof PERMISSION_TOOLS)[number]
 
 export interface StreamChatArgsInput {
   model: string
   sessionId?: string
-  webSearch?: boolean
   effort?: EffortLevel
+  /** Prompt de sistema completo para este pedido (con fecha/hora, T7); si
+   * falta, se usa CHAT_SYSTEM_PROMPT a secas (compatibilidad en tests). */
+  systemPrompt?: string
 }
 
 /**
  * Arma el argv de `claude -p --input-format stream-json --output-format
- * stream-json --verbose` (T5, visión): el mensaje NO va como argumento
- * posicional acá, viaja por stdin como una línea JSON (ver
- * buildStreamChatStdin). Mismas garantías que buildChatArgv: nunca habilita
- * herramientas locales.
+ * stream-json --verbose --permission-prompt-tool stdio` (T5 visión + T7
+ * permisos): el mensaje NO va como argumento posicional acá, viaja por
+ * stdin como una línea JSON (ver buildStreamChatStdin). `--tools` siempre
+ * lista Bash,WebFetch,WebSearch (nunca Edit/Write/Read/NotebookEdit): con
+ * `--permission-prompt-tool stdio` cada uso de herramienta pasa por el
+ * protocolo de control (control_request/control_response) en vez de
+ * ejecutarse o denegarse solo, así que ya no hace falta un flag separado
+ * para búsqueda web (antes T1-T6: `--tools ""` vs `--tools WebSearch`).
  */
 export function buildStreamChatArgv(input: StreamChatArgsInput): string[] {
   const argv = [
@@ -172,13 +193,17 @@ export function buildStreamChatArgv(input: StreamChatArgsInput): string[] {
     '--output-format',
     'stream-json',
     '--verbose',
+    '--permission-prompt-tool',
+    'stdio',
+    '--tools',
+    PERMISSION_TOOLS.join(','),
     '--model',
     input.model,
     '--setting-sources',
     '',
     '--strict-mcp-config',
     '--system-prompt',
-    CHAT_SYSTEM_PROMPT,
+    input.systemPrompt || CHAT_SYSTEM_PROMPT,
   ]
 
   appendCommonChatFlags(argv, input)
@@ -215,6 +240,209 @@ export function buildStreamChatStdin(input: StreamChatStdinInput): string {
   })
 
   return `${line}\n`
+}
+
+// ─── T7: fecha/hora en el system prompt ─────────────────────────────────────
+
+/** "lunes, 28 de septiembre de 2026, 10:32" en horario de Argentina. */
+export function formatBuenosAiresDateTime(now: Date): string {
+  return now.toLocaleString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    dateStyle: 'full',
+    timeStyle: 'short',
+  })
+}
+
+/** Hora UTC en ISO 8601 (`toISOString`), para que el modelo tenga un ancla
+ * sin ambigüedad de huso horario además de la hora local de Argentina. */
+export function formatUtcIso(now: Date): string {
+  return now.toISOString()
+}
+
+/**
+ * System prompt completo por pedido (T7, user request 2026-09-28): fecha y
+ * hora actuales (Argentina + ISO UTC) y la nota sobre Bash con permiso. Se
+ * genera de nuevo en cada /chat (nunca se cachea): el reloj no debe
+ * congelarse en una conversación larga con --resume.
+ */
+export function buildDynamicSystemPrompt(now: Date = new Date()): string {
+  return [
+    CHAT_SYSTEM_PROMPT,
+    '',
+    `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${formatUtcIso(now)}.`,
+    '',
+    'Podés usar la herramienta Bash, pero solo cuando lo que pide el usuario realmente necesita la computadora local (ejecutar un comando, revisar archivos, un cálculo con herramientas del sistema, etc.); para todo lo demás respondé directamente con tu conocimiento, sin ejecutar nada. Cada comando que propongas necesita que el usuario lo apruebe antes de correr: explicá brevemente qué vas a hacer.',
+  ].join('\n')
+}
+
+// ─── T7: herramientas con permiso ───────────────────────────────────────────
+
+/**
+ * Decide si una herramienta se auto-aprueba o si hay que preguntarle al
+ * usuario. `autoApprove` es el modo "YOLO" (toggle de la app, ver
+ * odd/tasks/claude-subscription-bridge.md): aprueba todo sin preguntar, pero
+ * nunca cambia qué herramientas están disponibles (`--tools` sigue sin
+ * Edit/Write/Read/NotebookEdit).
+ */
+export type PermissionPolicyDecision = 'auto-allow' | 'ask'
+
+const WEB_READ_ONLY_TOOLS: readonly string[] = ['WebSearch', 'WebFetch']
+
+export function policyForTool(
+  toolName: string,
+  autoApprove: boolean,
+): PermissionPolicyDecision {
+  if (autoApprove) return 'auto-allow'
+  if (WEB_READ_ONLY_TOOLS.includes(toolName)) return 'auto-allow'
+  return 'ask'
+}
+
+// ─── T7: protocolo de control (--permission-prompt-tool stdio) ─────────────
+//
+// Verificado en vivo 2026-09-28 (ver Verified facts en el feature doc): el
+// CLI manda por stdout una línea `{"type":"control_request","request_id":
+// "...","request":{"subtype":"can_use_tool","tool_name":"Bash","input":
+// {...}}}` y espera en stdin `{"type":"control_response","response":
+// {"subtype":"success","request_id":"<mismo id>","response":{"behavior":
+// "allow","updatedInput":<input>}}}` (o "deny" + "message"). Herramientas
+// "seguras" (p. ej. `echo`) el propio CLI las corre sin pedir permiso: el
+// control_request solo aparece para comandos que Claude Code considera que
+// lo necesitan.
+
+export interface CanUseToolRequest {
+  kind: 'can_use_tool'
+  requestId: string
+  toolName: string
+  input: Record<string, unknown>
+}
+
+export interface OtherControlRequest {
+  kind: 'other_control_request'
+  requestId: string
+  subtype: string
+}
+
+export interface ResultLineEvent {
+  kind: 'result'
+  raw: string
+}
+
+export interface SessionInitEvent {
+  kind: 'session_init'
+  sessionId: string
+}
+
+export interface OtherLineEvent {
+  kind: 'other'
+}
+
+export type StreamLineEvent =
+  | CanUseToolRequest
+  | OtherControlRequest
+  | ResultLineEvent
+  | SessionInitEvent
+  | OtherLineEvent
+
+/**
+ * Clasifica una línea de `--output-format stream-json` (una por evento).
+ * Nunca lanza: JSON inválido o sin los campos esperados cae en `other`.
+ */
+export function parseStreamLine(line: string): StreamLineEvent {
+  const trimmed = line.trim()
+  if (!trimmed) return { kind: 'other' }
+
+  let data: Record<string, unknown>
+  try {
+    data = JSON.parse(trimmed)
+  } catch {
+    return { kind: 'other' }
+  }
+  if (!data || typeof data !== 'object') return { kind: 'other' }
+
+  if (data.type === 'result') {
+    return { kind: 'result', raw: trimmed }
+  }
+
+  if (
+    data.type === 'system' &&
+    data.subtype === 'init' &&
+    typeof data.session_id === 'string' &&
+    data.session_id
+  ) {
+    return { kind: 'session_init', sessionId: data.session_id }
+  }
+
+  if (data.type === 'control_request' && typeof data.request_id === 'string') {
+    const request = data.request as Record<string, unknown> | undefined
+    if (request?.subtype === 'can_use_tool') {
+      const input =
+        request.input && typeof request.input === 'object'
+          ? (request.input as Record<string, unknown>)
+          : {}
+      return {
+        kind: 'can_use_tool',
+        requestId: data.request_id,
+        toolName: typeof request.tool_name === 'string' ? request.tool_name : '',
+        input,
+      }
+    }
+    return {
+      kind: 'other_control_request',
+      requestId: data.request_id,
+      subtype: typeof request?.subtype === 'string' ? request.subtype : '',
+    }
+  }
+
+  return { kind: 'other' }
+}
+
+/** Línea `control_response` de "allow" (incluye el salto de línea final). */
+export function buildAllowResponse(
+  requestId: string,
+  input: Record<string, unknown>,
+): string {
+  return `${JSON.stringify({
+    type: 'control_response',
+    response: {
+      subtype: 'success',
+      request_id: requestId,
+      response: { behavior: 'allow', updatedInput: input },
+    },
+  })}\n`
+}
+
+/** Línea `control_response` de "deny" (incluye el salto de línea final). */
+export function buildDenyResponse(requestId: string, message: string): string {
+  return `${JSON.stringify({
+    type: 'control_response',
+    response: {
+      subtype: 'success',
+      request_id: requestId,
+      response: { behavior: 'deny', message },
+    },
+  })}\n`
+}
+
+/**
+ * Línea de registro para una decisión de permiso: herramienta + primeros 120
+ * caracteres del comando/URL, nunca el texto del mensaje ni datos sensibles.
+ * `[YOLO]` marca lo auto-aprobado por el toggle (no por la política normal
+ * de WebSearch/WebFetch, que se marca `[auto]`).
+ */
+export function formatPermissionLog(
+  toolName: string,
+  input: Record<string, unknown>,
+  decision: 'allow' | 'deny',
+  origin: 'ask' | 'auto' | 'yolo',
+): string {
+  const detail =
+    typeof input.command === 'string'
+      ? input.command
+      : typeof input.url === 'string'
+        ? input.url
+        : ''
+  const marker = origin === 'yolo' ? ' [YOLO]' : origin === 'auto' ? ' [auto]' : ''
+  return `permiso ${toolName} -> ${decision}${marker}: ${detail.slice(0, 120)}`
 }
 
 interface ClaudeCliUsage {

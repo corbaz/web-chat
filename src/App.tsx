@@ -148,6 +148,11 @@ export const App = () => {
   // Búsqueda web nativa por chat
   const [searchEnabled, setSearchEnabled] = useState<boolean>(true)
 
+  // YOLO (T7 follow-up, user request 2026-09-28): auto-aprobar herramientas
+  // locales sin preguntar. Nunca persistido a propósito (useState en memoria,
+  // no localStorage): recargar la página lo vuelve a apagar.
+  const [yoloEnabled, setYoloEnabled] = useState<boolean>(false)
+
   useEffect(() => {
     if (!currentChatId) {
       setSearchEnabled(true)
@@ -643,6 +648,8 @@ export const App = () => {
             onToggleRightMenu={handleToggleRightMenu}
             selectedProvider={selectedProvider}
             onProviderChange={handleProviderChange}
+            yoloEnabled={yoloEnabled}
+            onYoloChange={setYoloEnabled}
           />
           {/* Contenedor principal del chat */}
           <ChatContainer
@@ -690,6 +697,7 @@ export const App = () => {
               }
             }}
             searchEnabled={searchEnabled}
+            yoloEnabled={yoloEnabled}
           />
           {/* Footer con área de entrada y controles */}
           <Footer

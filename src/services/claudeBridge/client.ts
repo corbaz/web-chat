@@ -5,8 +5,10 @@
 // que es testeable con un fetch mockeado (bun test, sin red real).
 //
 // Contrato: Basic auth, usuario "claude". GET /health -> {healthy, claudeVersion}.
-// GET /models -> [{id, name}]. POST /chat {model, message, sessionId?, webSearch?}
-// -> {text, sessionId, model, tokens:{input,output}, costUsd, isError, error?}.
+// GET /models -> [{id, name}]. POST /chat {model, message, sessionId?, effort?,
+// images?, autoApprove?} -> {text, sessionId, model, tokens:{input,output},
+// costUsd, isError, error?}. T7: GET /permission -> [{id, sessionId, tool,
+// command?, description?}], POST /permission/:id {decision: "allow"|"deny"}.
 
 function authHeader(password: string): Record<string, string> {
   const token = btoa(`claude:${password}`)
@@ -126,8 +128,11 @@ export interface ClaudeChatImage {
 /**
  * Envía un mensaje al bridge. Solo se manda el último mensaje: Claude Code
  * mantiene el historial del lado del proceso por sessionId (--resume, ver
- * Scope en el feature doc). Con `images`, el bridge usa el modo stream-json
- * (visión, T5) en vez del modo `-p "<msg>"` normal.
+ * Scope en el feature doc). Con `images`, se mandan en la misma línea que el
+ * mensaje (visión, T5). Búsqueda web (WebSearch/WebFetch) ya no se pide por
+ * flag: el bridge siempre las ofrece y las auto-aprueba (T7). `autoApprove`
+ * es el modo "YOLO" (toggle de la app): auto-aprueba también Bash, sin pedir
+ * permiso.
  */
 export async function sendMessage(
   baseUrl: string,
@@ -135,9 +140,9 @@ export async function sendMessage(
   model: string,
   message: string,
   sessionId?: string,
-  webSearch?: boolean,
   effort?: string,
   images?: ClaudeChatImage[],
+  autoApprove?: boolean,
 ): Promise<ClaudeChatResult> {
   return request<ClaudeChatResult>(baseUrl, '/chat', password, {
     method: 'POST',
@@ -145,9 +150,42 @@ export async function sendMessage(
       model,
       message,
       sessionId,
-      webSearch,
       effort,
       images,
+      autoApprove,
     }),
+  })
+}
+
+// T7: permisos pendientes (Bash preguntándole al usuario).
+export interface ClaudePendingPermission {
+  id: string
+  sessionId: string
+  tool: string
+  command?: string
+  description?: string
+}
+
+export async function listPermissions(
+  baseUrl: string,
+  password: string,
+): Promise<ClaudePendingPermission[]> {
+  const data = await request<ClaudePendingPermission[]>(
+    baseUrl,
+    '/permission',
+    password,
+  )
+  return Array.isArray(data) ? data : []
+}
+
+export async function respondPermission(
+  baseUrl: string,
+  password: string,
+  id: string,
+  decision: 'allow' | 'deny',
+): Promise<void> {
+  await request(baseUrl, `/permission/${encodeURIComponent(id)}`, password, {
+    method: 'POST',
+    body: JSON.stringify({ decision }),
   })
 }

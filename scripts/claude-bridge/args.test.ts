@@ -2,11 +2,17 @@
 
 import { describe, expect, test } from 'bun:test'
 import {
+  buildAllowResponse,
   buildChatArgv,
+  buildDenyResponse,
+  buildDynamicSystemPrompt,
   buildStreamChatArgv,
   buildStreamChatStdin,
   CHAT_SYSTEM_PROMPT,
   checkBasicAuth,
+  formatBuenosAiresDateTime,
+  formatPermissionLog,
+  formatUtcIso,
   isAllowedOrigin,
   isValidEffort,
   isValidImages,
@@ -16,6 +22,8 @@ import {
   MAX_BODY_BYTES_WITH_IMAGES,
   parseClaudeResult,
   parseStreamChatResult,
+  parseStreamLine,
+  policyForTool,
 } from './args'
 
 // PNG real de 1x1 rojo (RGB), verificado en vivo: Claude respondió "Rojo".
@@ -211,8 +219,8 @@ describe('buildChatArgv', () => {
   })
 })
 
-describe('buildStreamChatArgv (T5, visión)', () => {
-  test('caso base: modo stream-json, sin mensaje posicional (viaja por stdin)', () => {
+describe('buildStreamChatArgv (T5 visión + T7 permisos)', () => {
+  test('caso base: permission-prompt-tool stdio + Bash,WebFetch,WebSearch, sin mensaje posicional', () => {
     const argv = buildStreamChatArgv({ model: 'claude-sonnet-4-6' })
     expect(argv).toEqual([
       '-p',
@@ -221,6 +229,10 @@ describe('buildStreamChatArgv (T5, visión)', () => {
       '--output-format',
       'stream-json',
       '--verbose',
+      '--permission-prompt-tool',
+      'stdio',
+      '--tools',
+      'Bash,WebFetch,WebSearch',
       '--model',
       'claude-sonnet-4-6',
       '--setting-sources',
@@ -228,30 +240,42 @@ describe('buildStreamChatArgv (T5, visión)', () => {
       '--strict-mcp-config',
       '--system-prompt',
       CHAT_SYSTEM_PROMPT,
-      '--tools',
-      '',
     ])
-    // Nunca se habilitan herramientas locales, tampoco en este modo.
-    expect(argv).not.toContain('Bash')
+    // Nunca se habilitan herramientas de archivos, ni siquiera de lectura.
     expect(argv).not.toContain('Edit')
+    expect(argv).not.toContain('Write')
     expect(argv).not.toContain('Read')
+    expect(argv).not.toContain('NotebookEdit')
   })
 
-  test('con sessionId, effort y webSearch agrega las mismas flags que buildChatArgv', () => {
+  test('con systemPrompt, usa ese en vez de CHAT_SYSTEM_PROMPT (T7, fecha/hora)', () => {
+    const argv = buildStreamChatArgv({
+      model: 'claude-haiku-4-5',
+      systemPrompt: 'Prompt con fecha y hora incluida.',
+    })
+    expect(argv[argv.indexOf('--system-prompt') + 1]).toBe(
+      'Prompt con fecha y hora incluida.',
+    )
+  })
+
+  test('con sessionId y effort agrega --resume y --effort', () => {
     const argv = buildStreamChatArgv({
       model: 'claude-opus-4-8',
       sessionId: '550e8400-e29b-41d4-a716-446655440000',
-      webSearch: true,
       effort: 'high',
     })
     expect(argv).toContain('--effort')
     expect(argv[argv.indexOf('--effort') + 1]).toBe('high')
-    expect(argv).toContain('WebSearch')
-    expect(argv).toContain('--allowedTools')
     expect(argv).toContain('--resume')
     expect(argv[argv.indexOf('--resume') + 1]).toBe(
       '550e8400-e29b-41d4-a716-446655440000',
     )
+  })
+
+  test('sin sessionId ni effort, no agrega --resume ni --effort', () => {
+    const argv = buildStreamChatArgv({ model: 'claude-haiku-4-5' })
+    expect(argv).not.toContain('--resume')
+    expect(argv).not.toContain('--effort')
   })
 })
 
@@ -526,5 +550,191 @@ describe('isAllowedOrigin', () => {
 describe('MAX_BODY_BYTES', () => {
   test('límite de 200 KB', () => {
     expect(MAX_BODY_BYTES).toBe(200 * 1024)
+  })
+})
+
+describe('policyForTool (T7)', () => {
+  test('WebSearch y WebFetch se auto-aprueban sin YOLO', () => {
+    expect(policyForTool('WebSearch', false)).toBe('auto-allow')
+    expect(policyForTool('WebFetch', false)).toBe('auto-allow')
+  })
+
+  test('Bash pregunta al usuario sin YOLO', () => {
+    expect(policyForTool('Bash', false)).toBe('ask')
+  })
+
+  test('con autoApprove (YOLO), todo se auto-aprueba', () => {
+    expect(policyForTool('Bash', true)).toBe('auto-allow')
+    expect(policyForTool('WebSearch', true)).toBe('auto-allow')
+    expect(policyForTool('WebFetch', true)).toBe('auto-allow')
+  })
+})
+
+describe('parseStreamLine (T7)', () => {
+  test('reconoce un control_request can_use_tool', () => {
+    const line = JSON.stringify({
+      type: 'control_request',
+      request_id: 'req-1',
+      request: {
+        subtype: 'can_use_tool',
+        tool_name: 'Bash',
+        input: { command: 'echo hola', description: 'Saluda' },
+      },
+    })
+    expect(parseStreamLine(line)).toEqual({
+      kind: 'can_use_tool',
+      requestId: 'req-1',
+      toolName: 'Bash',
+      input: { command: 'echo hola', description: 'Saluda' },
+    })
+  })
+
+  test('reconoce un control_request de otro subtype', () => {
+    const line = JSON.stringify({
+      type: 'control_request',
+      request_id: 'init-1',
+      request: { subtype: 'initialize' },
+    })
+    expect(parseStreamLine(line)).toEqual({
+      kind: 'other_control_request',
+      requestId: 'init-1',
+      subtype: 'initialize',
+    })
+  })
+
+  test('reconoce la línea de resultado', () => {
+    const line = JSON.stringify({ type: 'result', result: 'ok' })
+    expect(parseStreamLine(line)).toEqual({ kind: 'result', raw: line })
+  })
+
+  test('reconoce el system init con session_id', () => {
+    const line = JSON.stringify({
+      type: 'system',
+      subtype: 'init',
+      session_id: 'sess-abc',
+    })
+    expect(parseStreamLine(line)).toEqual({
+      kind: 'session_init',
+      sessionId: 'sess-abc',
+    })
+  })
+
+  test('líneas vacías, basura no-JSON y eventos sin manejo dan "other"', () => {
+    expect(parseStreamLine('')).toEqual({ kind: 'other' })
+    expect(parseStreamLine('   ')).toEqual({ kind: 'other' })
+    expect(parseStreamLine('esto no es json')).toEqual({ kind: 'other' })
+    expect(parseStreamLine(JSON.stringify({ type: 'assistant' }))).toEqual({
+      kind: 'other',
+    })
+    expect(
+      parseStreamLine(JSON.stringify({ type: 'system', subtype: 'thinking_tokens' })),
+    ).toEqual({ kind: 'other' })
+  })
+
+  test('can_use_tool sin input da {} (nunca undefined)', () => {
+    const line = JSON.stringify({
+      type: 'control_request',
+      request_id: 'req-2',
+      request: { subtype: 'can_use_tool', tool_name: 'WebFetch' },
+    })
+    const parsed = parseStreamLine(line)
+    expect(parsed.kind).toBe('can_use_tool')
+    expect((parsed as { input: unknown }).input).toEqual({})
+  })
+})
+
+describe('buildAllowResponse / buildDenyResponse (T7)', () => {
+  test('allow: behavior allow + updatedInput, termina en salto de línea', () => {
+    const line = buildAllowResponse('req-1', { command: 'echo hola' })
+    expect(line.endsWith('\n')).toBe(true)
+    expect(JSON.parse(line)).toEqual({
+      type: 'control_response',
+      response: {
+        subtype: 'success',
+        request_id: 'req-1',
+        response: { behavior: 'allow', updatedInput: { command: 'echo hola' } },
+      },
+    })
+  })
+
+  test('deny: behavior deny + message, termina en salto de línea', () => {
+    const line = buildDenyResponse('req-1', 'El usuario denegó este comando.')
+    expect(line.endsWith('\n')).toBe(true)
+    expect(JSON.parse(line)).toEqual({
+      type: 'control_response',
+      response: {
+        subtype: 'success',
+        request_id: 'req-1',
+        response: {
+          behavior: 'deny',
+          message: 'El usuario denegó este comando.',
+        },
+      },
+    })
+  })
+})
+
+describe('formatPermissionLog (T7)', () => {
+  test('Bash: usa el comando, recorta a 120 caracteres', () => {
+    const long = 'x'.repeat(200)
+    const line = formatPermissionLog('Bash', { command: long }, 'allow', 'ask')
+    expect(line).toContain('Bash -> allow')
+    expect(line).not.toContain('[YOLO]')
+    expect(line).not.toContain('[auto]')
+    expect(line.length).toBeLessThan(200)
+  })
+
+  test('WebFetch auto-aprobado: marca [auto]', () => {
+    const line = formatPermissionLog(
+      'WebFetch',
+      { url: 'https://example.com' },
+      'allow',
+      'auto',
+    )
+    expect(line).toContain('[auto]')
+    expect(line).toContain('https://example.com')
+  })
+
+  test('YOLO: marca [YOLO]', () => {
+    const line = formatPermissionLog('Bash', { command: 'ls' }, 'allow', 'yolo')
+    expect(line).toContain('[YOLO]')
+  })
+
+  test('nunca incluye el texto del mensaje (solo lee command/url del input)', () => {
+    const line = formatPermissionLog(
+      'Bash',
+      { command: 'ls', message: 'esto no debería aparecer' },
+      'deny',
+      'ask',
+    )
+    expect(line).not.toContain('esto no debería aparecer')
+  })
+})
+
+describe('fecha/hora del system prompt (T7)', () => {
+  // 2026-09-28T15:00:00Z -> Argentina (UTC-3) es 12:00.
+  const fixedUtc = new Date('2026-09-28T15:00:00.000Z')
+
+  test('formatUtcIso devuelve el ISO exacto', () => {
+    expect(formatUtcIso(fixedUtc)).toBe('2026-09-28T15:00:00.000Z')
+  })
+
+  test('formatBuenosAiresDateTime convierte a UTC-3', () => {
+    const formatted = formatBuenosAiresDateTime(fixedUtc)
+    expect(formatted).toContain('2026')
+    expect(formatted).toContain('12:00')
+  })
+
+  test('buildDynamicSystemPrompt incluye el prompt base, la fecha y la nota de Bash', () => {
+    const prompt = buildDynamicSystemPrompt(fixedUtc)
+    expect(prompt).toContain(CHAT_SYSTEM_PROMPT)
+    expect(prompt).toContain('12:00')
+    expect(prompt).toContain('2026-09-28T15:00:00.000Z')
+    expect(prompt.toLowerCase()).toContain('bash')
+    expect(prompt.toLowerCase()).toContain('aprueb')
+  })
+
+  test('buildDynamicSystemPrompt sin argumento usa la hora actual (no lanza)', () => {
+    expect(() => buildDynamicSystemPrompt()).not.toThrow()
   })
 })

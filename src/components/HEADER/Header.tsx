@@ -8,6 +8,7 @@ import MenuButton from './menu/MenuButton'
 import Title from './menu/Title'
 import { OpenCodeFreeStatus } from './OpenCodeFreeStatus'
 import ProviderSelector from './ProviderSelector'
+import YoloToggle from './YoloToggle'
 
 interface HeaderProps {
   title: string
@@ -23,6 +24,8 @@ interface HeaderProps {
   editable?: boolean
   selectedProvider?: string
   onProviderChange?: (providerId: string) => void
+  yoloEnabled?: boolean
+  onYoloChange?: (next: boolean) => void
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -31,6 +34,7 @@ const Header: React.FC<HeaderProps> = ({
   selectedModel,
   onModelChange,
   theme,
+  isDarkTheme,
   onToggleLeftMenu,
   onToggleRightMenu,
   chatId,
@@ -38,6 +42,8 @@ const Header: React.FC<HeaderProps> = ({
   editable = false,
   selectedProvider: externalProvider,
   onProviderChange: externalOnProviderChange,
+  yoloEnabled = false,
+  onYoloChange,
 }) => {
   const [internalProvider, setInternalProvider] = useState<string>(() => {
     if (!externalProvider) {
@@ -115,11 +121,20 @@ const Header: React.FC<HeaderProps> = ({
                 theme={theme}
               />
             </div>
-            <EffortSelector
-              selectedProvider={selectedProvider}
-              selectedModel={selectedModel}
-              theme={theme}
-            />
+            <div className="w-auto flex items-center gap-1.5">
+              <EffortSelector
+                selectedProvider={selectedProvider}
+                selectedModel={selectedModel}
+                theme={theme}
+              />
+              <YoloToggle
+                selectedProvider={selectedProvider}
+                enabled={yoloEnabled}
+                onChange={(next) => onYoloChange?.(next)}
+                theme={theme}
+                isDarkTheme={isDarkTheme}
+              />
+            </div>
             <div className="w-auto">
               <ModelSelector
                 selectedModel={selectedModel}
