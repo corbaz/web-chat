@@ -1,6 +1,6 @@
 # Prompting
 
-Chat web con varios proveedores de IA en un solo lugar: Groq, OpenAI, Anthropic, Gemini, RouteLLM, OpenCode Go, OpenCode Zen y OpenCode Free. Cada usuario usa sus propias API keys, que se guardan solo en su navegador.
+Chat web con varios proveedores de IA en un solo lugar: Groq, OpenAI, Anthropic, Gemini, RouteLLM, OpenCode Go, OpenCode Zen, OpenCode Free y Claude (suscripción). Cada usuario usa sus propias API keys, que se guardan solo en su navegador.
 
 [![Vercel](https://img.shields.io/badge/Vercel-prompting--chat-black?style=flat&logo=vercel)](https://prompting-chat.vercel.app/) [![GitHub](https://img.shields.io/badge/GitHub-corbaz%2Fweb--chat-blue?style=flat&logo=github)](https://github.com/corbaz/web-chat)
 
@@ -21,8 +21,9 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 - **Búsqueda web nativa**: en los modelos que la soportan (ícono de globo 🌐), el proveedor busca en internet y la respuesta muestra las fuentes.
 - **Estadísticas de tokens** con el límite de contexto real de cada modelo.
 - **Modelos gratis de OpenCode** a través de un servidor local de OpenCode ("OpenCode Free").
+- **Claude por tu suscripción de Claude Code** (sin API key) a través de un bridge local ("Claude (suscripción)").
 - **Modelos que el proveedor rechaza** para tu cuenta (bloqueados, retirados, sin acceso) se ocultan solos del selector.
-- **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (no disponible en OpenCode Free).
+- **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (no disponible en OpenCode Free; en Claude (suscripción) siempre usa Haiku).
 - Tema claro y oscuro, historial de chats en el navegador.
 
 ---
@@ -39,6 +40,7 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 | OpenCode Go | https://opencode.ai (suscripción Go) | 10 modelos verificados | 26 modelos | Necesita el intermediario de Vercel (o el proxy de desarrollo) |
 | OpenCode Zen | https://opencode.ai/docs/zen/ (saldo) | Sin verificar | 32 modelos | Cobra por uso del saldo de Zen. Sin saldo responde "Insufficient account funds" |
 | OpenCode Free | No usa API key: contraseña del servidor local | No | No | Modelos gratis de Zen. Ver [OpenCode Free](#opencode-free-servidor-local) |
+| Claude (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre `claude -p` con tu suscripción de Claude Code. Ver [Claude (suscripción)](#claude-suscripción-bridge-local) |
 
 Detalle modelo por modelo, al 2026-09-26:
 
@@ -77,6 +79,8 @@ bun run dev      # https://localhost:5173 (certificado local de Vite)
 | `bun run opencode:free:password [clave]` | Copia la contraseña al portapapeles, o la cambia |
 | `bun run opencode:free:uninstall` | Quita el servidor local de OpenCode Free |
 | `bun run opencode:free` | Corre el servidor local en primer plano (debug) |
+| `bun run claude:bridge` | Corre el bridge local de Claude (suscripción) — arranque manual, sin autostart |
+| `bun run build:bridge` | Regenera `scripts/claude-bridge/claude-bridge.js`, el bundle standalone (ver [Claude (suscripción) sin el repo](#claude-suscripción-sin-el-repo)) |
 
 Convenciones del proyecto:
 
@@ -173,17 +177,118 @@ Código: `scripts/opencode-free/`, `src/services/opencodeLocal/`, `src/component
 
 ---
 
+## Arranque manual de los servidores locales (resumen)
+
+OpenCode Free y Claude (suscripción) se arrancan a mano, cada uno en su terminal, y pueden correr a la vez (puertos distintos). **La contraseña la elegís vos y va en el comando**; en la app, cada proveedor lleva la misma contraseña que usaste en su comando. Usá comillas simples en Mac y PowerShell, y `set "VAR=..."` en cmd, para que caracteres como `*` no se interpreten.
+
+| | Mac | Windows (cmd) |
+|---|---|---|
+| **OpenCode Free** (puerto 4096) | `cd ~/Library/Application\ Support/prompting/opencode-free && XDG_CONFIG_HOME="$PWD/config-home" OPENCODE_SERVER_PASSWORD='TuClave' opencode serve --port 4096 --hostname 127.0.0.1 --cors https://localhost:5173 --cors https://prompting-chat.vercel.app` | `cd /d "%LOCALAPPDATA%\prompting\opencode-free" && set "XDG_CONFIG_HOME=%LOCALAPPDATA%\prompting\opencode-free\config-home" && set "OPENCODE_SERVER_PASSWORD=TuClave" && opencode serve --port 4096 --hostname 127.0.0.1 --cors https://localhost:5173 --cors https://prompting-chat.vercel.app` |
+| **Claude (suscripción)** (puerto 4098) | `cd ~/Library/Application\ Support/prompting/claude-bridge && CLAUDE_BRIDGE_PASSWORD='TuClave' bun claude-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "CLAUDE_BRIDGE_PASSWORD=TuClave" && bun scripts/claude-bridge/server.ts` |
+
+Preparación, una sola vez:
+
+- **OpenCode Free:** la carpeta con su `opencode.json` la crea el instalador (`windows.bat` / `bash mac.sh`, ver [OpenCode Free](#opencode-free-servidor-local)); después se puede arrancar siempre a mano con el comando de arriba.
+- **Claude (suscripción) en Mac sin el repo:** instalar Bun, iniciar sesión en Claude Code y bajar el bridge:
+
+  ```bash
+  curl -fsSL https://bun.sh/install | bash
+  mkdir -p ~/Library/Application\ Support/prompting/claude-bridge
+  cd ~/Library/Application\ Support/prompting/claude-bridge
+  curl -fsSLO https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/claude-bridge/claude-bridge.js
+  ```
+
+Si no pasás contraseña, el bridge de Claude genera una la primera vez y la muestra al arrancar.
+
+---
+
+## Claude (suscripción, bridge local)
+
+Chatea con Claude usando tu propia suscripción de **Claude Code** (no una API key de Anthropic): la app le habla a un bridge local que corre `claude -p` en modo headless. Nota sobre los términos: usar la suscripción de Claude Code desde una app de terceros no es el uso previsto por Anthropic; es para uso personal y bajo tu propio riesgo.
+
+**Requisitos:** [Claude Code](https://claude.com/claude-code) instalado y con sesión iniciada (`claude`, luego `/login`).
+
+**Arranque manual** (sin autostart, sin servicio, sin carpeta Inicio/LaunchAgent — a diferencia de OpenCode Free):
+
+```bash
+bun run claude:bridge
+```
+
+La consola imprime la URL (`http://127.0.0.1:4098` por defecto) y la contraseña generada. Con `CLAUDE_BRIDGE_PASSWORD=miclave bun run claude:bridge` se fija una contraseña propia en vez de la generada.
+
+Después, en la app: elegir **Claude (suscripción)**, pegar la contraseña y **Guardar contraseña**. Al lado del selector de proveedor, un punto indica si el bridge responde (🟢) o no (🔴).
+
+- **Todos los modelos de Anthropic:** el selector lista cada modelo de chat de Claude (ids completos, p. ej. `claude-sonnet-5`, `claude-opus-5-5`, `claude-haiku-4-5`), tomados de [models.dev](https://models.dev) y regenerados con `bun run update:models`. Se prefiere el id sin fecha cuando existe (se descarta el duplicado con fecha) y el modelo por defecto es un Sonnet. Los 4 alias históricos (`haiku`, `sonnet`, `opus`, `fable`) se siguen aceptando en el bridge por compatibilidad, pero ya no aparecen en el selector.
+  - **Claude Fable** necesita créditos de uso además de la suscripción: si tu cuenta no los tiene, el modelo queda en la lista pero la app muestra el mensaje de error de Claude Code tal cual (no se oculta como "no disponible").
+- **Nivel de esfuerzo (`--effort`):** slider entre el proveedor y el modelo, con los niveles que ese modelo soporta según models.dev (entre `Bajo`/`Medio`/`Alto`/`Muy alto`/`Máximo` según el modelo). Sin "Por defecto": todo modelo con niveles arranca en el más bajo y se recuerda por modelo en el navegador (si la elección guardada ya no es válida para el modelo actual, también cae al más bajo). La varita mágica no usa nivel de esfuerzo.
+- **Visión:** todos los modelos de Claude aceptan imágenes (📎, hasta 4 por mensaje, PNG/JPEG/WEBP/GIF). El bridge las manda en modo `--input-format stream-json` en vez del modo de texto normal; el límite de tamaño del cuerpo sube a ~16 MB solo para pedidos con imágenes.
+- **Sin herramientas locales:** el bridge nunca habilita Bash/Edit/Read. Con búsqueda web activada (🌐) se habilita solo `WebSearch`.
+- **Solo escucha en `127.0.0.1:4098`**, con Basic auth en todos los endpoints y CORS restringido a `https://localhost:5173` y `https://prompting-chat.vercel.app`.
+- **Historial por sesión:** cada chat de la app reutiliza un `sessionId` de Claude Code (`--resume`) para mantener el contexto entre mensajes.
+
+Límites: funciona solo en la PC donde corre el bridge. La varita mágica siempre usa Haiku con una sesión nueva (sin `--resume`) y no manda imágenes.
+
+Código: `scripts/claude-bridge/`, `src/services/claudeBridge/`, `src/config/{effort,effortSettings,vision}.ts`, `src/components/HEADER/{ClaudeCodeStatus,EffortSelector}.tsx`.
+
+### Claude (suscripción) sin el repo
+
+Para usar el bridge en una máquina que no tiene este repositorio (por ejemplo, otra computadora tuya), alcanza con un solo archivo: `scripts/claude-bridge/claude-bridge.js`, un bundle standalone (generado con `bun run build:bridge`, sin minificar) que no importa nada del repo en tiempo de ejecución — solo módulos nativos de Node/Bun (`crypto`, `fs`, `os`, `path`).
+
+**macOS:**
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+Instalá [Claude Code](https://claude.com/claude-code) y corré `claude` y luego `/login` para iniciar sesión con tu suscripción. Después, descargá el bundle y arrancá el bridge:
+
+```bash
+curl -fsSLo claude-bridge.js https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/claude-bridge/claude-bridge.js
+CLAUDE_BRIDGE_PASSWORD='tu contraseña' bun claude-bridge.js
+```
+
+Si la contraseña tiene espacios o caracteres especiales, encerrala entre comillas simples como en el ejemplo.
+
+**Windows (PowerShell):**
+
+```powershell
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
+Instalá Claude Code y corré `claude` y luego `/login`. Después:
+
+```powershell
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/claude-bridge/claude-bridge.js -OutFile claude-bridge.js
+$env:CLAUDE_BRIDGE_PASSWORD = 'tu contraseña'
+bun claude-bridge.js
+```
+
+Igual que en Mac, las comillas simples protegen espacios y caracteres especiales en la contraseña.
+
+**Windows (cmd):** la variable de entorno se fija distinto — comillas dobles envolviendo todo el `set`, no comillas simples:
+
+```cmd
+set "CLAUDE_BRIDGE_PASSWORD=tu contraseña"
+bun claude-bridge.js
+```
+
+En cualquiera de los tres casos, la consola imprime la URL y la contraseña (si no la fijaste vos) igual que con `bun run claude:bridge`; en la app, dejá la URL del bridge en `http://127.0.0.1:4098`. El bridge solo escucha en la propia PC, así que la app tiene que abrirse en esa misma máquina.
+
+---
+
 ## Estructura
 
 ```
 scripts/
   opencode-free/            servidor local de OpenCode Free (instalar, contraseña, desinstalar)
+  claude-bridge/            bridge local a `claude -p` (incluye claude-bridge.js, el bundle standalone)
   update-vision-models.ts   genera visión y límites desde models.dev
 src/
   components/               interfaz (HEADER, FOOTER, chat, ApiKeyModal)
   config/                   proveedores, búsqueda web, visión, límites generados
   services/modelCatalog/    catálogo dinámico, fetchers por proveedor, rutas de OpenCode
   services/opencodeLocal/   cliente del servidor local de OpenCode Free
+  services/claudeBridge/    cliente del bridge local de Claude (suscripción)
   utils/                    tokens, tiempos, layout
 odd/tasks/                  documentos de cada feature (tareas, decisiones y verificación)
 ```
@@ -195,6 +300,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Catálogo dinámico de modelos para todos los proveedores con API.
 - Nuevo proveedor OpenCode Zen; OpenCode Go con header de sesión y rutas por familia.
 - OpenCode Free con servidor local, arranque automático, agente "chat" y permisos.
+- Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.
 - Búsqueda web habilitada solo en los modelos verificados en vivo.
 - Límites de contexto reales desde models.dev (antes muchos modelos mostraban 8192).
