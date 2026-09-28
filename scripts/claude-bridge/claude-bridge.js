@@ -305,9 +305,24 @@ function jsonResponse(body, init = {}, origin = null) {
     }
   });
 }
+var NON_SUBSCRIPTION_AUTH_VARS = [
+  "ANTHROPIC_API_KEY",
+  "ANTHROPIC_AUTH_TOKEN",
+  "ANTHROPIC_BASE_URL",
+  "CLAUDE_CODE_USE_BEDROCK",
+  "CLAUDE_CODE_USE_VERTEX",
+  "CLAUDE_CODE_USE_FOUNDRY"
+];
+function subscriptionEnv() {
+  const env = { ...process.env };
+  for (const name of NON_SUBSCRIPTION_AUTH_VARS)
+    delete env[name];
+  return env;
+}
 async function runClaude(argv) {
   const proc = Bun.spawn(["claude", ...argv], {
     cwd: DATA_DIR,
+    env: subscriptionEnv(),
     stdout: "pipe",
     stderr: "pipe"
   });
@@ -330,6 +345,7 @@ async function runClaude(argv) {
 async function runClaudeWithStdin(argv, stdinLine) {
   const proc = Bun.spawn(["claude", ...argv], {
     cwd: DATA_DIR,
+    env: subscriptionEnv(),
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe"
@@ -452,6 +468,10 @@ async function handleChat(req, origin, log) {
 }
 async function main() {
   const claudeVersion = await findClaudeVersion();
+  const ignored = NON_SUBSCRIPTION_AUTH_VARS.filter((name) => process.env[name]);
+  if (ignored.length > 0) {
+    console.log(`Se ignoran para usar tu suscripci\xF3n: ${ignored.join(", ")} (solo en este bridge).`);
+  }
   if (!claudeVersion) {
     console.warn(INSTALL_INSTRUCTIONS);
   }

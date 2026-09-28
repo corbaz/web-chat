@@ -139,9 +139,30 @@ interface RunResult {
 }
 
 /** Corre `claude` con un argv array (nunca un string de shell). */
+// Variables que hacen que Claude Code use otra autenticación (API key,
+// gateway, Bedrock, Vertex) en lugar del login de la suscripción. Si están
+// definidas, `claude -p` puede cobrar la API o colgarse esperando ese
+// backend (visto en macOS el 2026-09-28). Se quitan solo para el proceso
+// hijo; el entorno del usuario no cambia.
+const NON_SUBSCRIPTION_AUTH_VARS = [
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_AUTH_TOKEN',
+  'ANTHROPIC_BASE_URL',
+  'CLAUDE_CODE_USE_BEDROCK',
+  'CLAUDE_CODE_USE_VERTEX',
+  'CLAUDE_CODE_USE_FOUNDRY',
+]
+
+function subscriptionEnv(): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = { ...process.env }
+  for (const name of NON_SUBSCRIPTION_AUTH_VARS) delete env[name]
+  return env
+}
+
 async function runClaude(argv: string[]): Promise<RunResult> {
   const proc = Bun.spawn(['claude', ...argv], {
     cwd: DATA_DIR,
+    env: subscriptionEnv(),
     stdout: 'pipe',
     stderr: 'pipe',
   })
@@ -172,6 +193,7 @@ async function runClaudeWithStdin(
 ): Promise<RunResult> {
   const proc = Bun.spawn(['claude', ...argv], {
     cwd: DATA_DIR,
+    env: subscriptionEnv(),
     stdin: 'pipe',
     stdout: 'pipe',
     stderr: 'pipe',
@@ -395,6 +417,12 @@ async function handleChat(
 
 async function main(): Promise<void> {
   const claudeVersion = await findClaudeVersion()
+  const ignored = NON_SUBSCRIPTION_AUTH_VARS.filter((name) => process.env[name])
+  if (ignored.length > 0) {
+    console.log(
+      `Se ignoran para usar tu suscripción: ${ignored.join(', ')} (solo en este bridge).`,
+    )
+  }
   if (!claudeVersion) {
     console.warn(INSTALL_INSTRUCTIONS)
   }
