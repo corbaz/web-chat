@@ -18,6 +18,7 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 
 - **Catálogo de modelos siempre al día**: al abrir la app y cada vez que se guarda una API key, pide la lista de modelos a cada proveedor.
 - **Visión**: se pueden pegar (Ctrl+V) o adjuntar (📎) imágenes en los modelos que las aceptan (ícono de ojo 👁).
+- **Archivos de texto y PDF**: el botón 📎 también adjunta Markdown, texto plano, CSV, JSON y código, y PDFs (nativos en los modelos que los aceptan, ícono de PDF 📄; como texto extraído en el resto), en cualquier proveedor y modelo.
 - **Búsqueda web nativa**: en los modelos que la soportan (ícono de globo 🌐), el proveedor busca en internet y la respuesta muestra las fuentes.
 - **Estadísticas de tokens** con el límite de contexto real de cada modelo.
 - **Modelos gratis de OpenCode** a través de un servidor local de OpenCode ("OpenCode Free").
@@ -46,6 +47,7 @@ Detalle modelo por modelo, al 2026-09-26:
 
 - **Búsqueda web en OpenCode Go** (probada en vivo): `gpt-5.6-luna`, `gpt-6-luna`, `grok-4.6`, `grok-4.7`, `hy3`, `hy4-preview`, `kimi-k2.6`, `kimi-k3`, `mimo-v2.5`, `minimax-m3`. En `/chat/completions` Go usa la herramienta `web_search_preview`.
 - **Visión**: sale de [models.dev](https://models.dev) (`src/config/visionModels.generated.ts`). Para un modelo que models.dev todavía no conoce se usa una regla por prefijo (`claude-*`, `gemini-*`, `gpt-4o*`/`gpt-4.1*`/`gpt-5*`/`o3*`/`o4*`, o IDs con `vision`/`omni`).
+- **PDF nativo**: mismo criterio, con `modalities.input` incluyendo `pdf` (`src/config/pdfModels.generated.ts`, `src/config/pdf.ts`). Snapshot al 2026-09-28: Anthropic 15/15, OpenAI 19/52, Gemini 20/39, OpenCode Zen 45/112, OpenCode Go 6/33, Groq 0/16.
 - **Límite de contexto**: también sale de models.dev (`src/config/modelLimits.generated.ts`); si un modelo no figura, se usan los datos del catálogo fijo y, en último caso, 8192.
 
 Para actualizar la información de visión y límites cuando los proveedores suman modelos:
@@ -73,7 +75,7 @@ bun run dev      # https://localhost:5173 (certificado local de Vite)
 | `bun test` | Tests (runner de Bun) |
 | `bun run check` | Biome: lint + formato con corrección |
 | `bun run deploy` | Publica en Vercel a mano (`vercel deploy --prod`) |
-| `bun run update:models` | Regenera visión y límites desde models.dev (alias: `update:vision`) |
+| `bun run update:models` | Regenera visión, PDF y límites desde models.dev (alias: `update:vision`) |
 | `bun run ncu` | Actualiza dependencias a su última versión |
 | `bun run opencode:free:install` | Instala y arranca el servidor local de OpenCode Free (Windows; en Mac usar `scripts/opencode-free/mac.sh`) |
 | `bun run opencode:free:password [clave]` | Copia la contraseña al portapapeles, o la cambia |
@@ -144,6 +146,21 @@ Cada proveedor recibe las imágenes en el formato de su protocolo: `image_url` (
 **Las imágenes no se guardan en el historial** del navegador (la cuota es de ~5 MB): al recargar, el mensaje muestra "📎 [imagen]".
 
 Código: `src/config/vision.ts`, `src/config/providers.ts`, `src/components/FOOTER/Footer.tsx`.
+
+---
+
+## Entrada de archivos (texto y PDF)
+
+El botón 📎 (visible en todos los modelos, no solo los que tienen visión) también adjunta:
+
+- **Texto y código**: `.md`, `.markdown`, `.txt`, `.csv`, `.json`, `.xml`, `.yaml`/`.yml`, `.log` y código común (`.js`, `.ts`, `.tsx`, `.jsx`, `.py`, `.java`, `.go`, `.rs`, `.sql`, `.html`, `.css`, `.sh`, `.ps1`). Se leen en el navegador como UTF-8. En el chat se muestran como etiquetas arriba del texto (igual que las imágenes) y el contenido se agrega recién al armar el pedido a la API, como un bloque con fences ("Archivo: nombre.ext" + el contenido). Tope de ~200 KB por archivo y ~1 MB en total entre archivos de texto (y PDF pasado a texto) por mensaje.
+- **PDF**: en los modelos que lo aceptan como entrada nativa (ícono 📄 junto al ojo/globo en el selector) viaja el archivo entero en el formato de cada protocolo (`document` en Anthropic Messages, `input_file` en OpenAI Responses, `file` en OpenAI Chat Completions, `inline_data` en Gemini — el mismo mecanismo que las imágenes). En el resto de los modelos, el texto se extrae en el navegador con [pdf.js](https://mozilla.github.io/pdf.js/) (carga perezosa, en su propio chunk) y se manda como un archivo de texto más; la miniatura marca "nativo" o "texto".
+
+Hasta 4 imágenes + 4 archivos por mensaje. Los archivos se ven como etiquetas (📄 PDF, 📝 texto) arriba del cuadro de texto antes de enviar y arriba del texto en la burbuja del mensaje; al tocarlas se abre una vista previa dentro de la app (texto con scroll, o el PDF). Las imágenes también se amplían en un modal propio: abrir un `data:` en otra pestaña queda en blanco porque Chrome y Edge lo bloquean.
+
+Mientras la página está abierta, el contenido de los archivos de texto se sigue mandando en las preguntas siguientes. En el historial del navegador solo se guarda el texto de archivos chicos (hasta 20 KB cada uno y 40 KB por mensaje); de los más grandes queda el nombre ("sin contenido guardado"). Las imágenes y los PDF nativos nunca se guardan.
+
+Código: `src/config/pdf.ts`, `src/utils/{attachmentText,pdfText,blobUrl}.ts`, `src/config/providers.ts`, `src/components/FOOTER/Footer.tsx`, `src/components/chat/{ImageLightbox,FilePreviewModal}.tsx`.
 
 ---
 
@@ -222,6 +239,7 @@ Después, en la app: elegir **Claude (suscripción)**, pegar la contraseña y **
   - **Claude Fable** necesita créditos de uso además de la suscripción: si tu cuenta no los tiene, el modelo queda en la lista pero la app muestra el mensaje de error de Claude Code tal cual (no se oculta como "no disponible").
 - **Nivel de esfuerzo (`--effort`):** slider entre el proveedor y el modelo, con los niveles que ese modelo soporta según models.dev (entre `Bajo`/`Medio`/`Alto`/`Muy alto`/`Máximo` según el modelo). Sin "Por defecto": todo modelo con niveles arranca en el más bajo y se recuerda por modelo en el navegador (si la elección guardada ya no es válida para el modelo actual, también cae al más bajo). La varita mágica no usa nivel de esfuerzo.
 - **Visión:** todos los modelos de Claude aceptan imágenes (📎, hasta 4 por mensaje, PNG/JPEG/WEBP/GIF). El bridge las manda en modo `--input-format stream-json` en vez del modo de texto normal; el límite de tamaño del cuerpo sube a ~16 MB solo para pedidos con imágenes.
+- **PDF nativo:** todos los modelos de Claude también aceptan PDF (📎, hasta 4 por mensaje): el bridge acepta un campo `documents` (base64) y los manda como bloques `document` en el mismo mensaje stream-json que las imágenes. Los archivos de texto (Markdown, código, etc.) no viajan aparte: llegan ya insertados dentro del mensaje.
 - **Siempre usa la suscripción:** el bridge quita `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL` y las variables de Bedrock/Vertex/Foundry solo para el `claude` que lanza (y lo avisa al arrancar). Si estuvieran definidas, `claude -p` usaría esa autenticación en vez de tu login y podía quedarse colgado hasta el timeout.
 - **Fecha y hora:** cada mensaje le pasa al modelo la fecha y hora actual de Buenos Aires (y la hora UTC), así puede responder "¿qué hora es?" sin ejecutar nada.
 - **Herramientas con permiso:** Bash, WebFetch y WebSearch, nunca Edit/Write/Read/NotebookEdit. WebFetch y WebSearch se auto-aprueban (son de solo lectura); **Bash siempre pregunta**, con un modal (Rechazar es la opción por defecto) mientras el mensaje está en curso. Cada comando corre en la carpeta de datos del bridge, nunca en la del repo del usuario. Claude Code aprueba por su cuenta algunos comandos de solo lectura (por ejemplo `echo` o `dir`) sin pasar por el modal; todo lo que escribe, borra o cambia algo pregunta.
@@ -286,14 +304,14 @@ En cualquiera de los tres casos, la consola imprime la URL y la contraseña (si 
 scripts/
   opencode-free/            servidor local de OpenCode Free (instalar, contraseña, desinstalar)
   claude-bridge/            bridge local a `claude -p` (incluye claude-bridge.js, el bundle standalone)
-  update-vision-models.ts   genera visión y límites desde models.dev
+  update-vision-models.ts   genera visión, PDF y límites desde models.dev
 src/
   components/               interfaz (HEADER, FOOTER, chat, ApiKeyModal)
-  config/                   proveedores, búsqueda web, visión, límites generados
+  config/                   proveedores, búsqueda web, visión, PDF, límites generados
   services/modelCatalog/    catálogo dinámico, fetchers por proveedor, rutas de OpenCode
   services/opencodeLocal/   cliente del servidor local de OpenCode Free
   services/claudeBridge/    cliente del bridge local de Claude (suscripción)
-  utils/                    tokens, tiempos, layout
+  utils/                    tokens, tiempos, layout, adjuntos de texto/PDF
 odd/tasks/                  documentos de cada feature (tareas, decisiones y verificación)
 ```
 
@@ -307,6 +325,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Claude (suscripción) con bridge local a `claude -p`: todos los modelos, slider de esfuerzo, visión, fecha y hora, navegación web, comandos con permiso y toggle YOLO.
 - Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.
+- Entrada de archivos de texto/código y PDF (nativo o extraído con pdf.js) en todos los modelos y proveedores.
 - Búsqueda web habilitada solo en los modelos verificados en vivo.
 - Límites de contexto reales desde models.dev (antes muchos modelos mostraban 8192).
 - Modelos rechazados por el proveedor se ocultan solos.
