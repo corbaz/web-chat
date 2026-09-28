@@ -2,6 +2,11 @@ import type React from 'react'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import type { ColorPalette } from '../../../interfaces/temas/temas'
 import {
+  DEFAULT_CLAUDE_CODE_URL,
+  getClaudeCodeServerUrl,
+  setClaudeCodeServerUrl,
+} from '../../../services/claudeBridge/settings'
+import {
   DEFAULT_OPENCODE_FREE_URL,
   getOpenCodeFreeServerUrl,
   setOpenCodeFreeServerUrl,
@@ -90,6 +95,22 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     window.dispatchEvent(new Event('apikey-changed'))
   }
 
+  // Campo extra solo para Claude (suscripción): URL del bridge local (ver
+  // odd/tasks/claude-subscription-bridge.md).
+  const [claudeServerUrl, setClaudeServerUrl] = useState(() =>
+    getClaudeCodeServerUrl(),
+  )
+
+  useEffect(() => {
+    if (provider === 'claudecode') setClaudeServerUrl(getClaudeCodeServerUrl())
+  }, [provider])
+
+  const handleClaudeServerUrlBlur = () => {
+    setClaudeCodeServerUrl(claudeServerUrl)
+    setClaudeServerUrl(getClaudeCodeServerUrl())
+    window.dispatchEvent(new Event('apikey-changed'))
+  }
+
   const prevProviderRef = useRef<string>(provider)
 
   useEffect(() => {
@@ -146,9 +167,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
               ? 'OpenCode Zen'
               : id === 'opencodefree'
                 ? 'OpenCode Free'
-                : id === 'gemini'
-                  ? 'Gemini'
-                  : 'Anthropic'
+                : id === 'claudecode'
+                  ? 'Claude (suscripción)'
+                  : id === 'gemini'
+                    ? 'Gemini'
+                    : 'Anthropic'
 
   const providerLink = (id: string) =>
     id === 'groq'
@@ -163,9 +186,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
               ? 'https://opencode.ai/docs/zen/'
               : id === 'opencodefree'
                 ? 'https://opencode.ai'
-                : id === 'gemini'
-                  ? 'https://aistudio.google.com/app/apikey'
-                  : 'https://console.anthropic.com/settings/keys'
+                : id === 'claudecode'
+                  ? 'https://claude.com/claude-code'
+                  : id === 'gemini'
+                    ? 'https://aistudio.google.com/app/apikey'
+                    : 'https://console.anthropic.com/settings/keys'
 
   return (
     <div className="mb-6">
@@ -218,6 +243,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <option value="opengo">OpenCode Go</option>
             <option value="opencodezen">OpenCode Zen</option>
             <option value="opencodefree">OpenCode Free</option>
+            <option value="claudecode">Claude (suscripción)</option>
             <option value="gemini">Gemini</option>
           </select>
           {/* Chevron */}
@@ -261,6 +287,32 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         </div>
       )}
 
+      {/* Bridge local — solo Claude (suscripción) */}
+      {provider === 'claudecode' && (
+        <div className="mb-3">
+          <label
+            htmlFor="claudecode-server-url"
+            className="block text-xs font-medium mb-1.5"
+            style={{ color: theme.textMuted }}
+          >
+            Bridge local
+          </label>
+          <input
+            id="claudecode-server-url"
+            name="claudecodeServerUrl"
+            type="text"
+            value={claudeServerUrl}
+            onChange={(e) => setClaudeServerUrl(e.target.value)}
+            onBlur={handleClaudeServerUrlBlur}
+            placeholder={DEFAULT_CLAUDE_CODE_URL}
+            className="w-full px-3 py-2.5 text-sm"
+            style={nmInputStyle}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+      )}
+
       {/* API Key field */}
       <div className="space-y-2">
         <div className="relative">
@@ -275,7 +327,9 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                 ? ''
                 : provider === 'opencodefree'
                   ? 'Sin contraseña del servidor local'
-                  : `Sin API Key de ${providerName(provider)}`
+                  : provider === 'claudecode'
+                    ? 'Sin contraseña del bridge local'
+                    : `Sin API Key de ${providerName(provider)}`
             }
             className="w-full px-3 py-2.5 pr-10 text-sm cursor-default"
             style={{

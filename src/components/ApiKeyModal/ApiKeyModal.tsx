@@ -3,6 +3,7 @@ import Swal from 'sweetalert2'
 import { isOpenCodeAvailable } from '../../config/providers'
 import { APP_VERSION } from '../../constants/appVersion'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { checkServer as checkClaudeBridgeServer } from '../../services/claudeBridge/client'
 import {
   checkServer,
   type ServerCheck,
@@ -11,6 +12,9 @@ import {
 // Último diagnóstico del servidor local de OpenCode Free, para elegir el
 // mensaje de error (contraseña incorrecta vs. servidor inalcanzable).
 let lastOpenCodeFreeCheck: ServerCheck = 'unreachable'
+// Idem para el bridge local de Claude (suscripción, ver
+// odd/tasks/claude-subscription-bridge.md).
+let lastClaudeCodeCheck: ServerCheck = 'unreachable'
 
 interface ApiKeyModalProps {
   theme: ColorPalette
@@ -50,6 +54,11 @@ const PROVIDERS = [
     id: 'opencodefree',
     name: 'OpenCode Free',
     link: 'https://opencode.ai',
+  },
+  {
+    id: 'claudecode',
+    name: 'Claude (suscripción)',
+    link: 'https://claude.com/claude-code',
   },
   {
     id: 'gemini',
@@ -192,6 +201,17 @@ const validateApiKey = async (
         'http://127.0.0.1:4096'
       lastOpenCodeFreeCheck = await checkServer(baseUrl, apiKey.trim())
       return lastOpenCodeFreeCheck === 'ok'
+    } else if (provider === 'claudecode') {
+      // Mismo contrato que OpenCode Free: GET /health exige Basic auth, así
+      // que se valida la password real contra el bridge local configurado.
+      const baseUrl =
+        localStorage.getItem('claudecodeServerUrl')?.trim() ||
+        'http://127.0.0.1:4098'
+      lastClaudeCodeCheck = await checkClaudeBridgeServer(
+        baseUrl,
+        apiKey.trim(),
+      )
+      return lastClaudeCodeCheck === 'ok'
     } else if (provider === 'gemini') {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -215,9 +235,19 @@ const validateApiKey = async (
   }
 }
 
-// OpenCode Free no usa API key sino la contraseña del servidor local.
+// OpenCode Free y Claude (suscripción) no usan API key sino la contraseña
+// del servidor/bridge local.
+const usesLocalPassword = (provider: string): boolean =>
+  provider === 'opencodefree' || provider === 'claudecode'
+
 const confirmLabelFor = (provider: string): string =>
-  provider === 'opencodefree' ? 'Guardar contraseña' : 'Guardar API Key'
+  usesLocalPassword(provider) ? 'Guardar contraseña' : 'Guardar API Key'
+
+const passwordPlaceholderFor = (provider: string): string | null => {
+  if (provider === 'opencodefree') return 'Contraseña del servidor local'
+  if (provider === 'claudecode') return 'Contraseña del bridge local'
+  return null
+}
 
 const setConfirmLabel = (provider: string): void => {
   const button = Swal.getConfirmButton()
@@ -572,9 +602,8 @@ const ApiKeyModal = ({
               link.href = providerMeta.link
               link.textContent = providerMeta.name
               input.placeholder =
-                providerMeta.id === 'opencodefree'
-                  ? 'Contraseña del servidor local'
-                  : `Ingresa tu API Key de ${providerMeta.name}`
+                passwordPlaceholderFor(providerMeta.id) ||
+                `Ingresa tu API Key de ${providerMeta.name}`
               setConfirmLabel(providerMeta.id)
               const savedKey = localStorage.getItem(`${initialProvider}ApiKey`)
               if (savedKey) {
@@ -637,9 +666,8 @@ const ApiKeyModal = ({
                   link.href = p.link
                   link.textContent = p.name
                   input.placeholder =
-                    p.id === 'opencodefree'
-                      ? 'Contraseña del servidor local'
-                      : `Ingresa tu API Key de ${p.name}`
+                    passwordPlaceholderFor(p.id) ||
+                    `Ingresa tu API Key de ${p.name}`
                   setConfirmLabel(p.id)
                   const existing = localStorage.getItem(`${p.id}ApiKey`)
                   input.value = existing || ''
@@ -819,8 +847,8 @@ const ApiKeyModal = ({
             // Validar que no esté vacío
             if (!apiKey || apiKey.trim() === '') {
               Swal.showValidationMessage(
-                provider === 'opencodefree'
-                  ? 'Por favor, ingresa la contraseña del servidor local'
+                passwordPlaceholderFor(provider)
+                  ? `Por favor, ingresa la ${passwordPlaceholderFor(provider)?.toLowerCase()}`
                   : `Por favor, ingresa una API Key válida`,
               )
               applyErrorStyles()
@@ -828,9 +856,9 @@ const ApiKeyModal = ({
               return false
             }
 
-            // Validar longitud mínima (no aplica a la contraseña del servidor
-            // local de OpenCode Free: la valida el propio servidor).
-            if (provider !== 'opencodefree' && apiKey.trim().length < 20) {
+            // Validar longitud mínima (no aplica a la contraseña del
+            // servidor/bridge local: la valida el propio servidor/bridge).
+            if (!usesLocalPassword(provider) && apiKey.trim().length < 20) {
               Swal.showValidationMessage(
                 `La API Key parece demasiado corta. Verifica que sea correcta`,
               )
@@ -854,7 +882,11 @@ const ApiKeyModal = ({
                     ? lastOpenCodeFreeCheck === 'unauthorized'
                       ? `Contraseña incorrecta: tiene que ser exactamente la misma con la que arrancó el servidor local (no la API key de Zen). "windows.bat password" (Windows) o "bash mac.sh password" (Mac) la copian al portapapeles.`
                       : `No se pudo conectar con el servidor local. Verificá que esté corriendo (en Windows: "windows.bat"; en Mac: "bash mac.sh", ver README) y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
-                    : `API Key inválida. Por favor, verifica e intenta de nuevo.`
+                    : provider === 'claudecode'
+                      ? lastClaudeCodeCheck === 'unauthorized'
+                        ? `Contraseña incorrecta: tiene que ser exactamente la misma que imprimió la consola al correr "bun run claude:bridge".`
+                        : `No se pudo conectar con el bridge local. Verificá que esté corriendo ("bun run claude:bridge", ver README) y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
+                      : `API Key inválida. Por favor, verifica e intenta de nuevo.`
               Swal.showValidationMessage(errorMsg)
               applyErrorStyles()
               if (apiKeyInput) apiKeyInput.value = ''
@@ -887,9 +919,11 @@ const ApiKeyModal = ({
             text:
               provider === 'opencodefree'
                 ? 'La contraseña del servidor local de OpenCode Free ha sido guardada.'
-                : `Tu API Key de ${
-                    PROVIDERS.find((p) => p.id === provider)?.name || provider
-                  } ha sido guardada.`,
+                : provider === 'claudecode'
+                  ? 'La contraseña del bridge local de Claude ha sido guardada.'
+                  : `Tu API Key de ${
+                      PROVIDERS.find((p) => p.id === provider)?.name || provider
+                    } ha sido guardada.`,
             icon: 'success',
             background: theme.background,
             color: theme.text,

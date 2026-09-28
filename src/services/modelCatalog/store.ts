@@ -6,6 +6,7 @@
 // catálogo estático sin cambios: refreshProvider no hace nada para ellos.
 
 import { anthropicModels } from '../../components/HEADER/models/anthropicModels'
+import { claudeCodeModels } from '../../components/HEADER/models/claudeCodeModels'
 import { geminiModels } from '../../components/HEADER/models/geminiModels'
 import { groqModels } from '../../components/HEADER/models/groqModels'
 import { openaiModels } from '../../components/HEADER/models/openaiModels'
@@ -30,6 +31,7 @@ export const PROVIDER_IDS: ProviderId[] = [
   'opengo',
   'opencodezen',
   'opencodefree',
+  'claudecode',
   'gemini',
 ]
 
@@ -41,6 +43,7 @@ const STATIC_MODELS: Record<ProviderId, readonly CatalogModel[]> = {
   opengo: opengoModels,
   opencodezen: opencodeZenModels,
   opencodefree: opencodeFreeModels,
+  claudecode: claudeCodeModels,
   gemini: geminiModels,
 }
 

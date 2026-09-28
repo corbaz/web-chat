@@ -2,3 +2,9 @@
 # etiquetas con LF) y el .sh necesita LF para correr en macOS.
 *.bat -text
 *.sh text eol=lf
+
+# Bundle standalone del bridge de Claude (T6, ver
+# odd/tasks/claude-subscription-bridge.md): se descarga en crudo desde GitHub
+# y corre tal cual con `bun claude-bridge.js` en Mac o Windows, así que debe
+# quedar en LF pase lo que pase con core.autocrlf del que hace `git clone`.
+scripts/claude-bridge/*.js text eol=lf

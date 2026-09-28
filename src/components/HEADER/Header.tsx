@@ -1,6 +1,8 @@
 import type React from 'react'
 import { useState } from 'react'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { ClaudeCodeStatus } from './ClaudeCodeStatus'
+import EffortSelector from './EffortSelector'
 import ModelSelector from './ModelSelector'
 import MenuButton from './menu/MenuButton'
 import Title from './menu/Title'
@@ -44,6 +46,7 @@ const Header: React.FC<HeaderProps> = ({
         'routellm',
         'openai',
         'anthropic',
+        'claudecode',
         'opengo',
         'opencodezen',
         'opencodefree',
@@ -96,14 +99,7 @@ const Header: React.FC<HeaderProps> = ({
           />
 
           <div className="flex gap-4 w-full flex-col items-center sm:flex-row sm:justify-center">
-            <div className="w-auto">
-              <ModelSelector
-                selectedModel={selectedModel}
-                onModelChange={onModelChange}
-                theme={theme}
-                providerFilter={selectedProvider}
-              />
-            </div>
+            {/* Orden: Proveedor | Effort slider | Modelo */}
             <div className="w-auto flex items-center gap-1.5">
               <ProviderSelector
                 selectedProvider={selectedProvider}
@@ -113,6 +109,23 @@ const Header: React.FC<HeaderProps> = ({
               <OpenCodeFreeStatus
                 active={selectedProvider === 'opencodefree'}
                 theme={theme}
+              />
+              <ClaudeCodeStatus
+                active={selectedProvider === 'claudecode'}
+                theme={theme}
+              />
+            </div>
+            <EffortSelector
+              selectedProvider={selectedProvider}
+              selectedModel={selectedModel}
+              theme={theme}
+            />
+            <div className="w-auto">
+              <ModelSelector
+                selectedModel={selectedModel}
+                onModelChange={onModelChange}
+                theme={theme}
+                providerFilter={selectedProvider}
               />
             </div>
           </div>

@@ -33,6 +33,11 @@ function fallbackSupportsVision(modelId: string, provider: string): boolean {
     case 'opencodefree':
       // Sin imágenes en v1 (ver odd/tasks/opencode-free-local.md).
       return false
+    case 'claudecode':
+      // T5: todos los modelos de chat de Anthropic aceptan imágenes
+      // (models.dev), vía el bridge en modo stream-json (ver
+      // odd/tasks/claude-subscription-bridge.md).
+      return modelId.startsWith('claude-')
     default:
       return false
   }

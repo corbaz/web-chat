@@ -1,6 +1,6 @@
 // Archivo generado por scripts/update-vision-models.ts desde models.dev.
 // No editar a mano: correr `bun run update:models`.
-// Generado: 2026-09-26
+// Generado: 2026-09-27
 // Formato: [contexto, salida máxima] en tokens (0 = sin dato de salida).
 
 export const MODEL_LIMITS: Record<string, Record<string, [number, number]>> = {

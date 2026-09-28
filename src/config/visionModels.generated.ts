@@ -1,6 +1,6 @@
 // Archivo generado por scripts/update-vision-models.ts desde models.dev.
 // No editar a mano: correr `bun run update:vision`.
-// Generado: 2026-09-26
+// Generado: 2026-09-27
 
 export const VISION_MODELS: Record<string, Set<string>> = {
   groq: new Set<string>(['qwen/qwen3.6-27b', 'qwen/qwen3.8-27b']),

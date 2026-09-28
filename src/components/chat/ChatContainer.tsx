@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useCallback, useEffect, useRef } from 'react'
 import Swal from 'sweetalert2'
+import { resolveEffort } from '../../config/effortSettings'
 import {
   getApiErrorMessage,
   getApiKeyStorageKey,
@@ -22,6 +23,15 @@ import {
   type ToolConfig,
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { sendMessage as sendClaudeCodeMessage } from '../../services/claudeBridge/client'
+import {
+  getClaudeCodeSessionId,
+  setClaudeCodeSessionId,
+} from '../../services/claudeBridge/sessionMap'
+import {
+  getClaudeCodePassword,
+  getClaudeCodeServerUrl,
+} from '../../services/claudeBridge/settings'
 import {
   markModelUnavailable,
   PROVIDER_IDS,
@@ -663,6 +673,145 @@ const ChatContainer = ({
               'El modelo intentó ejecutar comandos en tu PC, se rechazaron y no llegó a responder. Reformulá la pregunta para que responda con lo que sabe (por ejemplo: "sin ejecutar nada, explicame...") o probá con otro modelo.'
           } else if (error instanceof Error && error.message) {
             errorMessage = `OpenCode Free: ${error.message}`
+          }
+
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: errorMessage,
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+        } finally {
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+        }
+        return
+      }
+
+      // Claude (suscripción, bridge local a `claude -p`, ver
+      // odd/tasks/claude-subscription-bridge.md): tampoco encaja en el flujo
+      // axios/payloadBuilder genérico (una sesión por chat vía --resume,
+      // historial del lado del proceso claude), así que se maneja aparte.
+      if (provider === 'claudecode') {
+        const baseUrl = getClaudeCodeServerUrl()
+        const password = getClaudeCodePassword()
+
+        if (!password.trim()) {
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content:
+              'Falta la contraseña del bridge de Claude. Guárdala en el menú de configuración antes de enviar mensajes.',
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+          return
+        }
+
+        try {
+          const appChatId = currentChatId || requestId
+          const sessionId = getClaudeCodeSessionId(appChatId)
+          const effectiveClaudeSearch =
+            searchEnabled && supportsWebSearch(selectedModel, provider)
+          const effort = resolveEffort(provider, selectedModel) || undefined
+          // Visión (T5): solo las imágenes del último mensaje (recién
+          // compuesto, en memoria); el bridge las valida (mime + máx. 4).
+          const claudeImages =
+            images && images.length > 0
+              ? images.map(({ mimeType, data }) => ({ mimeType, data }))
+              : undefined
+
+          // Solo se envía el último mensaje: el bridge mantiene el historial
+          // del lado del proceso claude por sessionId (--resume, ver Scope en
+          // el feature doc).
+          // Solo imágenes, sin texto: se manda un pedido por defecto (igual
+          // que prepareMessagesForApi en los demás proveedores).
+          const claudeText =
+            filteredContent.trim() ||
+            (claudeImages && claudeImages.length > 1
+              ? 'Describe las imágenes.'
+              : 'Describe la imagen.')
+          const result = await sendClaudeCodeMessage(
+            baseUrl,
+            password,
+            selectedModel,
+            claudeText,
+            sessionId,
+            effectiveClaudeSearch,
+            effort,
+            claudeImages,
+          )
+
+          if (result.isError) {
+            throw new Error(
+              result.error || 'Error desconocido del bridge de Claude',
+            )
+          }
+
+          if (result.sessionId) {
+            setClaudeCodeSessionId(appChatId, result.sessionId)
+          }
+
+          const filteredClaudeResponse = result.text
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim()
+
+          if (!filteredClaudeResponse) {
+            throw new Error('EMPTY_PROVIDER_RESPONSE')
+          }
+
+          const endTime = Date.now()
+          const responseTime =
+            endTime - (requestStartTimeRef.current[requestId] || endTime)
+          const formattedTime = formatResponseTime(responseTime)
+
+          const assistantMessage: ChatMessageType = {
+            id: `assistant_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: filteredClaudeResponse,
+            timestamp: Date.now(),
+            responseTime: formattedTime,
+            tokensUsed: result.tokens.input,
+            tokenLimit: getModelTokenLimit(
+              result.model || selectedModel,
+              provider,
+            ),
+            modelName: selectedModel,
+            requestedModelId: selectedModel,
+            promptTokens: result.tokens.input,
+            completionTokens: result.tokens.output,
+          }
+
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            assistantMessage,
+          ])
+        } catch (error) {
+          let errorMessage =
+            'Error al obtener respuesta. Por favor, intenta de nuevo.'
+          if (
+            error instanceof Error &&
+            error.message === 'EMPTY_PROVIDER_RESPONSE'
+          ) {
+            errorMessage =
+              'Claude devolvió una respuesta sin texto. No se guardó como respuesta válida; vuelve a intentarlo.'
+          } else if (error instanceof Error && error.message) {
+            errorMessage = `Claude (suscripción): ${error.message}`
           }
 
           const errorResponseMessage: ChatMessageType = {

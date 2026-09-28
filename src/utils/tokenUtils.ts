@@ -50,6 +50,20 @@ export const estimateMessagesTokens = (
 import { MODEL_LIMITS } from '../config/modelLimits.generated'
 import { getAllModels } from '../services/modelCatalog/store'
 
+// Claude (suscripción, bridge local a `claude -p`, ver
+// odd/tasks/claude-subscription-bridge.md): el bridge devuelve el id real de
+// Anthropic (modelUsage) como `model`, así que normalmente ya llega un id que
+// existe en MODEL_LIMITS.anthropic. Este mapa es el respaldo simple para el
+// caso en que llegue el alias sin resolver (p. ej. una respuesta de error
+// antes de tener modelUsage): apunta al id más nuevo de cada familia que ya
+// figura en modelLimits.generated.ts.
+const CLAUDE_CODE_ALIAS_TO_ANTHROPIC_ID: Record<string, string> = {
+  haiku: 'claude-haiku-4-5-20251001',
+  sonnet: 'claude-sonnet-5',
+  opus: 'claude-opus-5-5',
+  fable: 'claude-fable-5-1',
+}
+
 /**
  * Obtiene el límite de tokens para un modelo específico
  *
@@ -62,10 +76,21 @@ export const getModelTokenLimit = (
 ): number => {
   // 1) Contexto real según models.dev (ver scripts/update-vision-models.ts).
   //    OpenCode Free sirve los modelos gratis de Zen: comparte sus límites.
-  const limitsProvider = provider === 'opencodefree' ? 'opencodezen' : provider
-  const known = limitsProvider
+  //    Claude (suscripción) sirve los modelos reales de Anthropic: comparte
+  //    sus límites.
+  const limitsProvider =
+    provider === 'opencodefree'
+      ? 'opencodezen'
+      : provider === 'claudecode'
+        ? 'anthropic'
+        : provider
+  let known = limitsProvider
     ? MODEL_LIMITS[limitsProvider]?.[modelId]
     : undefined
+  if (!known && provider === 'claudecode') {
+    const aliasId = CLAUDE_CODE_ALIAS_TO_ANTHROPIC_ID[modelId]
+    if (aliasId) known = MODEL_LIMITS.anthropic[aliasId]
+  }
   if (known) return known[0]
 
   // 2) Metadatos del catálogo estático.

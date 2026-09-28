@@ -17,7 +17,16 @@ import {
   type ImageAttachment,
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { sendMessage as sendClaudeCodeMessage } from '../../services/claudeBridge/client'
+import {
+  getClaudeCodePassword,
+  getClaudeCodeServerUrl,
+} from '../../services/claudeBridge/settings'
 import { isMobile } from '../../utils/mobileUtils'
+
+// Modelo de Groq para la varita cuando el proveedor elegido es OpenCode Free:
+// rápido y sin herramientas.
+const MAGIC_FALLBACK_GROQ_MODEL = 'openai/gpt-oss-20b'
 
 // Constantes de adjuntos de imagen (T3, ver odd/tasks/image-input.md).
 const MAX_IMAGES = 4
@@ -267,18 +276,70 @@ const Footer: React.FC<FooterProps> = ({
     void addImageFiles(imageFiles)
   }
 
+  // OpenCode Free no sirve para la varita (sesiones con ~25k tokens de
+  // contexto y pedidos de permisos): en ese caso se usa Groq, si hay key.
+  const magicUsesGroqFallback = selectedProvider === 'opencodefree'
+  const hasGroqKey = Boolean(localStorage.getItem('groqApiKey')?.trim())
+
   const handleMagicButton = async () => {
     if (
       message.trim() &&
       !isLoading &&
       !isMagicLoading &&
-      selectedProvider !== 'opencodefree'
+      (!magicUsesGroqFallback || hasGroqKey)
     ) {
       try {
         setIsMagicLoading(true)
-        let modelToUse: string = selectedModel || 'openai/gpt-oss-120b'
 
-        if (!selectedModel && currentChatId) {
+        // Claude (suscripción, bridge local): la varita usa el bridge
+        // directamente con una sesión nueva (sin --resume) y el modelo
+        // haiku, sin importar el modelo elegido para el chat (ver Scope en
+        // odd/tasks/claude-subscription-bridge.md).
+        if (selectedProvider === 'claudecode') {
+          const baseUrl = getClaudeCodeServerUrl()
+          const password = getClaudeCodePassword()
+          if (!password.trim()) {
+            setIsMagicLoading(false)
+            alert('Falta la contraseña del bridge de Claude')
+            return
+          }
+
+          const claudePrompt = `Corrige y mejora la expresión en español del siguiente texto,
+asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
+
+Texto a mejorar:
+${message}`
+
+          const result = await sendClaudeCodeMessage(
+            baseUrl,
+            password,
+            'haiku',
+            claudePrompt,
+            undefined,
+            false,
+          )
+
+          if (result.isError || !result.text.trim()) {
+            throw new Error(
+              result.error || 'Respuesta vacía del bridge de Claude',
+            )
+          }
+
+          const improved = result.text
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim()
+          setMessage(improved)
+          setShowMagicResponse(true)
+          setTimeout(adjustTextareaHeight, 0)
+          textareaRef.current?.focus()
+          return
+        }
+
+        let modelToUse: string = magicUsesGroqFallback
+          ? MAGIC_FALLBACK_GROQ_MODEL
+          : selectedModel || 'openai/gpt-oss-120b'
+
+        if (!magicUsesGroqFallback && !selectedModel && currentChatId) {
           try {
             const raw = localStorage.getItem(CHAT_HISTORY_KEY)
             if (raw) {
@@ -299,8 +360,11 @@ asegurándote de que la gramática y la sintaxis sean impecables.El texto debe s
 Texto a mejorar:
 ${message}`
 
-        const provider =
-          selectedProvider || localStorage.getItem('selectedProvider') || 'groq'
+        const provider = magicUsesGroqFallback
+          ? 'groq'
+          : selectedProvider ||
+            localStorage.getItem('selectedProvider') ||
+            'groq'
         const providerConfig = getProviderConfig(provider)
         if (!providerConfig) {
           setIsMagicLoading(false)
@@ -508,7 +572,7 @@ ${message}`
     message.trim() &&
     !isLoading &&
     !isMagicLoading &&
-    selectedProvider !== 'opencodefree'
+    (!magicUsesGroqFallback || hasGroqKey)
 
   return (
     <footer
@@ -749,7 +813,13 @@ ${message}`
             <button
               type="button"
               onClick={handleMagicButton}
-              title="Mejorar Prompt"
+              title={
+                magicUsesGroqFallback
+                  ? hasGroqKey
+                    ? 'Mejorar Prompt (con Groq)'
+                    : 'Mejorar Prompt en OpenCode Free necesita una API key de Groq'
+                  : 'Mejorar Prompt'
+              }
               aria-label="Mejorar Prompt"
               className="nm-press"
               style={canMagic ? nmBtnBase : nmBtnDisabled}

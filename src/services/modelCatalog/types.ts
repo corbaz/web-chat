@@ -11,6 +11,7 @@ export type ProviderId =
   | 'opengo'
   | 'opencodezen'
   | 'opencodefree'
+  | 'claudecode'
   | 'gemini'
 
 export interface CatalogModel {
