@@ -352,7 +352,24 @@ async function runClaudeWithStdin(argv, stdinLine) {
     clearTimeout(timer);
   }
 }
-async function handleChat(req, origin) {
+function formatLog(req, url, status, ms, info) {
+  const hora = new Date().toLocaleTimeString("es-AR", { hour12: false });
+  const parts = [`[${hora}]`, req.method, url.pathname, String(status), `${(ms / 1000).toFixed(1)}s`];
+  if (info.model)
+    parts.push(info.model);
+  if (info.effort)
+    parts.push(`effort=${info.effort}`);
+  if (info.images)
+    parts.push(`im\xE1genes=${info.images}`);
+  if (info.webSearch)
+    parts.push("web");
+  if (info.tokensIn !== undefined)
+    parts.push(`tokens=${info.tokensIn}\u2192${info.tokensOut ?? 0}`);
+  if (info.error)
+    parts.push(`error: ${info.error.slice(0, 160)}`);
+  return parts.join(" ");
+}
+async function handleChat(req, origin, log) {
   const contentLength = Number(req.headers.get("content-length") || "0");
   if (contentLength > MAX_BODY_BYTES_WITH_IMAGES) {
     return jsonResponse({ error: "Cuerpo de la solicitud demasiado grande." }, { status: 413 }, origin);
@@ -399,6 +416,10 @@ async function handleChat(req, origin) {
   const sessionId = typeof body.sessionId === "string" ? body.sessionId : undefined;
   const webSearch = body.webSearch === true;
   const effort = isValidEffort(body.effort) ? body.effort : undefined;
+  log.model = model;
+  log.effort = effort;
+  log.images = images?.length;
+  log.webSearch = webSearch;
   try {
     const { stdout, stderr, exitCode, timedOut } = images ? await runClaudeWithStdin(buildStreamChatArgv({ model, sessionId, webSearch, effort }), buildStreamChatStdin({ message, images })) : await runClaude(buildChatArgv({
       model,
@@ -416,6 +437,10 @@ async function handleChat(req, origin) {
       }, { status: 502 }, origin);
     }
     const parsed = images ? parseStreamChatResult(stdout, model) : parseClaudeResult(stdout, model);
+    log.tokensIn = parsed.tokens?.input;
+    log.tokensOut = parsed.tokens?.output;
+    if (parsed.isError)
+      log.error = parsed.error ?? parsed.text;
     return jsonResponse(parsed, {}, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -440,6 +465,7 @@ async function main() {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
       }
       if (!checkBasicAuth(req.headers.get("authorization"), BASIC_AUTH_USER, PASSWORD)) {
+        console.log(formatLog(req, url, 401, 0, { error: "contrase\xF1a incorrecta" }));
         return jsonResponse({ error: "No autorizado." }, {
           status: 401,
           headers: { "WWW-Authenticate": 'Basic realm="claude-bridge"' }
@@ -453,14 +479,25 @@ async function main() {
         return jsonResponse(MODELS_RESPONSE, {}, origin);
       }
       if (url.pathname === "/chat" && req.method === "POST") {
-        return handleChat(req, origin);
+        const started = Date.now();
+        const log = {};
+        const response = await handleChat(req, origin, log);
+        if (response.status >= 400 && !log.error) {
+          try {
+            const data = await response.clone().json();
+            log.error = data.error;
+          } catch {}
+        }
+        console.log(formatLog(req, url, response.status, Date.now() - started, log));
+        return response;
       }
       return jsonResponse({ error: "No encontrado." }, { status: 404 }, origin);
     }
   });
   console.log(`Claude bridge escuchando en http://${server.hostname}:${server.port}`);
   console.log(`Usuario: ${BASIC_AUTH_USER}`);
-  console.log(`Password: ${PASSWORD}`);
+  console.log(process.env.CLAUDE_BRIDGE_PASSWORD ? "Password: la de CLAUDE_BRIDGE_PASSWORD" : `Password: ${PASSWORD}`);
+  console.log("Registro: una l\xEDnea por mensaje (sin el texto ni la contrase\xF1a).");
   if (claudeVersion) {
     console.log(`claude detectado: ${claudeVersion}`);
   }

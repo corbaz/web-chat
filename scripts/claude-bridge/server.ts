@@ -206,9 +206,40 @@ interface ChatRequestBody {
   images?: unknown
 }
 
+// Datos de un pedido para el registro en consola. Nunca incluye el texto del
+// mensaje, las imágenes ni la contraseña.
+interface RequestLog {
+  model?: string
+  effort?: string
+  images?: number
+  webSearch?: boolean
+  tokensIn?: number
+  tokensOut?: number
+  error?: string
+}
+
+function formatLog(
+  req: Request,
+  url: URL,
+  status: number,
+  ms: number,
+  info: RequestLog,
+): string {
+  const hora = new Date().toLocaleTimeString('es-AR', { hour12: false })
+  const parts = [`[${hora}]`, req.method, url.pathname, String(status), `${(ms / 1000).toFixed(1)}s`]
+  if (info.model) parts.push(info.model)
+  if (info.effort) parts.push(`effort=${info.effort}`)
+  if (info.images) parts.push(`imágenes=${info.images}`)
+  if (info.webSearch) parts.push('web')
+  if (info.tokensIn !== undefined) parts.push(`tokens=${info.tokensIn}→${info.tokensOut ?? 0}`)
+  if (info.error) parts.push(`error: ${info.error.slice(0, 160)}`)
+  return parts.join(' ')
+}
+
 async function handleChat(
   req: Request,
   origin: string | null,
+  log: RequestLog,
 ): Promise<Response> {
   // El límite chico (MAX_BODY_BYTES) es el que aplica en el caso normal (sin
   // imágenes); acá solo se descarta lo absurdamente grande de entrada. El
@@ -308,6 +339,10 @@ async function handleChat(
     typeof body.sessionId === 'string' ? body.sessionId : undefined
   const webSearch = body.webSearch === true
   const effort = isValidEffort(body.effort) ? body.effort : undefined
+  log.model = model
+  log.effort = effort
+  log.images = images?.length
+  log.webSearch = webSearch
 
   try {
     const { stdout, stderr, exitCode, timedOut } = images
@@ -345,6 +380,9 @@ async function handleChat(
     const parsed = images
       ? parseStreamChatResult(stdout, model)
       : parseClaudeResult(stdout, model)
+    log.tokensIn = parsed.tokens?.input
+    log.tokensOut = parsed.tokens?.output
+    if (parsed.isError) log.error = parsed.error ?? parsed.text
     return jsonResponse(parsed, {}, origin)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -375,6 +413,7 @@ async function main(): Promise<void> {
       }
 
       if (!checkBasicAuth(req.headers.get('authorization'), BASIC_AUTH_USER, PASSWORD)) {
+        console.log(formatLog(req, url, 401, 0, { error: 'contraseña incorrecta' }))
         return jsonResponse(
           { error: 'No autorizado.' },
           {
@@ -399,7 +438,19 @@ async function main(): Promise<void> {
       }
 
       if (url.pathname === '/chat' && req.method === 'POST') {
-        return handleChat(req, origin)
+        const started = Date.now()
+        const log: RequestLog = {}
+        const response = await handleChat(req, origin, log)
+        if (response.status >= 400 && !log.error) {
+          try {
+            const data = (await response.clone().json()) as { error?: string }
+            log.error = data.error
+          } catch {
+            // Sin cuerpo JSON: el código de estado alcanza.
+          }
+        }
+        console.log(formatLog(req, url, response.status, Date.now() - started, log))
+        return response
       }
 
       return jsonResponse({ error: 'No encontrado.' }, { status: 404 }, origin)
@@ -408,7 +459,12 @@ async function main(): Promise<void> {
 
   console.log(`Claude bridge escuchando en http://${server.hostname}:${server.port}`)
   console.log(`Usuario: ${BASIC_AUTH_USER}`)
-  console.log(`Password: ${PASSWORD}`)
+  console.log(
+    process.env.CLAUDE_BRIDGE_PASSWORD
+      ? 'Password: la de CLAUDE_BRIDGE_PASSWORD'
+      : `Password: ${PASSWORD}`,
+  )
+  console.log('Registro: una línea por mensaje (sin el texto ni la contraseña).')
   if (claudeVersion) {
     console.log(`claude detectado: ${claudeVersion}`)
   }
