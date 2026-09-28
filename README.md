@@ -223,13 +223,16 @@ Después, en la app: elegir **Claude (suscripción)**, pegar la contraseña y **
 - **Nivel de esfuerzo (`--effort`):** slider entre el proveedor y el modelo, con los niveles que ese modelo soporta según models.dev (entre `Bajo`/`Medio`/`Alto`/`Muy alto`/`Máximo` según el modelo). Sin "Por defecto": todo modelo con niveles arranca en el más bajo y se recuerda por modelo en el navegador (si la elección guardada ya no es válida para el modelo actual, también cae al más bajo). La varita mágica no usa nivel de esfuerzo.
 - **Visión:** todos los modelos de Claude aceptan imágenes (📎, hasta 4 por mensaje, PNG/JPEG/WEBP/GIF). El bridge las manda en modo `--input-format stream-json` en vez del modo de texto normal; el límite de tamaño del cuerpo sube a ~16 MB solo para pedidos con imágenes.
 - **Siempre usa la suscripción:** el bridge quita `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL` y las variables de Bedrock/Vertex/Foundry solo para el `claude` que lanza (y lo avisa al arrancar). Si estuvieran definidas, `claude -p` usaría esa autenticación en vez de tu login y podía quedarse colgado hasta el timeout.
-- **Sin herramientas locales:** el bridge nunca habilita Bash/Edit/Read. Con búsqueda web activada (🌐) se habilita solo `WebSearch`.
+- **Fecha y hora:** cada mensaje le pasa al modelo la fecha y hora actual de Buenos Aires (y la hora UTC), así puede responder "¿qué hora es?" sin ejecutar nada.
+- **Herramientas con permiso:** Bash, WebFetch y WebSearch, nunca Edit/Write/Read/NotebookEdit. WebFetch y WebSearch se auto-aprueban (son de solo lectura); **Bash siempre pregunta**, con un modal (Rechazar es la opción por defecto) mientras el mensaje está en curso. Cada comando corre en la carpeta de datos del bridge, nunca en la del repo del usuario. Claude Code aprueba por su cuenta algunos comandos de solo lectura (por ejemplo `echo` o `dir`) sin pasar por el modal; todo lo que escribe, borra o cambia algo pregunta.
+  - **YOLO:** un toggle junto al selector de esfuerzo (⚠️ rojo cuando está activo) salta el modal y auto-aprueba todo lo que el modelo pida ejecutar, sin preguntar — sigue sin habilitar herramientas de archivos. Apagado por defecto, nunca se guarda (recargar la página lo apaga), y activarlo muestra una advertencia una vez por carga de página. Mismo toggle para OpenCode Free.
+- **Fecha y hora actuales:** cada pedido manda la fecha/hora de Argentina (America/Argentina/Buenos_Aires) y la hora UTC en el system prompt, así el modelo sabe qué día es sin tener que preguntar o usar Bash para averiguarlo.
 - **Solo escucha en `127.0.0.1:4098`**, con Basic auth en todos los endpoints y CORS restringido a `https://localhost:5173` y `https://prompting-chat.vercel.app`.
 - **Historial por sesión:** cada chat de la app reutiliza un `sessionId` de Claude Code (`--resume`) para mantener el contexto entre mensajes.
 
-Límites: funciona solo en la PC donde corre el bridge. La varita mágica siempre usa Haiku con una sesión nueva (sin `--resume`) y no manda imágenes.
+Límites: funciona solo en la PC donde corre el bridge. La varita mágica siempre usa Haiku con una sesión nueva (sin `--resume`), no manda imágenes y nunca pide permiso (si el modelo intentara usar Bash para "mejorar el texto", cosa que no debería pasar, el pedido se corta por timeout en vez de quedar esperando un modal que la varita no muestra).
 
-Código: `scripts/claude-bridge/`, `src/services/claudeBridge/`, `src/config/{effort,effortSettings,vision}.ts`, `src/components/HEADER/{ClaudeCodeStatus,EffortSelector}.tsx`.
+Código: `scripts/claude-bridge/`, `src/services/claudeBridge/`, `src/services/permissionModal.ts`, `src/config/{effort,effortSettings,vision}.ts`, `src/components/HEADER/{ClaudeCodeStatus,EffortSelector,YoloToggle}.tsx`.
 
 ### Claude (suscripción) sin el repo
 
@@ -301,6 +304,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Catálogo dinámico de modelos para todos los proveedores con API.
 - Nuevo proveedor OpenCode Zen; OpenCode Go con header de sesión y rutas por familia.
 - OpenCode Free con servidor local, arranque automático, agente "chat" y permisos.
+- Claude (suscripción) con bridge local a `claude -p`: todos los modelos, slider de esfuerzo, visión, fecha y hora, navegación web, comandos con permiso y toggle YOLO.
 - Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.
 - Búsqueda web habilitada solo en los modelos verificados en vivo.
