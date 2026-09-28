@@ -15,6 +15,9 @@ export interface ChatMessageType {
   searchState?: 'incomplete' | undefined // Estado de la búsqueda web ('incomplete' para pause_turn de Anthropic)
   images?: ImageAttachment[] // Adjuntos de imagen en memoria (nunca se persisten, ver imageCount)
   imageCount?: number // Nº de imágenes enviadas en este mensaje; sobrevive a la persistencia como marcador "[imagen]"
+  documents?: DocumentAttachment[] // PDFs nativos del último mensaje en memoria (nunca se persisten, ver providers.ts)
+  files?: FileAttachment[] // Adjuntos de archivo (texto/PDF) en memoria, para mostrar chips (nunca se persisten, ver fileCount)
+  fileCount?: number // Nº de archivos enviados en este mensaje; sobrevive a la persistencia como marcador "[archivo]"
 }
 
 export interface Citation {
@@ -33,10 +36,38 @@ export interface ImageAttachment {
   id?: string
 }
 
+// Adjuntos de archivo (texto o PDF) para cualquier modelo (ver
+// odd/tasks/file-attachments.md). Los de kind 'text' y 'pdf-text' se
+// insertan como bloque de texto con fences en el `content` del mensaje antes
+// de enviarlo (ver src/utils/attachmentText.ts): nunca viajan por separado en
+// el payload de la API. Solo 'pdf-native' viaja estructurado, como
+// DocumentAttachment (providers.ts / bridge de Claude).
+export type FileAttachmentKind = 'text' | 'pdf-native' | 'pdf-text'
+
+export interface FileAttachment {
+  id?: string
+  name: string
+  mimeType: string
+  kind: FileAttachmentKind
+  size: number // bytes (del archivo original, o del texto extraído para pdf-text)
+  text?: string // contenido leído/extraído, para kind 'text' y 'pdf-text'
+  data?: string // base64 sin el prefijo data:...;base64,, solo para kind 'pdf-native'
+}
+
+// PDF nativo listo para viajar por protocolo (Anthropic 'document', OpenAI
+// Responses 'input_file', OpenAI Chat Completions 'file', Gemini
+// 'inline_data'). Nunca se persiste, igual que ImageAttachment.
+export interface DocumentAttachment {
+  mimeType: string // siempre 'application/pdf'
+  data: string
+  filename: string
+}
+
 export interface GroqMessageType {
   role: 'user' | 'assistant' | 'system'
   content: string
   images?: ImageAttachment[]
+  documents?: DocumentAttachment[]
 }
 
 // Clave versionada para almacenar mensajes en localStorage

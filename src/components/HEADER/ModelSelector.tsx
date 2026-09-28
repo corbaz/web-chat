@@ -9,6 +9,7 @@ import Select, {
   type StylesConfig,
 } from 'react-select'
 
+import { supportsPdf } from '../../config/pdf'
 import { supportsVision } from '../../config/vision'
 import { supportsWebSearch } from '../../config/webSearch'
 import type { ColorPalette } from '../../interfaces/temas/temas'
@@ -64,6 +65,26 @@ const EyeIcon: React.FC<{ className?: string }> = ({
   >
     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
     <circle cx="12" cy="12" r="3" />
+  </svg>
+)
+
+// Marca los modelos que aceptan PDF nativo (ver config/pdf.ts).
+const PdfIcon: React.FC<{ className?: string }> = ({
+  className = 'size-3.5',
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 2v6h6" />
   </svg>
 )
 
@@ -242,6 +263,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             props.data.value,
             props.data.provider,
           )
+          const hasPdf = supportsPdf(props.data.value, props.data.provider)
           return (
             <components.Option {...props}>
               <div className="flex items-center justify-between w-full">
@@ -254,6 +276,15 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                       title="Acepta imágenes"
                     >
                       <EyeIcon />
+                    </span>
+                  )}
+                  {hasPdf && (
+                    <span
+                      className="flex items-center"
+                      style={{ color: theme.accentAlt }}
+                      title="Acepta PDF"
+                    >
+                      <PdfIcon />
                     </span>
                   )}
                   {hasSearch && (
@@ -281,6 +312,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             props.data.value,
             props.data.provider,
           )
+          const hasPdf = supportsPdf(props.data.value, props.data.provider)
           return (
             <components.SingleValue {...props}>
               <div className="flex items-center gap-1.5">
@@ -292,6 +324,15 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     title="Acepta imágenes"
                   >
                     <EyeIcon className="size-3" />
+                  </span>
+                )}
+                {hasPdf && (
+                  <span
+                    className="flex items-center shrink-0"
+                    style={{ color: theme.accentAlt }}
+                    title="Acepta PDF"
+                  >
+                    <PdfIcon className="size-3" />
                   </span>
                 )}
                 {hasSearch && (

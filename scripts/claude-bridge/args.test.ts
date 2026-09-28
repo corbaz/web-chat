@@ -14,6 +14,7 @@ import {
   formatPermissionLog,
   formatUtcIso,
   isAllowedOrigin,
+  isValidDocuments,
   isValidEffort,
   isValidImages,
   isValidModel,
@@ -29,6 +30,10 @@ import {
 // PNG real de 1x1 rojo (RGB), verificado en vivo: Claude respondió "Rojo".
 const RED_PIXEL_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC'
+
+// Cabecera mínima de un PDF (no hace falta un archivo completo: solo se
+// valida la forma de base64, ver isValidDocuments).
+const TINY_PDF_BASE64 = 'JVBERi0xLjQKJeLjz9MK'
 
 describe('isValidModel', () => {
   test('acepta los alias históricos (compatibilidad hacia atrás)', () => {
@@ -114,6 +119,74 @@ describe('isValidImages', () => {
     expect(isValidImages('nope')).toBe(false)
     expect(isValidImages([{ mimeType: 'image/png' }])).toBe(false)
     expect(isValidImages([null])).toBe(false)
+  })
+})
+
+describe('isValidDocuments', () => {
+  test('acepta 1 a 4 documentos PDF con mime, base64 y filename válidos', () => {
+    expect(
+      isValidDocuments([
+        { mimeType: 'application/pdf', data: TINY_PDF_BASE64, filename: 'a.pdf' },
+      ]),
+    ).toBe(true)
+    const doc = {
+      mimeType: 'application/pdf',
+      data: TINY_PDF_BASE64,
+      filename: 'a.pdf',
+    }
+    expect(isValidDocuments([doc, doc, doc, doc])).toBe(true)
+  })
+
+  test('rechaza más de 4 documentos o un array vacío', () => {
+    const doc = {
+      mimeType: 'application/pdf',
+      data: TINY_PDF_BASE64,
+      filename: 'a.pdf',
+    }
+    expect(isValidDocuments([doc, doc, doc, doc, doc])).toBe(false)
+    expect(isValidDocuments([])).toBe(false)
+  })
+
+  test('rechaza un mime type que no sea application/pdf', () => {
+    expect(
+      isValidDocuments([
+        { mimeType: 'image/png', data: TINY_PDF_BASE64, filename: 'a.pdf' },
+      ]),
+    ).toBe(false)
+  })
+
+  test('rechaza datos que no tienen forma de base64', () => {
+    expect(
+      isValidDocuments([
+        { mimeType: 'application/pdf', data: 'no-es-base64!!', filename: 'a.pdf' },
+      ]),
+    ).toBe(false)
+  })
+
+  test('rechaza un filename con separadores de ruta o vacío', () => {
+    expect(
+      isValidDocuments([
+        {
+          mimeType: 'application/pdf',
+          data: TINY_PDF_BASE64,
+          filename: '../etc/passwd',
+        },
+      ]),
+    ).toBe(false)
+    expect(
+      isValidDocuments([
+        { mimeType: 'application/pdf', data: TINY_PDF_BASE64, filename: '' },
+      ]),
+    ).toBe(false)
+  })
+
+  test('rechaza valores que no son un array de objetos', () => {
+    expect(isValidDocuments(undefined)).toBe(false)
+    expect(isValidDocuments('nope')).toBe(false)
+    expect(
+      isValidDocuments([{ mimeType: 'application/pdf', data: TINY_PDF_BASE64 }]),
+    ).toBe(false)
+    expect(isValidDocuments([null])).toBe(false)
   })
 })
 
@@ -324,6 +397,53 @@ describe('buildStreamChatStdin (T5, visión)', () => {
     expect(content[0].source.data).toBe('AAA')
     expect(content[1].source.data).toBe('BBB')
     expect(content[2]).toEqual({ type: 'text', text: 'compará estas dos' })
+  })
+
+  test('un documento PDF: content = [documento, texto]', () => {
+    const stdin = buildStreamChatStdin({
+      message: '¿Qué dice el PDF?',
+      images: [],
+      documents: [
+        { mimeType: 'application/pdf', data: TINY_PDF_BASE64, filename: 'nota.pdf' },
+      ],
+    })
+    const parsed = JSON.parse(stdin)
+    expect(parsed.message.content).toEqual([
+      {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: TINY_PDF_BASE64,
+        },
+      },
+      { type: 'text', text: '¿Qué dice el PDF?' },
+    ])
+  })
+
+  test('imágenes y documentos juntos: imágenes primero, luego documentos, luego texto', () => {
+    const stdin = buildStreamChatStdin({
+      message: 'revisá todo esto',
+      images: [{ mimeType: 'image/png', data: 'AAA' }],
+      documents: [
+        { mimeType: 'application/pdf', data: TINY_PDF_BASE64, filename: 'nota.pdf' },
+      ],
+    })
+    const parsed = JSON.parse(stdin)
+    const content = parsed.message.content
+    expect(content).toHaveLength(3)
+    expect(content[0].type).toBe('image')
+    expect(content[1].type).toBe('document')
+    expect(content[2]).toEqual({ type: 'text', text: 'revisá todo esto' })
+  })
+
+  test('sin `documents`, sigue funcionando igual que antes (compatibilidad)', () => {
+    const stdin = buildStreamChatStdin({
+      message: 'hola',
+      images: [],
+    })
+    const parsed = JSON.parse(stdin)
+    expect(parsed.message.content).toEqual([{ type: 'text', text: 'hola' }])
   })
 })
 

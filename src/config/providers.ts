@@ -1,6 +1,7 @@
 // Configuración de proveedores de API
 import type {
   Citation,
+  DocumentAttachment,
   ExecutedTool,
   ImageAttachment,
   ToolConfig,
@@ -25,6 +26,7 @@ interface Message {
   role: string
   content: string
   images?: ImageAttachment[]
+  documents?: DocumentAttachment[]
 }
 
 export interface ProviderConfig {
@@ -69,21 +71,29 @@ export interface ProviderConfig {
 }
 
 // === T2: contenido con imágenes por protocolo (ver tabla de formatos en
-// odd/tasks/image-input.md) ===
+// odd/tasks/image-input.md); extendido para PDF nativo (documents) en
+// odd/tasks/file-attachments.md ===
 // Solo el último mensaje de usuario de la conversación puede llevar
-// `images`: el historial cargado desde localStorage nunca las lleva (se
-// eliminan al persistir, ver ChatMessageType.imageCount). Cuando un mensaje
-// no tiene imágenes, cada helper de abajo deja `content` como el mismo
-// string de siempre, así el payload de una conversación sin imágenes queda
-// byte-idéntico al de antes de esta funcionalidad.
+// `images`/`documents`: el historial cargado desde localStorage nunca los
+// lleva (se eliminan al persistir, ver ChatMessageType.imageCount/fileCount).
+// Cuando un mensaje no tiene imágenes ni documentos, cada helper de abajo
+// deja `content` como el mismo string de siempre, así el payload de una
+// conversación sin adjuntos queda byte-idéntico al de antes de esta
+// funcionalidad.
 const hasImages = (message: Message): boolean =>
   Array.isArray(message.images) && message.images.length > 0
+
+const hasDocuments = (message: Message): boolean =>
+  Array.isArray(message.documents) && message.documents.length > 0
+
+const hasAttachments = (message: Message): boolean =>
+  hasImages(message) || hasDocuments(message)
 
 // OpenAI Chat Completions: Groq, OpenCode Go/Zen (ruta 'chat'), RouteLLM.
 const toChatCompletionsMessage = (
   message: Message,
 ): { role: string; content: unknown } => {
-  if (!hasImages(message)) {
+  if (!hasAttachments(message)) {
     return { role: message.role, content: message.content }
   }
   return {
@@ -94,6 +104,13 @@ const toChatCompletionsMessage = (
         type: 'image_url',
         image_url: { url: `data:${image.mimeType};base64,${image.data}` },
       })),
+      ...(message.documents ?? []).map((doc) => ({
+        type: 'file',
+        file: {
+          filename: doc.filename,
+          file_data: `data:${doc.mimeType};base64,${doc.data}`,
+        },
+      })),
     ],
   }
 }
@@ -101,11 +118,11 @@ const toChatCompletionsMessage = (
 const toChatCompletionsMessages = (messages: Message[]) =>
   messages.map(toChatCompletionsMessage)
 
-// OpenAI Responses API: OpenAI (con imágenes), OpenCode Go/Zen (ruta 'responses').
+// OpenAI Responses API: OpenAI (con imágenes/PDF), OpenCode Go/Zen (ruta 'responses').
 const toResponsesItem = (
   message: Message,
 ): { role: string; content: unknown } => {
-  if (!hasImages(message)) {
+  if (!hasAttachments(message)) {
     return { role: message.role, content: message.content }
   }
   return {
@@ -116,6 +133,11 @@ const toResponsesItem = (
         type: 'input_image',
         image_url: `data:${image.mimeType};base64,${image.data}`,
       })),
+      ...(message.documents ?? []).map((doc) => ({
+        type: 'input_file',
+        filename: doc.filename,
+        file_data: `data:${doc.mimeType};base64,${doc.data}`,
+      })),
     ],
   }
 }
@@ -124,7 +146,7 @@ const toResponsesItem = (
 const toAnthropicMessage = (
   message: Message,
 ): { role: string; content: unknown } => {
-  if (!hasImages(message)) {
+  if (!hasAttachments(message)) {
     return { role: message.role, content: message.content }
   }
   return {
@@ -138,23 +160,35 @@ const toAnthropicMessage = (
           data: image.data,
         },
       })),
+      ...(message.documents ?? []).map((doc) => ({
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: doc.mimeType,
+          data: doc.data,
+        },
+      })),
       { type: 'text', text: message.content },
     ],
   }
 }
 
-// Gemini generateContent: Gemini, OpenCode Zen (ruta 'gemini').
+// Gemini generateContent: Gemini, OpenCode Zen (ruta 'gemini'). Un PDF viaja
+// igual que una imagen (mismo `inline_data`, solo cambia el mime_type).
 type GeminiPart =
   | { text: string }
   | { inline_data: { mime_type: string; data: string } }
 
 const toGeminiParts = (message: Message): GeminiPart[] => {
-  if (!hasImages(message)) {
+  if (!hasAttachments(message)) {
     return [{ text: message.content }]
   }
   return [
     ...(message.images ?? []).map((image) => ({
       inline_data: { mime_type: image.mimeType, data: image.data },
+    })),
+    ...(message.documents ?? []).map((doc) => ({
+      inline_data: { mime_type: doc.mimeType, data: doc.data },
     })),
     { text: message.content },
   ]
@@ -388,10 +422,11 @@ const buildOpenAIRequest = (
   _maxTokens: number,
   toolsConfig?: ToolConfig,
 ) => {
-  // Las imágenes de OpenAI solo viajan por la Responses API (ver tabla de
-  // formatos en odd/tasks/image-input.md): si el último mensaje lleva
-  // imágenes, se usa este endpoint aunque no haya búsqueda web activa.
-  if (toolsConfig?.searchEnabled !== true && !messages.some(hasImages)) {
+  // Las imágenes y los PDF nativos de OpenAI solo viajan por la Responses
+  // API (ver tabla de formatos en odd/tasks/image-input.md y
+  // odd/tasks/file-attachments.md): si el último mensaje lleva adjuntos, se
+  // usa este endpoint aunque no haya búsqueda web activa.
+  if (toolsConfig?.searchEnabled !== true && !messages.some(hasAttachments)) {
     return null
   }
 
@@ -474,10 +509,11 @@ const buildGeminiRequest = (
     return null
   }
 
-  // Las imágenes no viajan por el endpoint `interactions` (búsqueda web):
-  // si el último mensaje lleva imágenes, se usa generateContent (ver
-  // payloadBuilder de 'gemini' más abajo, que sí soporta inline_data).
-  if (messages.some(hasImages)) {
+  // Las imágenes y los PDF no viajan por el endpoint `interactions`
+  // (búsqueda web): si el último mensaje lleva adjuntos, se usa
+  // generateContent (ver payloadBuilder de 'gemini' más abajo, que sí
+  // soporta inline_data).
+  if (messages.some(hasAttachments)) {
     return null
   }
 

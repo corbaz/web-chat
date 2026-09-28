@@ -1,6 +1,6 @@
 // Archivo generado por scripts/update-vision-models.ts desde models.dev.
 // No editar a mano: correr `bun run update:models`.
-// Generado: 2026-09-27
+// Generado: 2026-09-28
 // Formato: [contexto, salida máxima] en tokens (0 = sin dato de salida).
 
 export const MODEL_LIMITS: Record<string, Record<string, [number, number]>> = {
@@ -56,6 +56,8 @@ export const MODEL_LIMITS: Record<string, Record<string, [number, number]>> = {
     'gpt-6-astra': [1050000, 128000],
     'gpt-6-luna': [1050000, 128000],
     'gpt-6-sol': [1050000, 128000],
+    'gpt-daybreak-blue-latest': [1050000, 128000],
+    'gpt-daybreak-red-latest': [400000, 128000],
     'gpt-realtime-2.1': [128000, 32000],
     o1: [200000, 100000],
     'o1-pro': [200000, 100000],
@@ -244,8 +246,6 @@ export const MODEL_LIMITS: Record<string, Record<string, [number, number]>> = {
     'deepseek-v4-flash-vision-exp': [1000000, 384000],
     'deepseek-v4-pro': [1000000, 384000],
     'deepseek-v4.1-flash': [1000000, 384000],
-    'glm-5': [202752, 32768],
-    'glm-5.1': [202752, 32768],
     'glm-5.2': [1000000, 131072],
     'glm-5.3': [1000000, 131072],
     'glm-5.3-flash': [1000000, 131072],
@@ -256,26 +256,19 @@ export const MODEL_LIMITS: Record<string, Record<string, [number, number]>> = {
     'grok-4.7': [500000, 500000],
     hy3: [256000, 128000],
     'hy4-preview': [1024000, 64000],
-    'kimi-k2.5': [262144, 65536],
     'kimi-k2.6': [262144, 65536],
     'kimi-k2.7-code': [262144, 262144],
     'kimi-k3': [1048576, 131072],
     'longcat-2.0': [1000000, 131072],
     'longcat-2.5-preview-free': [1000000, 131072],
-    'mimo-v2-omni': [262144, 128000],
-    'mimo-v2-pro': [1048576, 128000],
     'mimo-v2.5': [1000000, 128000],
     'mimo-v2.5-pro': [1048576, 128000],
     'mimo-v2.6-flash': [1048576, 131072],
     'mimo-v2.6-pro': [1048576, 131072],
-    'minimax-m2.5': [204800, 65536],
     'minimax-m2.7': [204800, 131072],
     'minimax-m3': [1000000, 131072],
     'muse-spark-1.2-contributor': [1048576, 131072],
     'muse-spark-1.3-contributor': [1048576, 131072],
-    'omen-alpha': [500000, 128000],
-    'ox-alpha-free': [1000000, 131072],
-    'qwen3.5-plus': [262144, 65536],
     'qwen3.6-plus': [1000000, 65536],
     'qwen3.7-max': [1000000, 65536],
     'qwen3.7-plus': [1000000, 65536],

@@ -1,5 +1,7 @@
 // Regenera, a partir de models.dev:
 // - src/config/visionModels.generated.ts (modalidades de entrada: visión)
+// - src/config/pdfModels.generated.ts (modalidades de entrada: PDF, ver
+//   odd/tasks/file-attachments.md)
 // - src/config/modelLimits.generated.ts (contexto y salida máxima)
 // - src/config/modelEffort.generated.ts (niveles de esfuerzo por reasoning_options)
 // - src/config/claudeModels.generated.ts (catálogo de Claude (suscripción), T4)
@@ -7,6 +9,7 @@
 
 const SOURCE_URL = 'https://models.dev/api.json'
 const OUTPUT = new URL('../src/config/visionModels.generated.ts', import.meta.url)
+const PDF_OUTPUT = new URL('../src/config/pdfModels.generated.ts', import.meta.url)
 const LIMITS_OUTPUT = new URL(
   '../src/config/modelLimits.generated.ts',
   import.meta.url,
@@ -93,6 +96,39 @@ const lines = [
 ]
 
 await Bun.write(OUTPUT, lines.join('\n'))
+
+// PDF nativo (ver odd/tasks/file-attachments.md): mismo criterio que visión
+// pero con `modalities.input.includes('pdf')`.
+const pdf: Record<string, string[]> = {}
+const pdfTextOnly: Record<string, string[]> = {}
+
+for (const [appProvider, devProvider] of Object.entries(PROVIDER_MAP)) {
+  const models = data[devProvider]?.models ?? {}
+  const ids = Object.keys(models).sort()
+  pdf[appProvider] = ids.filter((id) =>
+    models[id].modalities?.input?.includes('pdf'),
+  )
+  pdfTextOnly[appProvider] = ids.filter(
+    (id) => !models[id].modalities?.input?.includes('pdf'),
+  )
+}
+
+const pdfLines = [
+  '// Archivo generado por scripts/update-vision-models.ts desde models.dev.',
+  '// No editar a mano: correr `bun run update:models`.',
+  `// Generado: ${new Date().toISOString().slice(0, 10)}`,
+  '',
+  'export const PDF_MODELS: Record<string, Set<string>> = {',
+  ...Object.keys(PROVIDER_MAP).map((p) => `  ${p}: ${toSet(pdf[p])},`),
+  '}',
+  '',
+  'export const PDF_TEXT_ONLY_MODELS: Record<string, Set<string>> = {',
+  ...Object.keys(PROVIDER_MAP).map((p) => `  ${p}: ${toSet(pdfTextOnly[p])},`),
+  '}',
+  '',
+]
+
+await Bun.write(PDF_OUTPUT, pdfLines.join('\n'))
 
 // Límites: [contexto, salida máxima] por proveedor e ID (0 = sin dato).
 const limits: Record<string, Record<string, [number, number]>> = {}
@@ -213,7 +249,7 @@ await Bun.write(CLAUDE_MODELS_OUTPUT, claudeModelsLines.join('\n'))
 
 for (const p of Object.keys(PROVIDER_MAP)) {
   console.log(
-    `${p}: ${vision[p].length} con visión, ${textOnly[p].length} solo texto`,
+    `${p}: ${vision[p].length} con visión, ${textOnly[p].length} solo texto, ${pdf[p].length} con PDF`,
   )
 }
 console.log(`claudecode: ${claudeModelsList.length} modelos de Anthropic`)

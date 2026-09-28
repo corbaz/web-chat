@@ -11,6 +11,12 @@ const oneRedPixelPng = {
   data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
 }
 
+const tinyPdf = {
+  mimeType: 'application/pdf',
+  data: 'JVBERi0xLjQKJeLjz9MK',
+  filename: 'nota.pdf',
+}
+
 describe('providers: payloadBuilder sin imágenes queda byte-idéntico', () => {
   test('Groq (chat completions)', () => {
     const groq = getProviderConfig('groq')
@@ -200,6 +206,124 @@ describe('providers: payloadBuilder con imágenes usa la forma del protocolo', (
     const req = gemini?.buildRequest?.(
       'gemini-2.5-flash',
       messagesWithImage,
+      2048,
+      {
+        web_search: false,
+        code_interpreter: false,
+        visit_website: false,
+        wolfram_alpha: false,
+        browser_search: false,
+        searchEnabled: true,
+      },
+    )
+    expect(req).toBeNull()
+  })
+})
+
+describe('providers: payloadBuilder con documentos PDF usa la forma del protocolo', () => {
+  const messagesWithDocument = [
+    { role: 'system', content: 'Eres un asistente.' },
+    {
+      role: 'user',
+      content: '¿Qué dice el PDF?',
+      documents: [tinyPdf],
+    },
+  ]
+
+  test('Groq/Chat Completions: content pasa a array con type "file"', () => {
+    const groq = getProviderConfig('groq')
+    const payload = groq?.payloadBuilder(
+      'llama-3.3-70b-versatile',
+      messagesWithDocument,
+      2048,
+    ) as { messages: unknown[] }
+    expect(payload.messages[1]).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: '¿Qué dice el PDF?' },
+        {
+          type: 'file',
+          file: {
+            filename: 'nota.pdf',
+            file_data: `data:application/pdf;base64,${tinyPdf.data}`,
+          },
+        },
+      ],
+    })
+  })
+
+  test('OpenAI: buildRequest usa Responses API con input_file incluso sin búsqueda', () => {
+    const openai = getProviderConfig('openai')
+    const req = openai?.buildRequest?.('gpt-4o', messagesWithDocument, 2048)
+    expect(req?.url).toBe('https://api.openai.com/v1/responses')
+    expect(req?.parser).toBe('openai-responses')
+    const body = req?.body as { input: unknown[] }
+    expect(body.input[1]).toEqual({
+      role: 'user',
+      content: [
+        { type: 'input_text', text: '¿Qué dice el PDF?' },
+        {
+          type: 'input_file',
+          filename: 'nota.pdf',
+          file_data: `data:application/pdf;base64,${tinyPdf.data}`,
+        },
+      ],
+    })
+  })
+
+  test('Anthropic: content lleva bloques document + text', () => {
+    const anthropic = getProviderConfig('anthropic')
+    const payload = anthropic?.payloadBuilder(
+      'claude-sonnet-5',
+      messagesWithDocument,
+      2048,
+    ) as { messages: Array<{ role: string; content: unknown }> }
+    expect(payload.messages).toEqual([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: 'application/pdf',
+              data: tinyPdf.data,
+            },
+          },
+          { type: 'text', text: '¿Qué dice el PDF?' },
+        ],
+      },
+    ])
+  })
+
+  test('Gemini: parts lleva inline_data (mismo mecanismo que las imágenes) + text', () => {
+    const gemini = getProviderConfig('gemini')
+    const payload = gemini?.payloadBuilder(
+      'gemini-2.5-flash',
+      messagesWithDocument,
+      2048,
+    ) as { contents: Array<{ role: string; parts: unknown[] }> }
+    expect(payload.contents).toEqual([
+      {
+        role: 'user',
+        parts: [
+          {
+            inline_data: {
+              mime_type: 'application/pdf',
+              data: tinyPdf.data,
+            },
+          },
+          { text: '¿Qué dice el PDF?' },
+        ],
+      },
+    ])
+  })
+
+  test('Gemini: buildRequest (interactions/búsqueda) se salta si hay documentos', () => {
+    const gemini = getProviderConfig('gemini')
+    const req = gemini?.buildRequest?.(
+      'gemini-2.5-flash',
+      messagesWithDocument,
       2048,
       {
         web_search: false,

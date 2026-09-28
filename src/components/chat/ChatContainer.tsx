@@ -17,6 +17,8 @@ import {
   CHAT_HISTORY_KEY,
   type ChatMessageType,
   type Citation,
+  type DocumentAttachment,
+  type FileAttachment,
   type GroqMessageType,
   type ImageAttachment,
   STORAGE_KEY,
@@ -57,6 +59,10 @@ import {
   getOpenCodeFreeServerUrl,
 } from '../../services/opencodeLocal/settings'
 import { askPermission } from '../../services/permissionModal'
+import {
+  resolveApiContent,
+  toPersistableFiles,
+} from '../../utils/attachmentText'
 import {
   FOOTER_HEIGHT_MOBILE,
   HEADER_HEIGHT_MOBILE,
@@ -311,10 +317,19 @@ const ChatContainer = ({
           dataToStore = JSON.parse(storedData)
         }
 
-        // Las imágenes nunca se persisten en localStorage (cuota ~5 MB):
-        // se descarta `images` y queda solo el marcador `imageCount`.
+        // Las imágenes y los documentos PDF nativos nunca se persisten en
+        // localStorage (cuota ~5 MB): se descartan y solo sobrevive el
+        // marcador `imageCount`. Los archivos de texto sí, pero solo el
+        // contenido de los chicos (ver toPersistableFiles); el resto
+        // conserva nombre/tamaño/tipo sin el texto extraído.
         const messagesToPersist = messages.map(
-          ({ images: _images, ...rest }) => rest,
+          ({ images: _images, documents: _documents, files, ...rest }) => {
+            const persistableFiles = toPersistableFiles(files)
+            return {
+              ...rest,
+              ...(persistableFiles ? { files: persistableFiles } : {}),
+            }
+          },
         )
 
         // Creamos un nuevo objeto para evitar modificar directamente la referencia
@@ -357,20 +372,40 @@ const ChatContainer = ({
         modelTokenLimit * TOKEN_LIMIT_SAFETY_FACTOR - MAX_RESPONSE_TOKENS,
       )
 
-      // Convertir mensajes al formato para API. Solo el último mensaje de
-      // usuario (recién compuesto) puede traer `images`: el historial
-      // cargado desde localStorage nunca las tiene (se eliminan al
-      // persistir, ver el efecto de guardado más abajo). Si el usuario
-      // envía imágenes sin texto, el payload usa un texto por defecto; el
-      // mensaje mostrado en la UI conserva el contenido real (vacío).
-      const apiMessages: GroqMessageType[] = messagesHistory.map((msg) => ({
-        role: msg.role,
-        content:
-          !msg.content.trim() && msg.images && msg.images.length > 0
-            ? 'Describe la imagen.'
-            : msg.content,
-        ...(msg.images && msg.images.length > 0 ? { images: msg.images } : {}),
-      }))
+      // Convertir mensajes al formato para API. `content` en ChatMessageType
+      // es siempre lo que el usuario tipeó (nunca se modifica al guardar,
+      // ver sendMessage); acá, y solo acá, se arma el texto real que viaja a
+      // la API: los archivos de texto todavía en memoria (`files`, kind
+      // 'text'/'pdf-text') se insertan como bloques con fences (ver
+      // resolveApiContent/inlineTextAttachments), y si el resultado sigue
+      // vacío se usa un texto por defecto según haya imágenes o documentos.
+      // Como los proveedores sin sesión (todos menos Claude suscripción y
+      // OpenCode Free) reenvían el historial completo en cada pedido, esto
+      // se aplica a CADA mensaje, no solo al último: mientras el chat no se
+      // recargue, los archivos de texto de turnos anteriores siguen en
+      // memoria (`files`) y se vuelven a inlinear para mantener el
+      // contexto. Solo el último mensaje de usuario (recién compuesto)
+      // puede traer `images`/`documents`: el historial cargado desde
+      // localStorage nunca los tiene (se eliminan al persistir, ver el
+      // efecto de guardado más abajo).
+      const apiMessages: GroqMessageType[] = messagesHistory.map((msg) => {
+        const msgHasImages = Boolean(msg.images && msg.images.length > 0)
+        const msgHasDocuments = Boolean(
+          msg.documents && msg.documents.length > 0,
+        )
+        const content = resolveApiContent(
+          msg.content,
+          msg.files,
+          msg.images?.length ?? 0,
+          msg.documents?.length ?? 0,
+        )
+        return {
+          role: msg.role,
+          content,
+          ...(msgHasImages ? { images: msg.images } : {}),
+          ...(msgHasDocuments ? { documents: msg.documents } : {}),
+        }
+      })
 
       // Añadir sistema de mensajes para asegurar que responda en español
       const systemMessage: GroqMessageType = {
@@ -493,9 +528,14 @@ const ChatContainer = ({
 
   // Función para enviar un mensaje al API de Groq
   const sendMessage = useCallback(
-    async (content: string, images?: ImageAttachment[]) => {
+    async (
+      content: string,
+      images?: ImageAttachment[],
+      files?: FileAttachment[],
+    ) => {
       const hasImages = Boolean(images && images.length > 0)
-      if (!content.trim() && !hasImages) return
+      const hasFiles = Boolean(files && files.length > 0)
+      if (!content.trim() && !hasImages && !hasFiles) return
 
       // Generar ID único para el mensaje
       const userMessageId = `user_${Date.now()}_${Math.random()
@@ -506,16 +546,39 @@ const ChatContainer = ({
         .replace(/<think>[\s\S]*?<\/think>/g, '')
         .trim()
 
-      // Añadir mensaje del usuario (con contenido filtrado). Las imágenes
-      // quedan en memoria para mostrarlas (ChatMessage) y para esta
-      // petición; nunca se guardan en localStorage (ver efecto de
-      // persistencia), donde solo sobrevive `imageCount`.
+      // Los PDF nativos (kind 'pdf-native') viajan estructurados, como
+      // `documents` (providers.ts / bridge de Claude), igual que `images`.
+      const nativeDocuments: DocumentAttachment[] | undefined = hasFiles
+        ? files
+            ?.filter((file) => file.kind === 'pdf-native' && file.data)
+            .map((file) => ({
+              mimeType: file.mimeType,
+              data: file.data as string,
+              filename: file.name,
+            }))
+        : undefined
+      const hasNativeDocuments = Boolean(
+        nativeDocuments && nativeDocuments.length > 0,
+      )
+
+      // Añadir mensaje del usuario: `content` es exactamente lo que
+      // tipeó, nunca se le insertan los archivos de texto (esos se
+      // muestran como chips, igual que las imágenes, y se inlinean recién
+      // al armar el payload de la API — ver resolveApiContent/
+      // prepareMessagesForApi y las ramas de Claude/OpenCode Free más
+      // abajo). Las imágenes, documentos y la lista de archivos quedan en
+      // memoria para mostrarlos (ChatMessage) y para esta petición; las
+      // imágenes y los PDF nativos nunca se guardan en localStorage (ver
+      // efecto de persistencia), donde solo sobrevive `imageCount` y, para
+      // los archivos de texto, el contenido de los chicos (< ~20 KB).
       const userMessage: ChatMessageType = {
         id: userMessageId,
         role: 'user',
         content: filteredContent,
         timestamp: Date.now(),
         ...(hasImages ? { images, imageCount: images?.length } : {}),
+        ...(hasNativeDocuments ? { documents: nativeDocuments } : {}),
+        ...(hasFiles ? { files, fileCount: files?.length } : {}),
       }
 
       // Actualizar mensajes con el nuevo mensaje del usuario
@@ -528,7 +591,9 @@ const ChatContainer = ({
         const newChatId = currentChatId || `chat_${Date.now()}`
         const title = content.trim()
           ? content.trim().substring(0, 30) + (content.length > 30 ? '...' : '')
-          : 'Imagen'
+          : hasImages
+            ? 'Imagen'
+            : 'Archivo'
 
         // Actualizar historial de chat incluyendo el modelo actual
         setChatHistory(
@@ -617,14 +682,19 @@ const ChatContainer = ({
           }
 
           // Solo se envía el último mensaje: OpenCode mantiene el historial
-          // del lado del servidor por sessionId (ver Scope en el feature doc).
+          // del lado del servidor por sessionId (ver Scope en el feature
+          // doc). OpenCode Free nunca recibe PDF nativo (Footer.tsx nunca lo
+          // ofrece para este proveedor, ver Scope): el texto que se manda es
+          // solo el content tipeado + los adjuntos de texto inlineados acá
+          // mismo, recién al armar el pedido (nunca se guardan insertados en
+          // el mensaje, ver userMessage.content arriba).
           let rejectedTools = 0
           const result = await sendOpenCodeFreeMessage(
             baseUrl,
             password,
             sessionId,
             selectedModel,
-            filteredContent,
+            resolveApiContent(filteredContent, files, 0, 0),
             {
               onPermission: async (permission) => {
                 // YOLO (T7 follow-up): 'once' automático, sin modal.
@@ -753,17 +823,32 @@ const ChatContainer = ({
             images && images.length > 0
               ? images.map(({ mimeType, data }) => ({ mimeType, data }))
               : undefined
+          // PDF nativo (T-file-attachments): mismo criterio, el bridge los
+          // manda como bloques `document` en el mensaje stream-json.
+          const claudeDocuments =
+            nativeDocuments && nativeDocuments.length > 0
+              ? nativeDocuments.map(({ mimeType, data, filename }) => ({
+                  mimeType,
+                  data,
+                  filename,
+                }))
+              : undefined
 
           // Solo se envía el último mensaje: el bridge mantiene el historial
-          // del lado del proceso claude por sessionId (--resume, ver Scope en
-          // el feature doc).
-          // Solo imágenes, sin texto: se manda un pedido por defecto (igual
-          // que prepareMessagesForApi en los demás proveedores).
-          const claudeText =
-            filteredContent.trim() ||
-            (claudeImages && claudeImages.length > 1
-              ? 'Describe las imágenes.'
-              : 'Describe la imagen.')
+          // del lado del proceso claude por sessionId (--resume, ver Scope
+          // en el feature doc). Los archivos de texto se inlinean acá mismo,
+          // recién al armar el pedido (ver Bridge en el feature doc: "Text
+          // files arrive already inlined in the message" — nunca se guardan
+          // insertados en el mensaje, ver userMessage.content arriba). Sin
+          // texto ni archivos de texto: se manda un pedido por defecto según
+          // haya imágenes o documentos (mismo criterio que
+          // prepareMessagesForApi en los demás proveedores).
+          const claudeText = resolveApiContent(
+            filteredContent,
+            files,
+            claudeImages?.length ?? 0,
+            claudeDocuments?.length ?? 0,
+          )
 
           // T7: mientras el /chat esté en curso, sondear los permisos
           // pendientes (Bash preguntándole al usuario) cada ~1s y mostrar el
@@ -817,6 +902,7 @@ const ChatContainer = ({
               sessionId,
               effort,
               claudeImages,
+              claudeDocuments,
               yoloEnabled,
             )
           } finally {
@@ -1403,8 +1489,13 @@ const ChatContainer = ({
       const customEvent = event as CustomEvent<{
         message: string
         images?: ImageAttachment[]
+        files?: FileAttachment[]
       }>
-      sendMessage(customEvent.detail.message, customEvent.detail.images)
+      sendMessage(
+        customEvent.detail.message,
+        customEvent.detail.images,
+        customEvent.detail.files,
+      )
     }
 
     document.addEventListener(

@@ -1,9 +1,17 @@
 import type React from 'react'
 import { lazy, Suspense, useState } from 'react'
-import type { ChatMessageType } from '../../interfaces/chat/chatTypes.ts'
+import type {
+  ChatMessageType,
+  FileAttachment,
+} from '../../interfaces/chat/chatTypes.ts'
 import type { ColorPalette } from '../../interfaces/temas/temas.tsx'
 import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
+import { base64ToBlobUrl } from '../../utils/blobUrl'
+import FilePreviewModal, { type FilePreview } from './FilePreviewModal'
+import ImageLightbox from './ImageLightbox'
 import './markdown-styles.css'
+
+const PDF_MIME = 'application/pdf'
 
 const MarkdownRenderer = lazy(() => import('../chat/MarkdownRenderer.tsx'))
 
@@ -45,7 +53,36 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const imageToDataUrl = (mimeType: string, data: string): string =>
     `data:${mimeType};base64,${data}`
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   const [copied, setCopied] = useState(false)
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null)
+  const [filePreview, setFilePreview] = useState<FilePreview | null>(null)
+
+  const closeFilePreview = () => {
+    setFilePreview((current) => {
+      if (current?.kind === 'pdf') URL.revokeObjectURL(current.blobUrl)
+      return null
+    })
+  }
+
+  const handlePreviewFile = (file: FileAttachment) => {
+    if (file.kind === 'pdf-native') {
+      if (!file.data) return
+      setFilePreview({
+        kind: 'pdf',
+        title: file.name,
+        blobUrl: base64ToBlobUrl(file.data, PDF_MIME),
+      })
+      return
+    }
+    if (typeof file.text !== 'string') return
+    setFilePreview({ kind: 'text', title: file.name, text: file.text })
+  }
 
   const handleCopyMessage = async () => {
     const copy = async () => {
@@ -126,12 +163,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.images.map((image, index) => {
               const dataUrl = imageToDataUrl(image.mimeType, image.data)
               return (
-                <a
+                <button
+                  type="button"
                   key={image.id ?? dataUrl}
-                  href={dataUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={() => setPreviewSrc(dataUrl)}
                   title="Ver imagen completa"
+                  aria-label={`Ver imagen adjunta ${index + 1}`}
+                  className="p-0 border-0 bg-transparent cursor-zoom-in"
                 >
                   <img
                     src={dataUrl}
@@ -139,10 +177,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     className="size-20 object-cover rounded-lg"
                     style={{ boxShadow: theme.shadow.sm }}
                   />
-                </a>
+                </button>
               )
             })}
           </div>
+        )}
+        {previewSrc && (
+          <ImageLightbox
+            src={previewSrc}
+            alt="Imagen adjunta"
+            theme={theme}
+            onClose={() => setPreviewSrc(null)}
+          />
         )}
         {isUser &&
           (!message.images || message.images.length === 0) &&
@@ -154,6 +200,97 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               {message.imageCount === 1
                 ? '📎 [imagen]'
                 : `📎 [imagen ×${message.imageCount}]`}
+            </div>
+          )}
+
+        {/* Chips de archivos adjuntos (texto/PDF, T-file-attachments): igual
+            criterio que las imágenes de arriba, en memoria o marcador
+            persistido. Un archivo de texto persistido que superó el tope de
+            tamaño (ver toPersistableFiles) llega sin `text`: se muestra
+            igual, pero sin poder abrir la vista previa. */}
+        {isUser && message.files && message.files.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {message.files.map((file, index) => {
+              const isPdf =
+                file.kind === 'pdf-native' || file.kind === 'pdf-text'
+              const isPreviewable =
+                file.kind === 'pdf-native'
+                  ? Boolean(file.data)
+                  : typeof file.text === 'string'
+              return (
+                <div
+                  key={file.id ?? `${file.name}-${index}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+                  style={{
+                    backgroundColor: theme.background,
+                    boxShadow: theme.shadow.sm,
+                  }}
+                >
+                  {isPreviewable ? (
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewFile(file)}
+                      title={`Ver ${file.name}`}
+                      aria-label={`Ver archivo ${index + 1}: ${file.name}`}
+                      className="flex items-center gap-1.5 p-0 border-0 bg-transparent cursor-zoom-in"
+                    >
+                      <span aria-hidden="true">{isPdf ? '📄' : '📝'}</span>
+                      <span className="max-w-32 truncate" title={file.name}>
+                        {file.name}
+                      </span>
+                      <span style={{ color: theme.textMuted }}>
+                        ({formatFileSize(file.size)})
+                      </span>
+                    </button>
+                  ) : (
+                    <span
+                      className="flex items-center gap-1.5"
+                      style={{ color: theme.textMuted }}
+                      title="El contenido no se guardó en el historial (archivo grande)"
+                    >
+                      <span aria-hidden="true">{isPdf ? '📄' : '📝'}</span>
+                      <span className="max-w-32 truncate">{file.name}</span>
+                      <span>
+                        ({formatFileSize(file.size)}, sin contenido guardado)
+                      </span>
+                    </span>
+                  )}
+                  {isPdf && (
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase"
+                      style={{
+                        backgroundColor:
+                          file.kind === 'pdf-native'
+                            ? theme.accent
+                            : theme.textMuted,
+                        color: '#fff',
+                      }}
+                    >
+                      {file.kind === 'pdf-native' ? 'nativo' : 'texto'}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {filePreview && (
+          <FilePreviewModal
+            preview={filePreview}
+            theme={theme}
+            onClose={closeFilePreview}
+          />
+        )}
+        {isUser &&
+          (!message.files || message.files.length === 0) &&
+          !!message.fileCount && (
+            <div
+              className="text-xs italic mb-2"
+              style={{ color: theme.textMuted }}
+            >
+              {message.fileCount === 1
+                ? '📎 [archivo]'
+                : `📎 [archivo ×${message.fileCount}]`}
             </div>
           )}
 

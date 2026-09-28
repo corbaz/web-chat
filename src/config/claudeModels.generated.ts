@@ -1,6 +1,6 @@
 // Archivo generado por scripts/update-vision-models.ts desde models.dev.
 // No editar a mano: correr `bun run update:models`.
-// Generado: 2026-09-27
+// Generado: 2026-09-28
 
 export const CLAUDE_MODELS: Array<{ id: string; name: string }> = [
   {

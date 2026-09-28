@@ -1,6 +1,6 @@
 // Archivo generado por scripts/update-vision-models.ts desde models.dev.
 // No editar a mano: correr `bun run update:models`.
-// Generado: 2026-09-27
+// Generado: 2026-09-28
 // Valores de esfuerzo (reasoning_options tipo "effort"); [] = el modelo
 // solo tiene budget_tokens o toggle (ver src/config/effort.ts).
 
@@ -60,6 +60,22 @@ export const MODEL_EFFORT: Record<string, Record<string, string[]>> = {
     'gpt-6-astra': ['low', 'medium', 'high', 'xhigh', 'max'],
     'gpt-6-luna': ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
     'gpt-6-sol': ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+    'gpt-daybreak-blue-latest': [
+      'none',
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+    ],
+    'gpt-daybreak-red-latest': [
+      'none',
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+    ],
     'gpt-image-1': [],
     'gpt-image-1-mini': [],
     'gpt-image-1.5': [],
@@ -264,8 +280,6 @@ export const MODEL_EFFORT: Record<string, Record<string, string[]>> = {
     'deepseek-v4-flash-vision-exp': ['low', 'high', 'max'],
     'deepseek-v4-pro': ['high', 'max'],
     'deepseek-v4.1-flash': ['low', 'high', 'max'],
-    'glm-5': [],
-    'glm-5.1': [],
     'glm-5.2': ['high', 'max'],
     'glm-5.3': ['low', 'high', 'max'],
     'glm-5.3-flash': ['low', 'high', 'max'],
@@ -276,26 +290,19 @@ export const MODEL_EFFORT: Record<string, Record<string, string[]>> = {
     'grok-4.7': ['low', 'medium', 'high', 'xhigh'],
     hy3: ['none', 'low', 'high'],
     'hy4-preview': ['none', 'high'],
-    'kimi-k2.5': [],
     'kimi-k2.6': [],
     'kimi-k2.7-code': [],
     'kimi-k3': ['max'],
     'longcat-2.0': [],
     'longcat-2.5-preview-free': [],
-    'mimo-v2-omni': [],
-    'mimo-v2-pro': [],
     'mimo-v2.5': [],
     'mimo-v2.5-pro': [],
     'mimo-v2.6-flash': [],
     'mimo-v2.6-pro': [],
-    'minimax-m2.5': [],
     'minimax-m2.7': [],
     'minimax-m3': [],
     'muse-spark-1.2-contributor': ['minimal', 'low', 'medium', 'high', 'xhigh'],
     'muse-spark-1.3-contributor': ['minimal', 'low', 'medium', 'high', 'xhigh'],
-    'omen-alpha': ['low', 'high'],
-    'ox-alpha-free': ['low', 'high', 'max'],
-    'qwen3.5-plus': [],
     'qwen3.6-plus': [],
     'qwen3.7-max': [],
     'qwen3.7-plus': [],

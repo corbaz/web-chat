@@ -702,10 +702,14 @@ export const App = () => {
           {/* Footer con área de entrada y controles */}
           <Footer
             ref={footerRef}
-            onSendMessage={(message, images) => {
-              if (message.trim() || (images && images.length > 0)) {
+            onSendMessage={(message, images, files) => {
+              if (
+                message.trim() ||
+                (images && images.length > 0) ||
+                (files && files.length > 0)
+              ) {
                 const event = new CustomEvent('send-message', {
-                  detail: { message, images },
+                  detail: { message, images, files },
                 })
                 document.dispatchEvent(event)
                 focusInput()

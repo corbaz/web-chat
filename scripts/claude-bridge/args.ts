@@ -83,6 +83,58 @@ export function isValidImages(value: unknown): value is ChatImageInput[] {
   return value.every(isValidImage)
 }
 
+// PDF nativo (ver odd/tasks/file-attachments.md): mismo criterio que las
+// imágenes de arriba, `--input-format stream-json` acepta bloques
+// `document` además de `image`.
+export const PDF_MIME_TYPE = 'application/pdf'
+export const MAX_DOCUMENTS_PER_MESSAGE = 4
+
+export interface ChatDocumentInput {
+  mimeType: typeof PDF_MIME_TYPE
+  data: string
+  filename: string
+}
+
+function isValidDocumentMime(value: unknown): value is typeof PDF_MIME_TYPE {
+  return value === PDF_MIME_TYPE
+}
+
+function isValidDocumentData(value: unknown): value is string {
+  return (
+    typeof value === 'string' && value.length > 0 && BASE64_PATTERN.test(value)
+  )
+}
+
+// Nombre de archivo: sin separadores de ruta ni caracteres de control (nunca
+// se usa como ruta real, pero igual se sanea antes de loguear/mostrar).
+const SAFE_FILENAME_PATTERN = /^[^\\/\u0000-\u001f]{1,255}$/
+
+function isValidFilename(value: unknown): value is string {
+  return typeof value === 'string' && SAFE_FILENAME_PATTERN.test(value)
+}
+
+function isValidDocument(value: unknown): value is ChatDocumentInput {
+  if (!value || typeof value !== 'object') return false
+  const record = value as Record<string, unknown>
+  return (
+    isValidDocumentMime(record.mimeType) &&
+    isValidDocumentData(record.data) &&
+    isValidFilename(record.filename)
+  )
+}
+
+/**
+ * Valida un array de documentos PDF (campo opcional del body: llamar solo
+ * cuando `body.documents !== undefined`, ver handleChat). Rechaza `[]`.
+ */
+export function isValidDocuments(value: unknown): value is ChatDocumentInput[] {
+  if (!Array.isArray(value)) return false
+  if (value.length === 0 || value.length > MAX_DOCUMENTS_PER_MESSAGE) {
+    return false
+  }
+  return value.every(isValidDocument)
+}
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -214,12 +266,15 @@ export function buildStreamChatArgv(input: StreamChatArgsInput): string[] {
 export interface StreamChatStdinInput {
   message: string
   images: ChatImageInput[]
+  documents?: ChatDocumentInput[]
 }
 
 /**
  * Arma la única línea JSON que se escribe en stdin para el modo stream-json
- * (una imagen o más, en el orden recibido, seguidas del texto). Incluye el
- * salto de línea final: el protocolo de Claude Code es un JSON por línea.
+ * (imágenes y documentos PDF, en el orden recibido, seguidos del texto).
+ * Incluye el salto de línea final: el protocolo de Claude Code es un JSON
+ * por línea. Verificado en vivo 2026-09-28: un bloque `document` con un PDF
+ * generado responde citando el texto (ver Progress en el feature doc).
  */
 export function buildStreamChatStdin(input: StreamChatStdinInput): string {
   const content: unknown[] = [
@@ -229,6 +284,14 @@ export function buildStreamChatStdin(input: StreamChatStdinInput): string {
         type: 'base64',
         media_type: image.mimeType,
         data: image.data,
+      },
+    })),
+    ...(input.documents ?? []).map((doc) => ({
+      type: 'document',
+      source: {
+        type: 'base64',
+        media_type: doc.mimeType,
+        data: doc.data,
       },
     })),
     { type: 'text', text: input.message },
@@ -630,7 +693,7 @@ export function isAllowedOrigin(
 
 export const MAX_BODY_BYTES = 200 * 1024
 
-// Con imágenes en base64 (~1.33x el tamaño binario) el límite normal se
-// queda corto: T5 sube el techo a ~16 MB solo para pedidos que traen
-// `images` (ver handleChat en server.ts).
+// Con imágenes o documentos PDF en base64 (~1.33x el tamaño binario) el
+// límite normal se queda corto: T5 sube el techo a ~16 MB para pedidos que
+// traen `images` y/o `documents` (ver handleChat en server.ts).
 export const MAX_BODY_BYTES_WITH_IMAGES = 16 * 1024 * 1024

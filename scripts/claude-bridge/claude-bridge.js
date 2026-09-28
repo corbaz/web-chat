@@ -48,6 +48,32 @@ function isValidImages(value) {
     return false;
   return value.every(isValidImage);
 }
+var PDF_MIME_TYPE = "application/pdf";
+var MAX_DOCUMENTS_PER_MESSAGE = 4;
+function isValidDocumentMime(value) {
+  return value === PDF_MIME_TYPE;
+}
+function isValidDocumentData(value) {
+  return typeof value === "string" && value.length > 0 && BASE64_PATTERN.test(value);
+}
+var SAFE_FILENAME_PATTERN = /^[^\\/\u0000-\u001f]{1,255}$/;
+function isValidFilename(value) {
+  return typeof value === "string" && SAFE_FILENAME_PATTERN.test(value);
+}
+function isValidDocument(value) {
+  if (!value || typeof value !== "object")
+    return false;
+  const record = value;
+  return isValidDocumentMime(record.mimeType) && isValidDocumentData(record.data) && isValidFilename(record.filename);
+}
+function isValidDocuments(value) {
+  if (!Array.isArray(value))
+    return false;
+  if (value.length === 0 || value.length > MAX_DOCUMENTS_PER_MESSAGE) {
+    return false;
+  }
+  return value.every(isValidDocument);
+}
 var UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidSessionId(id) {
   return typeof id === "string" && UUID_PATTERN.test(id);
@@ -93,6 +119,14 @@ function buildStreamChatStdin(input) {
         type: "base64",
         media_type: image.mimeType,
         data: image.data
+      }
+    })),
+    ...(input.documents ?? []).map((doc) => ({
+      type: "document",
+      source: {
+        type: "base64",
+        media_type: doc.mimeType,
+        data: doc.data
       }
     })),
     { type: "text", text: input.message }
@@ -512,6 +546,8 @@ function formatLog(req, url, status, ms, info) {
     parts.push(`effort=${info.effort}`);
   if (info.images)
     parts.push(`im\xE1genes=${info.images}`);
+  if (info.documents)
+    parts.push(`documentos=${info.documents}`);
   if (info.autoApprove)
     parts.push("YOLO");
   if (info.tokensIn !== undefined)
@@ -541,11 +577,13 @@ async function handleChat(req, origin, log) {
     }, { status: 400 }, origin);
   }
   const hasImages = Array.isArray(body.images) && body.images.length > 0;
-  if (typeof body.message !== "string" || !body.message.trim() && !hasImages) {
+  const hasDocuments = Array.isArray(body.documents) && body.documents.length > 0;
+  if (typeof body.message !== "string" || !body.message.trim() && !hasImages && !hasDocuments) {
     return jsonResponse({ error: "Falta el mensaje." }, { status: 400 }, origin);
   }
   const imageCount = hasImages ? body.images.length : 0;
-  const message = body.message.trim() || (imageCount > 1 ? "Describe las im\xE1genes." : "Describe la imagen.");
+  const documentCount = hasDocuments ? body.documents.length : 0;
+  const message = body.message.trim() || (hasImages ? imageCount > 1 ? "Describe las im\xE1genes." : "Describe la imagen." : documentCount > 1 ? "Resume los documentos adjuntos." : "\xBFQu\xE9 dice el documento adjunto?");
   if (body.sessionId !== undefined && !isValidSessionId(body.sessionId)) {
     return jsonResponse({ error: "sessionId inv\xE1lido (debe ser un UUID)." }, { status: 400 }, origin);
   }
@@ -559,8 +597,14 @@ async function handleChat(req, origin, log) {
       error: "Imagen inv\xE1lida. Usa PNG, JPEG, WEBP o GIF en base64 (m\xE1ximo 4 im\xE1genes)."
     }, { status: 400 }, origin);
   }
+  if (body.documents !== undefined && !isValidDocuments(body.documents)) {
+    return jsonResponse({
+      error: "Documento inv\xE1lido. Usa PDF (application/pdf) en base64 con nombre de archivo (m\xE1ximo 4 documentos)."
+    }, { status: 400 }, origin);
+  }
   const images = isValidImages(body.images) ? body.images : undefined;
-  if (!images && rawBody.length > MAX_BODY_BYTES) {
+  const documents = isValidDocuments(body.documents) ? body.documents : undefined;
+  if (!images && !documents && rawBody.length > MAX_BODY_BYTES) {
     return jsonResponse({ error: "Cuerpo de la solicitud demasiado grande." }, { status: 413 }, origin);
   }
   const model = body.model;
@@ -570,6 +614,7 @@ async function handleChat(req, origin, log) {
   log.model = model;
   log.effort = effort;
   log.images = images?.length;
+  log.documents = documents?.length;
   log.autoApprove = autoApprove;
   const argv = buildStreamChatArgv({
     model,
@@ -577,7 +622,11 @@ async function handleChat(req, origin, log) {
     effort,
     systemPrompt: buildDynamicSystemPrompt()
   });
-  const stdinLine = buildStreamChatStdin({ message, images: images ?? [] });
+  const stdinLine = buildStreamChatStdin({
+    message,
+    images: images ?? [],
+    documents: documents ?? []
+  });
   try {
     const { stdout, stderr, exitCode, timedOut } = await runClaudeInteractive(argv, stdinLine, {
       autoApprove,

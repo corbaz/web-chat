@@ -1,5 +1,6 @@
 import type React from 'react'
 import LunaIcon from '../../../assets/luna.svg'
+import { supportsPdf } from '../../../config/pdf'
 import { supportsVision } from '../../../config/vision'
 import { supportsWebSearch } from '../../../config/webSearch'
 import type { ColorPalette } from '../../../interfaces/temas/temas.tsx'
@@ -275,6 +276,25 @@ const RightMenu: React.FC<RightMenuProps> = ({
                               <title>Acepta imágenes</title>
                               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
                               <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          )}
+                          {supportsPdf(model.id, model.provider) && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="size-3.5 shrink-0"
+                              style={{ color: theme.accentAlt }}
+                              aria-label="Acepta PDF"
+                              role="img"
+                            >
+                              <title>Acepta PDF</title>
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                              <path d="M14 2v6h6" />
                             </svg>
                           )}
                           {supportsWebSearch(model.id, model.provider) && (

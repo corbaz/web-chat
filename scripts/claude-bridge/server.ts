@@ -16,11 +16,13 @@ import {
   buildDynamicSystemPrompt,
   buildStreamChatArgv,
   buildStreamChatStdin,
+  type ChatDocumentInput,
   type ChatImageInput,
   checkBasicAuth,
   type ClaudeCodeModel,
   formatPermissionLog,
   isAllowedOrigin,
+  isValidDocuments,
   isValidEffort,
   isValidImages,
   isValidModel,
@@ -392,15 +394,17 @@ interface ChatRequestBody {
   sessionId?: unknown
   effort?: unknown
   images?: unknown
+  documents?: unknown
   autoApprove?: unknown
 }
 
 // Datos de un pedido para el registro en consola. Nunca incluye el texto del
-// mensaje, las imágenes ni la contraseña.
+// mensaje, las imágenes, los documentos ni la contraseña.
 interface RequestLog {
   model?: string
   effort?: string
   images?: number
+  documents?: number
   autoApprove?: boolean
   tokensIn?: number
   tokensOut?: number
@@ -419,6 +423,7 @@ function formatLog(
   if (info.model) parts.push(info.model)
   if (info.effort) parts.push(`effort=${info.effort}`)
   if (info.images) parts.push(`imágenes=${info.images}`)
+  if (info.documents) parts.push(`documentos=${info.documents}`)
   if (info.autoApprove) parts.push('YOLO')
   if (info.tokensIn !== undefined) parts.push(`tokens=${info.tokensIn}→${info.tokensOut ?? 0}`)
   if (info.error) parts.push(`error: ${info.error.slice(0, 160)}`)
@@ -431,9 +436,9 @@ async function handleChat(
   log: RequestLog,
 ): Promise<Response> {
   // El límite chico (MAX_BODY_BYTES) es el que aplica en el caso normal (sin
-  // imágenes); acá solo se descarta lo absurdamente grande de entrada. El
-  // límite exacto para el pedido sin imágenes se aplica más abajo, una vez
-  // que se sabe si vino `images` o no.
+  // imágenes ni documentos); acá solo se descarta lo absurdamente grande de
+  // entrada. El límite exacto se aplica más abajo, una vez que se sabe si
+  // vino `images`/`documents` o no.
   const contentLength = Number(req.headers.get('content-length') || '0')
   if (contentLength > MAX_BODY_BYTES_WITH_IMAGES) {
     return jsonResponse(
@@ -470,17 +475,27 @@ async function handleChat(
     )
   }
   const hasImages = Array.isArray(body.images) && body.images.length > 0
+  const hasDocuments = Array.isArray(body.documents) && body.documents.length > 0
   if (
     typeof body.message !== 'string' ||
-    (!body.message.trim() && !hasImages)
+    (!body.message.trim() && !hasImages && !hasDocuments)
   ) {
     return jsonResponse({ error: 'Falta el mensaje.' }, { status: 400 }, origin)
   }
-  // Solo imágenes: pedido por defecto (el CLI necesita algo de texto).
+  // Solo imágenes y/o documentos: pedido por defecto (el CLI necesita algo
+  // de texto). Las imágenes tienen prioridad como descripción por defecto,
+  // igual que en el resto de proveedores (ver ChatContainer.tsx).
   const imageCount = hasImages ? (body.images as unknown[]).length : 0
+  const documentCount = hasDocuments ? (body.documents as unknown[]).length : 0
   const message: string =
     body.message.trim() ||
-    (imageCount > 1 ? 'Describe las imágenes.' : 'Describe la imagen.')
+    (hasImages
+      ? imageCount > 1
+        ? 'Describe las imágenes.'
+        : 'Describe la imagen.'
+      : documentCount > 1
+        ? 'Resume los documentos adjuntos.'
+        : '¿Qué dice el documento adjunto?')
   if (body.sessionId !== undefined && !isValidSessionId(body.sessionId)) {
     return jsonResponse(
       { error: 'sessionId inválido (debe ser un UUID).' },
@@ -508,14 +523,30 @@ async function handleChat(
       origin,
     )
   }
+  if (body.documents !== undefined && !isValidDocuments(body.documents)) {
+    return jsonResponse(
+      {
+        error:
+          'Documento inválido. Usa PDF (application/pdf) en base64 con nombre de archivo (máximo 4 documentos).',
+      },
+      { status: 400 },
+      origin,
+    )
+  }
 
   const images: ChatImageInput[] | undefined = isValidImages(body.images)
     ? body.images
     : undefined
+  const documents: ChatDocumentInput[] | undefined = isValidDocuments(
+    body.documents,
+  )
+    ? body.documents
+    : undefined
 
-  // Sin imágenes, el límite normal (chico) rige igual que antes de T5: el
-  // techo grande de arriba solo existe para no cortar imágenes válidas.
-  if (!images && rawBody.length > MAX_BODY_BYTES) {
+  // Sin imágenes ni documentos, el límite normal (chico) rige igual que
+  // antes de T5: el techo grande de arriba solo existe para no cortar
+  // adjuntos válidos.
+  if (!images && !documents && rawBody.length > MAX_BODY_BYTES) {
     return jsonResponse(
       { error: 'Cuerpo de la solicitud demasiado grande.' },
       { status: 413 },
@@ -534,18 +565,24 @@ async function handleChat(
   log.model = model
   log.effort = effort
   log.images = images?.length
+  log.documents = documents?.length
   log.autoApprove = autoApprove
 
   // T7: todo pedido pasa por stream-json (antes solo las imágenes, T5) para
-  // que las herramientas con permiso (Bash) funcionen. Sin imágenes, el
-  // array simplemente viaja vacío en el content de buildStreamChatStdin.
+  // que las herramientas con permiso (Bash) funcionen. Sin imágenes ni
+  // documentos, esos arrays simplemente viajan vacíos en el content de
+  // buildStreamChatStdin.
   const argv = buildStreamChatArgv({
     model,
     sessionId,
     effort,
     systemPrompt: buildDynamicSystemPrompt(),
   })
-  const stdinLine = buildStreamChatStdin({ message, images: images ?? [] })
+  const stdinLine = buildStreamChatStdin({
+    message,
+    images: images ?? [],
+    documents: documents ?? [],
+  })
 
   try {
     const { stdout, stderr, exitCode, timedOut } = await runClaudeInteractive(

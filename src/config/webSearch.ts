@@ -37,13 +37,18 @@ const GO_WEB_SEARCH_MODELS = new Set<string>([
   'minimax-m3',
 ])
 
+/** Proveedores con búsqueda web siempre activa: sin botón para apagarla. */
+export function isWebSearchAlwaysOn(provider?: string): boolean {
+  return provider === 'claudecode'
+}
+
 export function supportsWebSearch(modelId: string, provider?: string): boolean {
   if (!modelId || provider === 'routellm') return false
   if (provider === 'opengo') return GO_WEB_SEARCH_MODELS.has(modelId)
-  // Claude (suscripción, bridge local a `claude -p`): WebSearch/WebFetch ya
-  // no dependen de este toggle (T7) — el bridge siempre las ofrece y las
-  // auto-aprueba sin preguntar. El globo queda oculto para este proveedor.
-  if (provider === 'claudecode') return false
+  // Claude (suscripción, bridge local a `claude -p`): WebSearch/WebFetch
+  // siempre disponibles (T7). El globo se muestra como capacidad en el
+  // selector, pero no hay botón para apagarla (ver isWebSearchAlwaysOn).
+  if (provider === 'claudecode') return true
   // OpenCode Zen: sin verificar (la cuenta no tenía saldo al probar).
   // OpenCode Free (servidor local): sin búsqueda web en v1 (ver
   // odd/tasks/opencode-free-local.md).

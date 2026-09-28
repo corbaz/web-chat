@@ -6,9 +6,10 @@
 //
 // Contrato: Basic auth, usuario "claude". GET /health -> {healthy, claudeVersion}.
 // GET /models -> [{id, name}]. POST /chat {model, message, sessionId?, effort?,
-// images?, autoApprove?} -> {text, sessionId, model, tokens:{input,output},
-// costUsd, isError, error?}. T7: GET /permission -> [{id, sessionId, tool,
-// command?, description?}], POST /permission/:id {decision: "allow"|"deny"}.
+// images?, documents?, autoApprove?} -> {text, sessionId, model,
+// tokens:{input,output}, costUsd, isError, error?}. T7: GET /permission ->
+// [{id, sessionId, tool, command?, description?}], POST /permission/:id
+// {decision: "allow"|"deny"}.
 
 function authHeader(password: string): Record<string, string> {
   const token = btoa(`claude:${password}`)
@@ -125,14 +126,23 @@ export interface ClaudeChatImage {
   data: string
 }
 
+// PDF nativo adjunto (ver odd/tasks/file-attachments.md): mismo shape que
+// DocumentAttachment de interfaces/chat/chatTypes.ts. El bridge valida mime
+// application/pdf y hasta 4 documentos.
+export interface ClaudeChatDocument {
+  mimeType: string
+  data: string
+  filename: string
+}
+
 /**
  * Envía un mensaje al bridge. Solo se manda el último mensaje: Claude Code
  * mantiene el historial del lado del proceso por sessionId (--resume, ver
- * Scope en el feature doc). Con `images`, se mandan en la misma línea que el
- * mensaje (visión, T5). Búsqueda web (WebSearch/WebFetch) ya no se pide por
- * flag: el bridge siempre las ofrece y las auto-aprueba (T7). `autoApprove`
- * es el modo "YOLO" (toggle de la app): auto-aprueba también Bash, sin pedir
- * permiso.
+ * Scope en el feature doc). Con `images`/`documents`, se mandan en la misma
+ * línea que el mensaje (visión T5, PDF nativo T-file-attachments). Búsqueda
+ * web (WebSearch/WebFetch) ya no se pide por flag: el bridge siempre las
+ * ofrece y las auto-aprueba (T7). `autoApprove` es el modo "YOLO" (toggle de
+ * la app): auto-aprueba también Bash, sin pedir permiso.
  */
 export async function sendMessage(
   baseUrl: string,
@@ -142,6 +152,7 @@ export async function sendMessage(
   sessionId?: string,
   effort?: string,
   images?: ClaudeChatImage[],
+  documents?: ClaudeChatDocument[],
   autoApprove?: boolean,
 ): Promise<ClaudeChatResult> {
   return request<ClaudeChatResult>(baseUrl, '/chat', password, {
@@ -152,6 +163,7 @@ export async function sendMessage(
       sessionId,
       effort,
       images,
+      documents,
       autoApprove,
     }),
   })
