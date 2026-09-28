@@ -10,6 +10,9 @@ rem Usa la misma carpeta y los mismos archivos que "bun run opencode:free:instal
 setlocal
 
 set "PORT=4096"
+rem Rutas completas: un powershell.cmd u otro atajo en el PATH puede tomar el
+rem control del .bat y cortarlo (visto 2026-09-27).
+set "PS=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 set "DIR=%LOCALAPPDATA%\prompting\opencode-free"
 set "PWFILE=%DIR%\password.txt"
 set "VBS=%DIR%\launch.vbs"
@@ -22,7 +25,7 @@ echo Uso: windows.bat [install ^| password [CLAVE] ^| uninstall]
 exit /b 1
 
 :install
-where opencode >nul 2>nul
+where.exe opencode >nul 2>nul
 if errorlevel 1 (
   echo OpenCode no esta instalado. Instalalo desde https://opencode.ai
   echo Abrilo una vez, manda un mensaje con un modelo gratis y volve a correr este archivo.
@@ -32,7 +35,7 @@ if not exist "%DIR%\config-home" mkdir "%DIR%\config-home"
 call :write_config
 if not exist "%PWFILE%" call :generate_password
 set /p PW=<"%PWFILE%"
-powershell -NoProfile -Command "if ('%PW%' -cmatch '^[A-Za-z0-9._*@#+=?-]{6,}$') { exit 0 } else { exit 1 }" >nul 2>nul
+%PS% -NoProfile -Command "if ('%PW%' -cmatch '^[A-Za-z0-9._*@#+=?-]{6,}$') { exit 0 } else { exit 1 }" >nul 2>nul
 if errorlevel 1 (
   echo La contrasena guardada tiene caracteres no permitidos.
   echo Elegi otra con: windows.bat password NUEVA_CLAVE
@@ -41,7 +44,7 @@ if errorlevel 1 (
 call :write_launcher
 copy /y "%VBS%" "%STARTUP_VBS%" >nul
 call :stop_server
-start "" wscript.exe "%VBS%"
+start "" "%SystemRoot%\System32\wscript.exe" "%VBS%"
 call :wait_health
 if errorlevel 1 (
   echo El servidor no respondio en http://127.0.0.1:%PORT%.
@@ -57,7 +60,7 @@ exit /b 0
 
 :password
 if "%~2"=="" goto :password_copy
-powershell -NoProfile -Command "if ('%~2' -cmatch '^[A-Za-z0-9._*@#+=?-]{6,}$') { exit 0 } else { exit 1 }" >nul 2>nul
+%PS% -NoProfile -Command "if ('%~2' -cmatch '^[A-Za-z0-9._*@#+=?-]{6,}$') { exit 0 } else { exit 1 }" >nul 2>nul
 if errorlevel 1 (
   echo La contrasena debe tener al menos 6 caracteres: letras, numeros o . _ - * @ # + = ?
   exit /b 1
@@ -103,7 +106,7 @@ rem ---------------------------------------------------------------------------
 exit /b 0
 
 :generate_password
-for /f %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')"') do <nul set /p "=%%i" > "%PWFILE%"
+for /f %%i in ('%PS% -NoProfile -Command "[guid]::NewGuid().ToString('N')"') do <nul set /p "=%%i" > "%PWFILE%"
 exit /b 0
 
 :write_launcher
@@ -118,16 +121,16 @@ exit /b 0
 exit /b 0
 
 :stop_server
-for /f "tokens=5" %%p in ('netstat -ano -p tcp ^| findstr /r /c:"127.0.0.1:%PORT% .*LISTENING"') do (
-  tasklist /fi "PID eq %%p" /fo csv /nh | findstr /i "opencode" >nul && taskkill /pid %%p /f >nul
+for /f "tokens=5" %%p in ('netstat.exe -ano -p tcp ^| findstr.exe /r /c:"127.0.0.1:%PORT% .*LISTENING"') do (
+  tasklist.exe /fi "PID eq %%p" /fo csv /nh | findstr.exe /i "opencode" >nul && taskkill.exe /pid %%p /f >nul
 )
 exit /b 0
 
 :wait_health
-powershell -NoProfile -Command "$p = (Get-Content -Raw '%PWFILE%').Trim(); $h = @{ Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes('opencode:' + $p)) }; for ($i = 0; $i -lt 30; $i++) { try { $r = Invoke-RestMethod -Uri 'http://127.0.0.1:%PORT%/global/health' -Headers $h; if ($r.healthy) { exit 0 } } catch {}; Start-Sleep -Seconds 1 }; exit 1"
+%PS% -NoProfile -Command "$p = (Get-Content -Raw '%PWFILE%').Trim(); $h = @{ Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes('opencode:' + $p)) }; for ($i = 0; $i -lt 30; $i++) { try { $r = Invoke-RestMethod -Uri 'http://127.0.0.1:%PORT%/global/health' -Headers $h; if ($r.healthy) { exit 0 } } catch {}; Start-Sleep -Seconds 1 }; exit 1"
 exit /b %errorlevel%
 
 :copy_password
-<nul set /p "=%PW%" | clip
+<nul set /p "=%PW%" | clip.exe
 echo Contrasena copiada al portapapeles. Pegala en la app con Ctrl+V.
 exit /b 0
