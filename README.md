@@ -390,7 +390,7 @@ Después, en la app: elegir **OpenAI (suscripción)**, pegar la contraseña y **
 - **Siempre usa la suscripción:** el bridge quita `OPENAI_API_KEY` y `OPENAI_BASE_URL` solo para el `codex` que lanza (y lo avisa al arrancar). Si estuvieran definidas, Codex podía usar esa autenticación en vez de tu login de ChatGPT.
 - **Comandos con permiso:** cuando el modelo quiere ejecutar algo, el bridge expone el mismo contrato que Claude (suscripción) (`GET /permission` + `POST /permission/:id`, mismo modal, Rechazar por defecto). El sandbox es el único control de alcance (no hay una lista de herramientas permitidas como en Claude Code): `read-only` por defecto (el modelo puede leer pero no escribir ni tiene red, salvo búsqueda web), `workspace-write` solo en YOLO.
   - **YOLO:** mismo toggle que Claude (suscripción) y OpenCode Free — auto-aprueba sin preguntar (`approvalPolicy: "never"`, sandbox `workspace-write`), apagado por defecto y nunca se guarda.
-- **Búsqueda web:** Codex tiene una herramienta de búsqueda nativa; el bridge habilita acceso de red de solo lectura en el sandbox. **Sin verificar en vivo** (riesgo conocido, ver más abajo).
+- **Búsqueda web:** siempre activa. El bridge arranca Codex con `web_search="live"` y le indica buscar cuando la pregunta necesita información actual (noticias, precios, resultados). Verificado en vivo (2026-09-29): trae las noticias del día con links a las fuentes. Una respuesta con búsqueda tarda más (10 a 45 s).
 - **Solo escucha en `127.0.0.1:4094`**, con Basic auth en todos los endpoints y CORS restringido a `https://localhost:5173` y `https://prompting-chat.vercel.app`.
 - **Historial por sesión:** cada chat de la app reutiliza un `threadId` de Codex (`thread/resume`) para mantener el contexto entre mensajes.
 
@@ -477,7 +477,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - OpenCode Free con servidor local, arranque automático, agente "chat" y permisos.
 - Claude (suscripción) con bridge local a `claude -p`: todos los modelos, slider de esfuerzo, visión, fecha y hora, navegación web, comandos con permiso y toggle YOLO.
 - Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
-- OpenAI (suscripción) con bridge local a `codex app-server`: todos los modelos, esfuerzo y visión en vivo desde `model/list`, comandos con permiso y toggle YOLO (sin PDF nativo; búsqueda web sin verificar en vivo).
+- OpenAI (suscripción) con bridge local a `codex app-server`: todos los modelos, esfuerzo y visión en vivo desde `model/list`, comandos con permiso y toggle YOLO (sin PDF nativo); búsqueda web en vivo.
 - Links y fuentes en un modal dentro del chat (con chequeo de si el sitio se deja embeber); mapas de Google Maps y videos de YouTube embebidos; imágenes de markdown con vista previa.
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.
 - Entrada de archivos de texto/código y PDF (nativo o extraído con pdf.js) en todos los modelos y proveedores.

@@ -350,9 +350,19 @@ export const CODEX_DISABLED_FEATURES = [
 /**
  * argv de `codex app-server`: mantiene el login de ChatGPT de `~/.codex` pero
  * sin los servidores MCP del usuario ni las funciones de agente de arriba.
+ * Búsqueda web en modo `live` (`WebSearchMode` del schema: disabled, cached,
+ * indexed, live): sin esto Codex respondía "no puedo consultar noticias en
+ * tiempo real" aunque la app muestra el globo (verificado 2026-09-29).
  */
 export function buildAppServerArgv(): string[] {
-  const argv = ['codex', 'app-server', '-c', 'mcp_servers={}']
+  const argv = [
+    'codex',
+    'app-server',
+    '-c',
+    'mcp_servers={}',
+    '-c',
+    'web_search="live"',
+  ]
   for (const feature of CODEX_DISABLED_FEATURES) argv.push('--disable', feature)
   return argv
 }
@@ -379,6 +389,7 @@ export function buildCodexInstructions(now: Date = new Date()): string {
     '',
     `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${now.toISOString()}.`,
     '',
+    'Tenés búsqueda web: si la pregunta necesita información actual o que puede haber cambiado (noticias, precios, resultados, clima, versiones), buscá en la web antes de responder y citá las fuentes con links. Nunca digas que no tenés acceso a internet.',
     `No podés abrir un navegador. ${LINKS_AND_IMAGES_RULE}`,
     'Podés ejecutar comandos locales solo cuando el pedido realmente lo necesita; cada comando requiere que el usuario lo apruebe, así que explicá brevemente qué vas a hacer.',
   ].join('\n')

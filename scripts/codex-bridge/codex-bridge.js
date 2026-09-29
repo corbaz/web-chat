@@ -171,7 +171,14 @@ var CODEX_DISABLED_FEATURES = [
   "worktrees"
 ];
 function buildAppServerArgv() {
-  const argv = ["codex", "app-server", "-c", "mcp_servers={}"];
+  const argv = [
+    "codex",
+    "app-server",
+    "-c",
+    "mcp_servers={}",
+    "-c",
+    'web_search="live"'
+  ];
   for (const feature of CODEX_DISABLED_FEATURES)
     argv.push("--disable", feature);
   return argv;
@@ -189,6 +196,7 @@ function buildCodexInstructions(now = new Date) {
     "",
     `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${now.toISOString()}.`,
     "",
+    "Ten\xE9s b\xFAsqueda web: si la pregunta necesita informaci\xF3n actual o que puede haber cambiado (noticias, precios, resultados, clima, versiones), busc\xE1 en la web antes de responder y cit\xE1 las fuentes con links. Nunca digas que no ten\xE9s acceso a internet.",
     `No pod\xE9s abrir un navegador. ${LINKS_AND_IMAGES_RULE}`,
     "Pod\xE9s ejecutar comandos locales solo cuando el pedido realmente lo necesita; cada comando requiere que el usuario lo apruebe, as\xED que explic\xE1 brevemente qu\xE9 vas a hacer."
   ].join(`

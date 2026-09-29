@@ -241,7 +241,14 @@ describe('turnInputTokens', () => {
 describe('buildAppServerArgv', () => {
   test('vacía los servidores MCP y apaga las funciones de agente', () => {
     const argv = buildAppServerArgv()
-    expect(argv.slice(0, 4)).toEqual(['codex', 'app-server', '-c', 'mcp_servers={}'])
+    expect(argv.slice(0, 6)).toEqual([
+      'codex',
+      'app-server',
+      '-c',
+      'mcp_servers={}',
+      '-c',
+      'web_search="live"',
+    ])
     expect(argv).toContain('computer_use')
     expect(argv).toContain('plugins')
     expect(argv).not.toContain('shell_tool')
