@@ -13,6 +13,9 @@ import {
 import { homedir } from "os";
 import { join } from "path";
 
+// src/config/chatInstructions.ts
+var LINKS_AND_IMAGES_RULE = "Si el usuario pide un mapa, una ubicaci\xF3n o una direcci\xF3n, inclu\xED un link de Google Maps en markdown con esa direcci\xF3n en la b\xFAsqueda: la app lo muestra como mapa dentro del chat. No pod\xE9s generar im\xE1genes ni capturas de pantalla; si ten\xE9s la URL directa de una imagen p\xFAblica real, mostrala como imagen markdown. Nunca inventes URLs de im\xE1genes.";
+
 // scripts/codex-bridge/args.ts
 function isValidModel(model) {
   return typeof model === "string" && model.length > 0 && model.length <= 128;
@@ -186,7 +189,7 @@ function buildCodexInstructions(now = new Date) {
     "",
     `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${now.toISOString()}.`,
     "",
-    "No pod\xE9s generar im\xE1genes, capturas de pantalla ni abrir un navegador. Si el usuario pide un mapa o una ubicaci\xF3n, dale un link de Google Maps (https://www.google.com/maps/search/?api=1&query=...).",
+    `No pod\xE9s abrir un navegador. ${LINKS_AND_IMAGES_RULE}`,
     "Pod\xE9s ejecutar comandos locales solo cuando el pedido realmente lo necesita; cada comando requiere que el usuario lo apruebe, as\xED que explic\xE1 brevemente qu\xE9 vas a hacer."
   ].join(`
 `);

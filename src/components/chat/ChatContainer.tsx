@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useCallback, useEffect, useRef } from 'react'
 import Swal from 'sweetalert2'
+import { LINKS_AND_IMAGES_RULE } from '../../config/chatInstructions'
 import { resolveEffort } from '../../config/effortSettings'
 import {
   getApiErrorMessage,
@@ -433,7 +434,8 @@ const ChatContainer = ({
       const systemMessage: GroqMessageType = {
         role: 'system',
         content:
-          'Eres un asistente virtual útil y conciso. Responde en español en todo momento, utilizando formato markdown enriquecido. El objetivo es ofrecer una respuestas precisas, claras y adaptadas a las necesidades del usuario, siempre manteniendo un tono amable y respetuoso.',
+          'Eres un asistente virtual útil y conciso. Responde en español en todo momento, utilizando formato markdown enriquecido. El objetivo es ofrecer una respuestas precisas, claras y adaptadas a las necesidades del usuario, siempre manteniendo un tono amable y respetuoso. ' +
+          LINKS_AND_IMAGES_RULE,
       }
 
       // Calcular tokens del mensaje de sistema

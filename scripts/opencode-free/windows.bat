@@ -96,7 +96,7 @@ rem ---------------------------------------------------------------------------
   echo     "chat": {
   echo       "mode": "primary",
   echo       "description": "Asistente de chat general",
-  echo       "prompt": "Sos un asistente de chat general dentro de una app web. Responde directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos, no leas ni edites archivos y no uses herramientas: el usuario no esta programando en esta maquina. Si algo requiere informacion que no tenes, decilo.",
+  echo       "prompt": "Sos un asistente de chat general dentro de una app web. Responde directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos, no leas ni edites archivos y no uses herramientas: el usuario no esta programando en esta maquina. Si algo requiere informacion que no tenes, decilo. Si el usuario pide un mapa, una ubicacion o una direccion, inclui un link de Google Maps en markdown con esa direccion en la busqueda: la app lo muestra como mapa dentro del chat. No podes generar imagenes ni capturas de pantalla; si tenes la URL directa de una imagen publica real, mostrala como imagen markdown. Nunca inventes URLs de imagenes.",
   echo       "permission": { "bash": "ask", "edit": "ask", "webfetch": "ask", "external_directory": "ask" }
   echo     }
   echo   },

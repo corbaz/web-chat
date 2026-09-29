@@ -8,6 +8,7 @@
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { LINKS_AND_IMAGES_RULE } from '../../src/config/chatInstructions'
 
 export const TASK_NAME = 'PromptingOpenCodeFree'
 export const PORT = 4096
@@ -65,7 +66,8 @@ const SANDBOX_OPENCODE_CONFIG = {
       mode: 'primary',
       description: 'Asistente de chat general',
       prompt:
-        'Sos un asistente de chat general dentro de una app web. Respondé directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos, no leas ni edites archivos y no uses herramientas: el usuario no está programando en esta máquina. Si algo requiere información que no tenés, decilo.',
+        'Sos un asistente de chat general dentro de una app web. Respondé directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos, no leas ni edites archivos y no uses herramientas: el usuario no está programando en esta máquina. Si algo requiere información que no tenés, decilo. '+
+        LINKS_AND_IMAGES_RULE,
       permission: ASK_PERMISSIONS,
     },
   },

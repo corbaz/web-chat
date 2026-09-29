@@ -7,6 +7,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
+// src/config/chatInstructions.ts
+var LINKS_AND_IMAGES_RULE = "Si el usuario pide un mapa, una ubicaci\xF3n o una direcci\xF3n, inclu\xED un link de Google Maps en markdown con esa direcci\xF3n en la b\xFAsqueda: la app lo muestra como mapa dentro del chat. No pod\xE9s generar im\xE1genes ni capturas de pantalla; si ten\xE9s la URL directa de una imagen p\xFAblica real, mostrala como imagen markdown. Nunca inventes URLs de im\xE1genes.";
+
 // scripts/claude-bridge/args.ts
 var MODEL_ALLOWLIST = ["haiku", "sonnet", "opus", "fable"];
 var FULL_MODEL_ID_PATTERN = /^claude-[a-z0-9.-]+$/;
@@ -78,7 +81,7 @@ var UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 function isValidSessionId(id) {
   return typeof id === "string" && UUID_PATTERN.test(id);
 }
-var CHAT_SYSTEM_PROMPT = "Sos un asistente de chat general dentro de una app web. Respond\xE9 directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos ni uses herramientas locales.";
+var CHAT_SYSTEM_PROMPT = "Sos un asistente de chat general dentro de una app web. Respond\xE9 directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos ni uses herramientas locales. " + LINKS_AND_IMAGES_RULE;
 function appendCommonChatFlags(argv, input) {
   if (input.effort) {
     argv.push("--effort", input.effort);

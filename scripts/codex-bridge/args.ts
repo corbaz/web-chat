@@ -5,6 +5,8 @@
 // JSON-RPC de `codex app-server` (en vez de `claude -p --output-format
 // stream-json`).
 
+import { LINKS_AND_IMAGES_RULE } from '../../src/config/chatInstructions'
+
 // codex-cli acepta cualquier id de modelo que el propio `model/list` liste
 // (catálogo dinámico, ver Verified facts en el feature doc): a diferencia de
 // Claude Code no hay un patrón fijo tipo "claude-*", así que solo se valida
@@ -377,7 +379,7 @@ export function buildCodexInstructions(now: Date = new Date()): string {
     '',
     `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${now.toISOString()}.`,
     '',
-    'No podés generar imágenes, capturas de pantalla ni abrir un navegador. Si el usuario pide un mapa o una ubicación, dale un link de Google Maps (https://www.google.com/maps/search/?api=1&query=...).',
+    `No podés abrir un navegador. ${LINKS_AND_IMAGES_RULE}`,
     'Podés ejecutar comandos locales solo cuando el pedido realmente lo necesita; cada comando requiere que el usuario lo apruebe, así que explicá brevemente qué vas a hacer.',
   ].join('\n')
 }

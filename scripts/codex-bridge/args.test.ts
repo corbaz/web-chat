@@ -253,6 +253,6 @@ describe('buildCodexInstructions', () => {
     const text = buildCodexInstructions(new Date('2026-09-29T15:00:00Z'))
     expect(text).toContain('2026-09-29T15:00:00.000Z')
     expect(text).toContain('Buenos_Aires')
-    expect(text).toContain('google.com/maps')
+    expect(text).toContain('Google Maps')
   })
 })

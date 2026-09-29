@@ -3,6 +3,8 @@
 // -p`, parseo del JSON de resultado y chequeos de CORS/auth. Sin dependencia
 // de Bun.serve ni de red: testeables con `bun test` sin proceso real.
 
+import { LINKS_AND_IMAGES_RULE } from '../../src/config/chatInstructions'
+
 // Alias históricos de Claude Code (T1-T3): se siguen aceptando por
 // compatibilidad hacia atrás, pero el catálogo de la app (T4) ya usa ids
 // completos de Anthropic (claude-opus-5-5, claude-sonnet-4-6, ...).
@@ -146,7 +148,8 @@ export function isValidSessionId(id: unknown): id is string {
 // Free (ver scripts/opencode-free/config.ts) pero sin mencionar herramientas
 // que acá directamente no existen (--tools "" salvo búsqueda web explícita).
 export const CHAT_SYSTEM_PROMPT =
-  'Sos un asistente de chat general dentro de una app web. Respondé directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos ni uses herramientas locales.'
+  'Sos un asistente de chat general dentro de una app web. Respondé directamente con tu conocimiento, en el idioma del usuario. No ejecutes comandos ni uses herramientas locales. ' +
+  LINKS_AND_IMAGES_RULE
 
 export interface ChatArgsInput {
   model: string

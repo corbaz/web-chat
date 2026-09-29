@@ -305,7 +305,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <Suspense
             fallback={<div className="p-2 opacity-60">{message.content}</div>}
           >
-            <MarkdownRenderer content={message.content} />
+            <MarkdownRenderer content={message.content} theme={theme} />
           </Suspense>
         </div>
 
