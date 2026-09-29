@@ -61,6 +61,21 @@ export function supportsWebSearch(modelId: string, provider?: string): boolean {
   // odd/tasks/opencode-free-local.md).
   if (provider === 'opencodezen' || provider === 'opencodefree') return false
   if (WEB_SEARCH_CAPABLE_MODELS.has(modelId)) return true
+  // Anthropic por API key: la herramienta web_search del servidor está en
+  // todos los Claude de chat actuales (la lista de arriba solo tenía los
+  // viejos, así que Opus 5.5 o Sonnet 5 no mostraban el globo). Sin probar en
+  // vivo con estos ids nuevos (no se usan las API keys del usuario).
+  if (provider === 'anthropic') return modelId.startsWith('claude-')
+  // Gemini por API key: grounding con Google Search en los modelos de chat;
+  // no en los de imagen, voz, embeddings, live, computer use ni en los de
+  // otras familias (gemma, veo, lyria, deep-research). Sin probar en vivo con
+  // estos ids nuevos.
+  if (provider === 'gemini') {
+    return (
+      modelId.startsWith('gemini-') &&
+      !/(image|tts|embedding|live|computer-use|customtools)/.test(modelId)
+    )
+  }
   return (
     modelId.startsWith('gpt-') ||
     modelId.startsWith('o3') ||
