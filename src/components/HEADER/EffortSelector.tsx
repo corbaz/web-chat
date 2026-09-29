@@ -5,14 +5,17 @@
 // theme.shadow.inset/sm, theme.accent). Se oculta (return null) cuando el
 // modelo actual no tiene niveles (getEffortLevels) — genérico, listo para
 // otros proveedores a futuro. Sin opción "Por defecto": todo modelo con
-// niveles siempre tiene uno explícito seleccionado (ver resolveEffort en
-// config/effortSettings.ts), por defecto el más bajo.
+// niveles siempre tiene uno explícito seleccionado. La posición sale de
+// resolveEffort (config/effortSettings.ts), la misma función que usa el envío
+// del mensaje: sin elección guardada muestra el default del proveedor (p. ej.
+// "Medio" en Codex), nunca un nivel distinto del que realmente se manda.
 
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { getEffortLevels } from '../../config/effort'
-import { getStoredEffort, setStoredEffort } from '../../config/effortSettings'
+import { resolveEffort, setStoredEffort } from '../../config/effortSettings'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
 
 const EFFORT_LABELS: Record<string, string> = {
   low: 'Bajo',
@@ -20,6 +23,7 @@ const EFFORT_LABELS: Record<string, string> = {
   high: 'Alto',
   xhigh: 'Muy alto',
   max: 'Máximo',
+  ultra: 'Ultra',
 }
 
 // Estilos del thumb/track solo se pueden tematizar vía pseudo-elementos
@@ -83,55 +87,39 @@ interface EffortSelectorProps {
   theme: ColorPalette
 }
 
-/** Índice del nivel guardado; si no hay nada guardado o ya no es válido para
- * este modelo, el más bajo (índice 0) — mismo criterio que resolveEffort. */
-function resolveIndex(levels: string[], stored: string): number {
-  const idx = levels.indexOf(stored)
-  return idx === -1 ? 0 : idx
-}
-
 const EffortSelector: React.FC<EffortSelectorProps> = ({
   selectedProvider,
   selectedModel,
   theme,
 }) => {
+  // Se suscribe al catálogo para re-renderizar cuando llegan niveles nuevos
+  // (en Codex salen del refresh de model/list, ver
+  // services/codexBridge/capabilities.ts).
+  useModelCatalog()
+  // Fuerza un render tras guardar una elección (el valor vive en
+  // localStorage, no en este estado).
+  const [, setRevision] = useState(0)
+
   const levels =
     selectedProvider && selectedModel
       ? getEffortLevels(selectedProvider, selectedModel)
       : []
 
-  const [index, setIndex] = useState<number>(() =>
-    selectedProvider && selectedModel
-      ? resolveIndex(levels, getStoredEffort(selectedProvider, selectedModel))
-      : 0,
-  )
-
-  // Al cambiar de modelo o proveedor, releer la elección guardada para ESE
-  // par (la persistencia es por provider:model, no global) y recalcular el
-  // índice contra los niveles del nuevo modelo.
-  useEffect(() => {
-    if (!selectedProvider || !selectedModel) return
-    const currentLevels = getEffortLevels(selectedProvider, selectedModel)
-    setIndex(
-      resolveIndex(
-        currentLevels,
-        getStoredEffort(selectedProvider, selectedModel),
-      ),
-    )
-  }, [selectedProvider, selectedModel])
-
   if (!selectedProvider || !selectedModel || levels.length === 0) return null
 
   const maxIndex = levels.length - 1
-  const clampedIndex = Math.min(index, maxIndex)
+  const clampedIndex = Math.max(
+    0,
+    levels.indexOf(resolveEffort(selectedProvider, selectedModel)),
+  )
   const level = levels[clampedIndex]
   const label = EFFORT_LABELS[level] ?? level
   const fillPercent = maxIndex === 0 ? 100 : (clampedIndex / maxIndex) * 100
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newIndex = Number(event.target.value)
-    setIndex(newIndex)
     setStoredEffort(selectedProvider, selectedModel, levels[newIndex])
+    setRevision((revision) => revision + 1)
   }
 
   const sliderVars = {
