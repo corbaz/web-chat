@@ -27,6 +27,9 @@ interface HeaderProps {
   onProviderChange?: (providerId: string) => void
   yoloEnabled?: boolean
   onYoloChange?: (next: boolean) => void
+  // T4 (ver odd/tasks/chat-rooms.md): las 10 cajitas de salas, ya armadas
+  // por App (necesitan el estado de todas las salas, no solo el de esta).
+  roomTabs?: React.ReactNode
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -45,6 +48,7 @@ const Header: React.FC<HeaderProps> = ({
   onProviderChange: externalOnProviderChange,
   yoloEnabled = false,
   onYoloChange,
+  roomTabs,
 }) => {
   const [internalProvider, setInternalProvider] = useState<string>(() => {
     if (!externalProvider) {
@@ -141,13 +145,17 @@ const Header: React.FC<HeaderProps> = ({
                 isDarkTheme={isDarkTheme}
               />
             </div>
-            <div className="w-auto">
+            {/* Modelo y cajitas de salas en la misma fila: en el celular los
+                selectores se apilan y el alto del header es fijo
+                (layoutConstants), así que las salas no suman otra fila. */}
+            <div className="w-auto max-w-full flex items-center gap-1.5">
               <ModelSelector
                 selectedModel={selectedModel}
                 onModelChange={onModelChange}
                 theme={theme}
                 providerFilter={selectedProvider}
               />
+              {roomTabs}
             </div>
           </div>
         </div>

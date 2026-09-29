@@ -74,6 +74,11 @@ import {
   getOpenCodeFreeServerUrl,
 } from '../../services/opencodeLocal/settings'
 import { askPermission } from '../../services/permissionModal'
+import { computeMessageCost } from '../../services/pricing/pricing'
+import {
+  ensureFreshPrices,
+  getPricingTable,
+} from '../../services/pricing/store'
 import {
   resolveApiContent,
   toPersistableFiles,
@@ -124,6 +129,15 @@ interface ChatContainerProps {
   onRepeatMessage?: (message: string) => void // Callback para repetir mensaje en footer
   searchEnabled: boolean // Estado de la búsqueda web para el chat
   yoloEnabled?: boolean // T7: auto-aprobar herramientas locales sin preguntar (claudecode)
+  // T3/T5 (ver odd/tasks/chat-rooms.md): id de la sala dueña de esta
+  // instancia, para filtrar el evento global 'send-message' (varias salas
+  // están montadas a la vez) y si es la sala visible actualmente.
+  roomId: number
+  isActive: boolean
+  // T5: antes de mostrar un modal de permiso bloqueante, espera a que esta
+  // sala esté visible (si ya lo está, resuelve enseguida). Sin esta prop, se
+  // pregunta igual sin esperar (comportamiento de antes).
+  waitUntilVisible?: () => Promise<void>
 }
 
 const FRESH_WEB_EVIDENCE_PATTERN =
@@ -184,6 +198,9 @@ const ChatContainer = ({
   onRepeatMessage,
   searchEnabled,
   yoloEnabled = false,
+  roomId,
+  isActive,
+  waitUntilVisible,
 }: ChatContainerProps) => {
   // Ref para almacenar tiempos de inicio de solicitudes
   const requestStartTimeRef = useRef<Record<string, number>>({})
@@ -722,6 +739,7 @@ const ChatContainer = ({
             {
               onPermission: async (permission) => {
                 // YOLO (T7 follow-up): 'once' automático, sin modal.
+                if (!yoloEnabled && waitUntilVisible) await waitUntilVisible()
                 const answer = yoloEnabled
                   ? 'once'
                   : await askOpenCodeFreePermission(
@@ -893,6 +911,7 @@ const ChatContainer = ({
               for (const permission of pending) {
                 if (seenPermissionIds.has(permission.id)) continue
                 seenPermissionIds.add(permission.id)
+                if (waitUntilVisible) await waitUntilVisible()
                 const decision = await askPermission(
                   theme,
                   isDarkTheme,
@@ -974,6 +993,17 @@ const ChatContainer = ({
             requestedModelId: selectedModel,
             promptTokens: result.tokens.input,
             completionTokens: result.tokens.output,
+            // Costo exacto equivalente por API que informa `claude -p`
+            // (incluye la caché, que casi no aparece en tokens.input): mejor
+            // que calcularlo por tokens (ver odd/tasks/message-cost.md).
+            ...(result.costUsd > 0
+              ? {
+                  cost: {
+                    total: result.costUsd,
+                    kind: 'subscription' as const,
+                  },
+                }
+              : {}),
           }
 
           setMessages((prevMessages: ChatMessageType[]) => [
@@ -1077,6 +1107,7 @@ const ChatContainer = ({
               for (const permission of pending) {
                 if (seenPermissionIds.has(permission.id)) continue
                 seenPermissionIds.add(permission.id)
+                if (waitUntilVisible) await waitUntilVisible()
                 const decision = await askPermission(
                   theme,
                   isDarkTheme,
@@ -1692,17 +1723,22 @@ const ChatContainer = ({
       searchEnabled,
       theme,
       isDarkTheme,
+      waitUntilVisible,
     ],
   )
 
-  // Escuchar el evento personalizado para enviar mensajes
+  // Escuchar el evento personalizado para enviar mensajes. T3: el evento es
+  // global (document) pero hay una sala por cada ChatContainer montado, así
+  // que cada una ignora los eventos que no traen su propio roomId.
   useEffect(() => {
     const handleSendMessage = (event: Event) => {
       const customEvent = event as CustomEvent<{
         message: string
         images?: ImageAttachment[]
         files?: FileAttachment[]
+        roomId: number
       }>
+      if (customEvent.detail.roomId !== roomId) return
       sendMessage(
         customEvent.detail.message,
         customEvent.detail.images,
@@ -1721,17 +1757,64 @@ const ChatContainer = ({
         handleSendMessage as EventListener,
       )
     }
-  }, [sendMessage])
+  }, [sendMessage, roomId])
 
-  // Cuando la IA responde o se agrega un mensaje del asistente, enfocar input
+  // Costo del mensaje (ver odd/tasks/message-cost.md): cuando aparece una
+  // respuesta nueva con tokens y sin costo, se calcula una sola vez con los
+  // precios del día y queda guardado en el mensaje (el historial no cambia si
+  // mañana cambia el precio). Solo mira la última respuesta: los mensajes de
+  // antes de esta función quedan sin costo.
+  useEffect(() => {
+    const last = messages[messages.length - 1]
+    if (
+      !selectedProvider ||
+      !last ||
+      last.role !== 'assistant' ||
+      last.cost ||
+      last.promptTokens === undefined ||
+      last.completionTokens === undefined
+    ) {
+      return
+    }
+    const messageId = last.id
+    const modelId = last.requestedModelId || selectedModel
+    const inputTokens = last.promptTokens
+    const outputTokens = last.completionTokens
+    let cancelled = false
+    void ensureFreshPrices().then(() => {
+      if (cancelled) return
+      const cost = computeMessageCost(
+        getPricingTable(),
+        selectedProvider,
+        modelId,
+        inputTokens,
+        outputTokens,
+      )
+      if (!cost) return
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === messageId ? { ...message, cost } : message,
+        ),
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [messages, selectedModel, selectedProvider, setMessages])
+
+  // Cuando la IA responde o se agrega un mensaje del asistente, enfocar
+  // input — pero solo si esta sala es la visible: enfocar el textarea de una
+  // sala oculta (display:none) no hace nada visible, pero tampoco tiene
+  // sentido intentarlo mientras el usuario está mirando otra sala (T3).
   useEffect(() => {
     if (
+      isActive &&
       messages.length > 0 &&
       messages[messages.length - 1].role === 'assistant'
     ) {
       if (onFocusInput) onFocusInput()
     }
-  }, [messages, onFocusInput])
+  }, [messages, onFocusInput, isActive])
 
   return (
     <>

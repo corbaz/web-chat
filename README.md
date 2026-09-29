@@ -22,11 +22,13 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 - **Búsqueda web nativa**: en los modelos que la soportan (ícono de globo 🌐), el proveedor busca en internet y la respuesta muestra las fuentes.
 - **Links sin salir del chat**: los links de las respuestas y de las fuentes se abren en un modal dentro del chat, adaptado a cualquier pantalla y con botón para abrirlos en otra pestaña (Ctrl+clic o clic del medio abren directo la pestaña). Google Maps (📍, incluido "Cómo llegar") y YouTube se muestran con su versión embebible. Para el resto, la app consulta antes `/api/frame-check` (función de Vercel; en `bun run dev` lo responde Vite): si el sitio no permite mostrarse dentro de otra página (GitHub, OpenStreetMap, etc.), el modal lo avisa y ofrece la pestaña nueva. La página embebida no puede reemplazar la app. Las imágenes de markdown `![descripción](url)` se muestran con vista previa y se amplían con un clic; si la URL no carga, queda como link. Todos los proveedores reciben la misma instrucción: ante un pedido de mapa o dirección, responder con un link de Google Maps (ningún modelo genera capturas de mapas).
 - **Estadísticas de tokens** con el límite de contexto real de cada modelo.
+- **Costo de cada respuesta** (💲): al lado de los tokens, cuánto costó el mensaje (entrada + salida) con el precio público del modelo en models.dev (USD por millón de tokens, con los tramos por tamaño de contexto). Los precios los resume `/api/prices` (función de Vercel; en `bun run dev` lo responde Vite, ~13 KB en vez de los 5 MB de models.dev) y el navegador los renueva una vez por día, al abrir la app o al cambiar de modelo. El costo queda guardado en el mensaje. Claude y OpenAI por suscripción muestran el equivalente por API ("incluido en tu suscripción"; en Claude, el costo exacto que informa `claude -p`); OpenCode Free muestra "Gratis"; un modelo sin precio publicado no muestra costo. No descuenta la caché de entrada, así que puede sobrestimar un poco.
 - **Modelos gratis de OpenCode** a través de un servidor local de OpenCode ("OpenCode Free").
 - **Claude por tu suscripción de Claude Code** (sin API key) a través de un bridge local ("Claude (suscripción)").
 - **OpenAI por tu suscripción de ChatGPT** (sin API key) a través de un bridge local ("OpenAI (suscripción)").
 - **Modelos que el proveedor rechaza** para tu cuenta (bloqueados, retirados, sin acceso) se ocultan solos del selector.
 - **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (no disponible en OpenCode Free; en Claude (suscripción) siempre usa Haiku).
+- **10 salas de chat** (cajitas 1-10 al lado del selector de modelo): cada una es un chat independiente, con su propio proveedor, modelo, búsqueda web, YOLO y respuestas en curso; cambiar de sala nunca interrumpe una que está esperando respuesta. Las cajitas muestran si esa sala está pensando, tiene una respuesta sin leer o un permiso pendiente.
 - Tema claro y oscuro, historial de chats en el navegador.
 
 ---
@@ -478,6 +480,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Claude (suscripción) con bridge local a `claude -p`: todos los modelos, slider de esfuerzo, visión, fecha y hora, navegación web, comandos con permiso y toggle YOLO.
 - Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
 - OpenAI (suscripción) con bridge local a `codex app-server`: todos los modelos, esfuerzo y visión en vivo desde `model/list`, comandos con permiso y toggle YOLO (sin PDF nativo); búsqueda web en vivo.
+- Costo de cada respuesta con precios de models.dev renovados una vez por día.
 - Links y fuentes en un modal dentro del chat (con chequeo de si el sitio se deja embeber); mapas de Google Maps y videos de YouTube embebidos; imágenes de markdown con vista previa.
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.
 - Entrada de archivos de texto/código y PDF (nativo o extraído con pdf.js) en todos los modelos y proveedores.
@@ -486,3 +489,4 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Modelos rechazados por el proveedor se ocultan solos.
 - Groq: solo los modelos disponibles hoy; se quitó `compound` (apagado por Groq).
 - ESLint reemplazado por Biome; build sin commitear; Vercel como único hosting.
+- 10 salas de chat internas (cajitas junto al selector de modelo), cada una con su propio proveedor/modelo/chat/YOLO/búsqueda web e indicadores de estado (pensando, sin leer, permiso pendiente).

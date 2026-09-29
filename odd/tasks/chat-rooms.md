@@ -1,0 +1,49 @@
+# Chat rooms (10 internal tabs)
+
+## Objective
+Ten numbered boxes (1-10) next to the model selector. Each box is an independent chat room identical to today's chat: its own messages, provider, model, YOLO, web-search toggle, draft and current chat. Switching rooms never interrupts a room that is waiting for an answer. Requested and approved by the user 2026-09-29.
+
+## Problem
+All chat state lives in `src/App.tsx` (provider, model, messages, isLoading, currentChatId, searchEnabled, yolo) and there is a single `ChatContainer` + `Footer`, so only one conversation can run at a time.
+
+## Approach
+- A room = the current Header + ChatContainer + Footer trio with its own state (`src/components/rooms/ChatRoom.tsx`), extracted from App. App keeps shared state: theme, API-key modal, chat history (shared left-menu history), room list/active room and per-room status.
+- Rooms are mounted the first time they are opened and stay mounted (hidden with `display:none`), so in-flight requests keep running and land in their own room. Room 1 exists from the start.
+- Global side effects are scoped per room: the `send-message` event carries `roomId`; document/window listeners (paste, keyboard shortcuts, focus) only act in the active room.
+- Permission prompts (sweetalert, global) of a hidden room wait until that room is active; its box shows ⚠️ meanwhile.
+- Box indicators: active (highlighted), spinner (waiting for an answer), dot (unread answer), ⚠️ (pending permission). Tooltip: chat title + model.
+- Persistence (`rooms:v1` in localStorage): active room, opened rooms, and per room provider/model/chatId. Migrates room 1 from the legacy `selectedProvider`/`selectedModel` keys. A new room starts with its own new chat (never the "last chat" fallback). In-flight answers are lost on reload (same as today).
+- Opening a history chat that is already open in another room switches to that room instead of duplicating it. Deleting a chat that is open in another room makes that room start a new chat.
+
+## Tasks
+- [x] T1 `roomStorage.ts` (pure: read/write/migrate `rooms:v1`) + status helpers + tests.
+- [x] T2 Extract `ChatRoom` from App (per-room state, handlers, Header/ChatContainer/Footer), App renders opened rooms; behavior unchanged with a single room.
+- [x] T3 Scope global effects per room (`send-message` roomId, document/window listeners only when active, focus).
+- [x] T4 `RoomTabs` next to the model selector with indicators; mobile horizontal scroll.
+- [x] T5 Permission prompts deferred for hidden rooms (⚠️), unread tracking, same-chat-in-two-rooms and delete rules.
+- [x] T6 README + checks.
+
+## Checks
+TDD: not configured for this project (ordinary checks). Runner: `bun test`. Also `bunx tsc -b`, `bun run build`, `bunx biome check` on touched files.
+
+## Progress
+- 2026-09-29: explored App.tsx, ChatContainer (init effect picks the last history chat when `currentChatId` is empty; `send-message` is a document-level event; LeftMenu/RightMenu render inside ChatContainer), permissionModal (global sweetalert). Document created; implementation delegated to one writer.
+- 2026-09-29: implemented T1-T6.
+  - `src/components/rooms/roomStorage.ts` + `roomStorage.test.ts` (15 tests): pure `readRoomsState`/`writeRoomsState` over an injectable `Storage`-like object, migration of room 1 from legacy `selectedProvider`/`selectedModel` (empty string when neither exists, so callers resolve the real default), sanitization of corrupt/unexpected JSON, and `resolveRoomIndicator`/`describeRoomTooltip` helpers for the box indicators/tooltip.
+  - `src/components/rooms/ChatRoom.tsx`: moved provider/model/messages/isLoading/currentChatId/searchEnabled/yolo/menus/footerRef and all chat handlers (new/clear/model/provider change, select chat) out of `App.tsx`. Also exports `API_KEY_PROVIDER_IDS`/`isOpenCodeGatedProvider`/`pickInitialProvider` (moved verbatim from `App.getInitialProvider`) so App can seed a freshly opened room's default provider and gate the API-key modal without duplicating the provider list. Room 1 with no persisted `chatId` leaves `currentChatId` undefined so ChatContainer's existing "pick the last chat in history" init effect runs unchanged (byte-identical single-room cold start); every other room (or room 1 resumed after a reload) gets a concrete `chatId` before first render via a `useState` lazy initializer, so ChatContainer's fallback never hijacks another room's chat.
+  - `src/components/chat/ChatContainer.tsx`: added `roomId`/`isActive`/`waitUntilVisible` props. The `send-message` document listener now ignores events whose `detail.roomId` doesn't match; the "focus input after assistant reply" effect only fires when `isActive`; `waitUntilVisible()` is awaited right before each of the three blocking permission prompts (OpenCode Free, Claude subscription bridge, Codex subscription bridge) when not in YOLO mode.
+  - `src/components/rooms/RoomTabs.tsx` + `src/components/HEADER/Header.tsx` (new optional `roomTabs` prop, rendered after `ModelSelector`): 10 buttons with `role="tab"`/`aria-selected`, horizontally scrollable (`overflow-x-auto`, bounded `max-w`) so they never force page-level horizontal scroll, showing ⚠️ (permission pending) > spinner (loading) > dot (unread) by priority, and a tooltip via `describeRoomTooltip`.
+  - `src/App.tsx`: now only owns shared state (theme, API-key modal, shared `chatHistory`, `roomsState` persisted via `roomStorage`, live `roomStatuses`) and renders one `ChatRoom` per opened room id, wrapped by `ChatRoom` itself in a `hidden` div when inactive (Header/ChatContainer/Footer are `position:fixed`, so hiding the wrapper hides all three). Cross-room coordination: `handleSelectRoom` opens+activates a box; `handleRequestSelectChat` redirects to another room if it already has that chat open, otherwise sends a one-shot `{chatId, nonce}` command to the requesting room; `handleDeleteChat` removes the chat from the shared history/localStorage and sends a one-shot "new chat" nonce to every opened room whose persisted `chatId` matched the deleted one (including the room that requested the delete, generalizing the old single-room self-recovery logic).
+  - Footer.tsx needed no changes: it has no `document`/`window` listeners (paste/keydown/focus all attach to its own textarea), and each room mounts its own Footer instance, so a hidden room's Footer can't receive input from the DOM.
+  - README.md: added one bullet to "Qué hace" and one to "Cambios recientes (septiembre 2026)".
+
+## Verification (2026-09-29)
+- `bun test`: 307 pass, 0 fail (292 baseline + 15 new in `roomStorage.test.ts`). The two `console.error` lines printed during the run are expected output from the "corrupt JSON" test cases, not failures.
+- `bunx tsc -b`: exit 0, no output.
+- `bun run build`: succeeded (`vite build` completed, same chunk layout as before).
+- `bunx biome check` on every touched file: 0 errors. `ChatContainer.tsx` keeps its 4 pre-existing warnings (a missing `yoloEnabled`/`isDarkTheme` dependency on `sendMessage` and two `useOptionalChain` suggestions), none introduced by this change and none in code this change added; all other touched files (`App.tsx`, `ChatRoom.tsx`, `RoomTabs.tsx`, `Header.tsx`, `roomStorage.ts`) are clean.
+
+## Known gaps / not verified
+- No browser/runtime smoke test was run (no browser available to this agent): multi-room switching, the actual permission-prompt-defers-until-visible flow, unread/spinner/⚠️ indicators, and the duplicate-chat/delete-in-another-room redirects are implemented per the design above and covered indirectly by `tsc`/`build`/unit tests, but not exercised end-to-end. Recommend a manual pass: open 3+ rooms, send a message in a background room, delete a chat open in two rooms, and check a Claude/Codex/OpenCode Free permission prompt from a background room.
+- `roomStorage.test.ts` covers the pure storage/indicator helpers only; `ChatRoom`/`RoomTabs`/`App` have no component tests (none existed for `App`/`ChatContainer`/`Footer` before this change either — the project has no React component test setup).
+- 2026-09-29 (parent review): fixed (1) a new room registered its chat in the shared history from a useState initializer (state update of App during render; also double-run in StrictMode) -> the room now only generates its chat id and registers it in an idempotent effect; the welcome message comes from ChatContainer's existing load effect; (2) unread was set when a hidden room loaded stored messages on reload -> now set only when a room finishes loading while hidden; (3) room boxes: indicators were clipped by overflow-x-auto (padding added) and only ~6 boxes fit on desktop (max width now only below xl); (4) boxes share the model selector row so the fixed-height mobile header does not gain a row. Checks after fixes: `bun test` 307 pass 0 fail, `bunx tsc -b` exit 0, `bun run build` OK, biome clean except 4 pre-existing ChatContainer warnings; SSR smoke render of App with 3 opened rooms: 3 tablists x 10 tabs, 1 active per header, inactive rooms hidden. Still not verified in a real browser.

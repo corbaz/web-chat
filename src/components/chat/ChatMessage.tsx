@@ -6,6 +6,7 @@ import type {
 } from '../../interfaces/chat/chatTypes.ts'
 import type { ColorPalette } from '../../interfaces/temas/temas.tsx'
 import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
+import { formatUsd } from '../../services/pricing/pricing'
 import { base64ToBlobUrl } from '../../utils/blobUrl'
 import { isPlainClick, toLinkPreview } from '../../utils/linkPreview'
 import FilePreviewModal, { type FilePreview } from './FilePreviewModal'
@@ -455,6 +456,29 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                         ) / 10,
                       )}
                       %)
+                      {message.cost && (
+                        <>
+                          {' · 💲 '}
+                          {message.cost.kind === 'free' ? (
+                            'Gratis'
+                          ) : (
+                            <span
+                              title={
+                                message.cost.kind === 'subscription'
+                                  ? 'Lo que habría costado por API: con tu suscripción no se cobra por mensaje'
+                                  : 'Costo estimado con los precios públicos del modelo (models.dev)'
+                              }
+                            >
+                              {formatUsd(message.cost.total)}
+                              {message.cost.input !== undefined &&
+                                message.cost.output !== undefined &&
+                                ` (entrada ${formatUsd(message.cost.input)} | salida ${formatUsd(message.cost.output)})`}
+                              {message.cost.kind === 'subscription' &&
+                                ' · equivalente API, incluido en tu suscripción'}
+                            </span>
+                          )}
+                        </>
+                      )}
                     </span>
                   ) : (
                     <span>

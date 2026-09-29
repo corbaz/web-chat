@@ -35,11 +35,31 @@ const frameCheckDevEndpoint = (): Plugin => ({
     },
 });
 
+// Mismo endpoint que api/prices.ts (Vercel) para `bun run dev`: precios de
+// los modelos reducidos de models.dev (ver src/services/pricing/pricing.ts).
+const pricesDevEndpoint = (): Plugin => ({
+    name: 'prices-dev-endpoint',
+    configureServer(server) {
+        server.middlewares.use('/api/prices', async (_req, res) => {
+            res.setHeader('content-type', 'application/json');
+            try {
+                const response = await fetch('https://models.dev/api.json');
+                const { compactPricing } = await server.ssrLoadModule('/src/services/pricing/pricing.ts');
+                const prices = compactPricing(await response.json());
+                res.end(JSON.stringify({ fetchedAt: Date.now(), prices }));
+            } catch {
+                res.statusCode = 502;
+                res.end(JSON.stringify({ error: 'No se pudo leer models.dev' }));
+            }
+        });
+    },
+});
+
 // https://vite.dev/config/
 export default defineConfig({
     // Configura base como './' para generar rutas relativas en lugar de absolutas
     base: './',
-    plugins: [react(), tailwindcss(), basicSsl(), frameCheckDevEndpoint()],
+    plugins: [react(), tailwindcss(), basicSsl(), frameCheckDevEndpoint(), pricesDevEndpoint()],
     define: {
         __APP_VERSION__: JSON.stringify(getBuenosAiresVersion()),
     },

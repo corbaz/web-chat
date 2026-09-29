@@ -1,3 +1,5 @@
+import type { MessageCost } from '../../services/pricing/pricing'
+
 export interface ChatMessageType {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -10,6 +12,7 @@ export interface ChatMessageType {
   requestedModelId?: string // ID del modelo solicitado por el usuario
   promptTokens?: number // Exact input/prompt tokens
   completionTokens?: number // Exact output/completion tokens
+  cost?: MessageCost // Costo en USD calculado al llegar la respuesta (ver odd/tasks/message-cost.md)
   executedTools?: ExecutedTool[] // Herramientas integradas ejecutadas por Groq (GPT-OSS)
   citations?: Citation[] // Citaciones/Fuentes de la búsqueda web
   searchState?: 'incomplete' | undefined // Estado de la búsqueda web ('incomplete' para pause_turn de Anthropic)

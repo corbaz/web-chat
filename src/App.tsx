@@ -1,53 +1,43 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ApiKeyModal from './components/ApiKeyModal/ApiKeyModal.tsx'
-// Importación utilizando el archivo índice
-import ChatContainer from './components/chat/ChatContainer'
-import Footer, { type FooterRef } from './components/FOOTER/Footer'
-// Componentes principales
-import Header from './components/HEADER/Header'
-import { DEFAULT_MODEL_BY_PROVIDER } from './config/modelDefaults'
+import ChatRoom, {
+  API_KEY_PROVIDER_IDS,
+  isOpenCodeGatedProvider,
+  pickInitialProvider,
+} from './components/rooms/ChatRoom'
+import RoomTabs, { type RoomTabStatus } from './components/rooms/RoomTabs'
+import {
+  type RoomEntry,
+  type RoomsState,
+  readRoomsState,
+  writeRoomsState,
+} from './components/rooms/roomStorage'
 import { isOpenCodeAvailable } from './config/providers'
 import { APP_VERSION } from './constants/appVersion'
-import { createWelcomeMessage } from './constants/messages'
-// Interfaces
 import {
   CHAT_HISTORY_KEY,
   type ChatMessageType,
   STORAGE_KEY,
-  TOOLS_STORAGE_KEY,
 } from './interfaces/chat/chatTypes'
 import { darkTheme, lightTheme } from './interfaces/temas/temas.tsx'
-import {
-  PROVIDER_IDS as CATALOG_PROVIDER_IDS,
-  getModels,
-  initModelCatalog,
-} from './services/modelCatalog/store'
-import type { CatalogModel, ProviderId } from './services/modelCatalog/types'
-import { useModelCatalog } from './services/modelCatalog/useModelCatalog'
 import { generateLayoutCSS } from './utils/layoutConstants'
 import { setupMobileKeyboardHandler } from './utils/mobileUtils'
 
-const PROVIDER_IDS = [
-  'groq',
-  'routellm',
-  'openai',
-  'anthropic',
-  'opengo',
-  'opencodezen',
-  'opencodefree',
-  'gemini',
-] as const
-
-const isOpenCodeGatedProvider = (p: string): boolean =>
-  p === 'opengo' || p === 'opencodezen'
+type ChatHistoryEntry = {
+  id: string
+  title: string
+  date: Date
+  model?: string
+}
 
 export const App = () => {
   // Estados para la UI
   const [isDarkTheme, setIsDarkTheme] = useState(true)
   const theme = isDarkTheme ? darkTheme : lightTheme
+
   const hasAnyApiKey = useCallback(
     () =>
-      PROVIDER_IDS.some((p) => {
+      API_KEY_PROVIDER_IDS.some((p) => {
         if (isOpenCodeGatedProvider(p) && !isOpenCodeAvailable()) return false
         const key = localStorage.getItem(`${p}ApiKey`)
         return key && key.trim() !== ''
@@ -55,171 +45,174 @@ export const App = () => {
     [],
   )
 
-  const getInitialProvider = () => {
-    const stored = localStorage.getItem('selectedProvider')
-    if (stored) {
-      if (!isOpenCodeGatedProvider(stored) || isOpenCodeAvailable()) {
-        const key = localStorage.getItem(`${stored}ApiKey`)
-        if (key && key.trim() !== '') return stored
-      }
-    }
-    for (const p of PROVIDER_IDS) {
-      if (isOpenCodeGatedProvider(p) && !isOpenCodeAvailable()) continue
-      const key = localStorage.getItem(`${p}ApiKey`)
-      if (key && key.trim() !== '') return p
-    }
-    return 'groq'
-  }
-
-  // Modelo por defecto de un provider (T17, user request 2026-09-28): el id
-  // configurado en DEFAULT_MODEL_BY_PROVIDER si ya está en el catálogo
-  // (puede no estarlo todavía si el refresh en background no terminó, o si
-  // el proveedor lo retiró); si no, el primero disponible.
-  const pickDefaultModel = (
-    provider: string,
-    models: CatalogModel[],
-  ): string | undefined => {
-    const defaultId = DEFAULT_MODEL_BY_PROVIDER[provider]
-    if (defaultId && models.some((m) => m.id === defaultId)) return defaultId
-    return models[0]?.id
-  }
-
-  const getInitialModel = (provider: string) => {
-    // Intentar cargar el modelo guardado en localStorage
-    const savedModel = localStorage.getItem('selectedModel')
-
-    // Verificar que el modelo guardado pertenece al provider actual
-    const allModels = getModels(
-      PROVIDER_IDS.includes(provider as (typeof PROVIDER_IDS)[number])
-        ? (provider as (typeof PROVIDER_IDS)[number])
-        : 'groq',
-    )
-
-    // Si el modelo guardado existe en el provider actual, usarlo
-    if (savedModel && allModels.some((m) => m.id === savedModel)) {
-      return savedModel
-    }
-
-    // Si no, el default del provider (o el primero del catálogo)
-    return pickDefaultModel(provider, allModels) || getModels('groq')[0].id
-  }
-
-  const initialProvider = getInitialProvider()
-  const [selectedProvider, setSelectedProvider] =
-    useState<string>(initialProvider)
-  const [selectedModel, setSelectedModel] = useState(() =>
-    getInitialModel(initialProvider),
-  )
-
-  const getDefaultModelForProvider = (provider: string) => {
-    const models = getModels(
-      PROVIDER_IDS.includes(provider as (typeof PROVIDER_IDS)[number])
-        ? (provider as (typeof PROVIDER_IDS)[number])
-        : 'groq',
-    )
-    return pickDefaultModel(provider, models) || selectedModel
-  }
-
-  // Si el modelo elegido desaparece del catálogo (refresh o modelo rechazado
-  // por el proveedor), se pasa al primero disponible del mismo proveedor.
-  const providerModels = useModelCatalog(
-    CATALOG_PROVIDER_IDS.includes(selectedProvider as ProviderId)
-      ? (selectedProvider as ProviderId)
-      : 'groq',
-  )
-  useEffect(() => {
-    if (providerModels.length === 0) return
-    if (providerModels.some((model) => model.id === selectedModel)) return
-    const fallback = providerModels[0].id
-    setSelectedModel(fallback)
-    localStorage.setItem('selectedModel', fallback)
-  }, [providerModels, selectedModel])
-
-  const handleProviderChange = (providerId: string) => {
-    setSelectedProvider(providerId)
-    localStorage.setItem('selectedProvider', providerId)
-    const newModel = getDefaultModelForProvider(providerId)
-    setSelectedModel(newModel)
-    localStorage.setItem('selectedModel', newModel)
-  }
-
-  // Estados para los menús laterales
-  const [leftMenuOpen, setLeftMenuOpen] = useState(false)
-  const [rightMenuOpen, setRightMenuOpen] = useState(false)
-
-  // Estados para el chat
-  const [messages, setMessages] = useState<ChatMessageType[]>([])
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [chatHistory, setChatHistory] = useState<
-    { id: string; title: string; date: Date; model?: string }[]
-  >([])
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
-    undefined,
-  )
   const [isApiKeySet, setIsApiKeySet] = useState(() => hasAnyApiKey())
   const [apiKeyModalReset, setApiKeyModalReset] = useState(0)
 
-  // Búsqueda web nativa por chat
-  const [searchEnabled, setSearchEnabled] = useState<boolean>(true)
+  // Historial de chats: compartido por las 10 salas (T2, ver
+  // odd/tasks/chat-rooms.md), igual que antes solo había una.
+  const [chatHistory, setChatHistory] = useState<ChatHistoryEntry[]>([])
 
-  // YOLO (T7 follow-up, user request 2026-09-28): auto-aprobar herramientas
-  // locales sin preguntar. Nunca persistido a propósito (useState en memoria,
-  // no localStorage): recargar la página lo vuelve a apagar.
-  const [yoloEnabled, setYoloEnabled] = useState<boolean>(false)
-
-  useEffect(() => {
-    if (!currentChatId) {
-      setSearchEnabled(true)
-      return
-    }
-    try {
-      const stored = localStorage.getItem(TOOLS_STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed && typeof parsed === 'object' && parsed[currentChatId]) {
-          const config = parsed[currentChatId]
-          if (config.searchEnabled !== undefined) {
-            setSearchEnabled(config.searchEnabled)
-            return
+  const handleUpdateChatHistory = useCallback(
+    (value: React.SetStateAction<ChatHistoryEntry[]>) => {
+      if (typeof value === 'function') {
+        setChatHistory((prev) => {
+          const newValue = value(prev)
+          try {
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newValue))
+          } catch (error) {
+            console.error('Error al guardar historial de chat:', error)
           }
+          return newValue
+        })
+      } else {
+        try {
+          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(value))
+        } catch (error) {
+          console.error('Error al guardar historial de chat:', error)
         }
+        setChatHistory(value)
       }
-    } catch (e) {
-      console.error('Error al cargar config de búsqueda web:', e)
-    }
-    setSearchEnabled(true)
-  }, [currentChatId])
+    },
+    [],
+  )
 
-  const handleToggleSearch = useCallback(() => {
-    if (!currentChatId) return
-    setSearchEnabled((prev) => {
-      const next = !prev
-      try {
-        const stored = localStorage.getItem(TOOLS_STORAGE_KEY)
-        let parsed: Record<string, Record<string, unknown>> = {}
-        if (stored) {
-          parsed = JSON.parse(stored)
+  const handleUpdateChatTitle = useCallback(
+    (chatId: string, newTitle: string) => {
+      setChatHistory((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId ? { ...chat, title: newTitle } : chat,
+        ),
+      )
+    },
+    [],
+  )
+
+  // Estado de las salas (T1/T2): cuál está activa, cuáles están abiertas
+  // (montadas) y el proveedor/modelo/chat de cada una, persistido en
+  // localStorage (`rooms:v1`).
+  const [roomsState, setRoomsState] = useState<RoomsState>(() =>
+    readRoomsState(),
+  )
+  useEffect(() => {
+    writeRoomsState(roomsState)
+  }, [roomsState])
+
+  // Estado en vivo (no persistido) de cada sala: para los indicadores de la
+  // cajita (T4/T5).
+  const [roomStatuses, setRoomStatuses] = useState<
+    Partial<Record<number, RoomTabStatus>>
+  >({})
+  const reportRoomStatus = useCallback(
+    (roomId: number, status: RoomTabStatus) => {
+      setRoomStatuses((prev) => {
+        const existing = prev[roomId]
+        if (
+          existing &&
+          existing.isLoading === status.isLoading &&
+          existing.unread === status.unread &&
+          existing.permissionPending === status.permissionPending &&
+          existing.chatTitle === status.chatTitle &&
+          existing.model === status.model
+        ) {
+          return prev
         }
-        parsed[currentChatId] = {
-          ...(parsed[currentChatId] || {}),
-          searchEnabled: next,
+        return { ...prev, [roomId]: status }
+      })
+    },
+    [],
+  )
+
+  const handleRoomStateChange = useCallback(
+    (roomId: number, entry: RoomEntry) => {
+      setRoomsState((prev) => {
+        const existing = prev.rooms[roomId]
+        if (
+          existing &&
+          existing.provider === entry.provider &&
+          existing.model === entry.model &&
+          existing.chatId === entry.chatId
+        ) {
+          return prev
         }
-        localStorage.setItem(TOOLS_STORAGE_KEY, JSON.stringify(parsed))
-      } catch (e) {
-        console.error('Error al guardar config de búsqueda web:', e)
-      }
-      return next
+        return { ...prev, rooms: { ...prev.rooms, [roomId]: entry } }
+      })
+    },
+    [],
+  )
+
+  // Abre (si hace falta) y activa una sala al tocar su cajita (T4).
+  const handleSelectRoom = useCallback((roomId: number) => {
+    setRoomsState((prev) => {
+      if (prev.active === roomId && prev.opened.includes(roomId)) return prev
+      const opened = prev.opened.includes(roomId)
+        ? prev.opened
+        : [...prev.opened, roomId]
+      return { ...prev, active: roomId, opened }
     })
-  }, [currentChatId])
-
-  const footerRef = useRef<FooterRef>(null)
-
-  // Función para enfocar el textarea desde cualquier parte
-  const focusInput = useCallback(() => {
-    setTimeout(() => {
-      footerRef.current?.focusTextarea()
-    }, 100)
   }, [])
+
+  // T5: al elegir un chat del historial, si ya está abierto en OTRA sala se
+  // activa esa sala en vez de duplicarlo; si no, se le pide a la sala que lo
+  // pidió que lo abra ella misma.
+  const [selectChatCommands, setSelectChatCommands] = useState<
+    Partial<Record<number, { chatId: string; nonce: number }>>
+  >({})
+  const handleRequestSelectChat = useCallback(
+    (requestingRoomId: number, chatId: string) => {
+      const otherRoomId = roomsState.opened.find(
+        (id) =>
+          id !== requestingRoomId && roomsState.rooms[id]?.chatId === chatId,
+      )
+      if (otherRoomId !== undefined) {
+        setRoomsState((prev) => ({ ...prev, active: otherRoomId }))
+        return
+      }
+      setSelectChatCommands((prev) => ({
+        ...prev,
+        [requestingRoomId]: { chatId, nonce: Date.now() },
+      }))
+    },
+    [roomsState],
+  )
+
+  // T5: si se borra un chat que está abierto en alguna sala (la que pidió
+  // borrarlo u otra), esa sala arranca un chat nuevo.
+  const [newChatCommands, setNewChatCommands] = useState<
+    Partial<Record<number, number>>
+  >({})
+  const handleDeleteChat = useCallback(
+    (chatIdToDelete: string) => {
+      if (!chatIdToDelete) return
+
+      try {
+        const storedConversations = localStorage.getItem(STORAGE_KEY)
+        if (storedConversations) {
+          const conversations: Record<string, ChatMessageType[]> =
+            JSON.parse(storedConversations)
+          delete conversations[chatIdToDelete]
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
+        }
+      } catch (error) {
+        console.error('Error al eliminar chat:', error)
+      }
+
+      handleUpdateChatHistory((prev) =>
+        prev.filter((chat) => chat.id !== chatIdToDelete),
+      )
+
+      const affectedRooms = roomsState.opened.filter(
+        (id) => roomsState.rooms[id]?.chatId === chatIdToDelete,
+      )
+      if (affectedRooms.length > 0) {
+        setNewChatCommands((prev) => {
+          const next = { ...prev }
+          for (const id of affectedRooms) next[id] = Date.now() + id
+          return next
+        })
+      }
+    },
+    [roomsState, handleUpdateChatHistory],
+  )
 
   // Reaccionar a cambios en API keys (guardar o borrar)
   useEffect(() => {
@@ -237,13 +230,6 @@ export const App = () => {
     }
   }, [hasAnyApiKey])
 
-  // Arrancar el catálogo dinámico de modelos: lee caché/estático de forma
-  // síncrona (ya aplicado en el estado inicial de arriba) y dispara el
-  // refresco en background una sola vez.
-  useEffect(() => {
-    initModelCatalog()
-  }, [])
-
   // Inyectar las variables CSS de layout y actualizar el título del documento
   useEffect(() => {
     const styleElement = document.createElement('style')
@@ -251,7 +237,6 @@ export const App = () => {
     styleElement.textContent = generateLayoutCSS()
     document.head.appendChild(styleElement)
 
-    // Actualizar el título con la versión
     document.title = `PROMPTING ${APP_VERSION}`
 
     return () => {
@@ -262,7 +247,6 @@ export const App = () => {
     }
   }, [])
 
-  // Función para cambiar el tema
   const toggleTheme = useCallback(() => {
     setIsDarkTheme((prevIsDark) => !prevIsDark)
   }, [])
@@ -271,11 +255,9 @@ export const App = () => {
   useEffect(() => {
     setupMobileKeyboardHandler()
 
-    // Configurar clases de HTML y body
     const htmlElement = document.documentElement
     const bodyElement = document.body
 
-    // Primero limpiar las clases existentes para evitar duplicados
     const classesToAdd = [
       'm-0',
       'p-0',
@@ -289,7 +271,6 @@ export const App = () => {
     bodyElement.classList.add(...classesToAdd, 'bg-red-500')
 
     return () => {
-      // Limpieza al desmontar o antes de re-ejecutar el efecto
       classesToAdd.forEach((cls) => {
         htmlElement.classList.remove(cls)
         bodyElement.classList.remove(cls)
@@ -298,338 +279,6 @@ export const App = () => {
       bodyElement.classList.remove('bg-red-500')
     }
   }, [])
-
-  // Manejadores para los menús laterales
-  const handleToggleLeftMenu = () => {
-    setLeftMenuOpen(!leftMenuOpen)
-    if (rightMenuOpen) setRightMenuOpen(false)
-    focusInput()
-  }
-
-  const handleToggleRightMenu = () => {
-    setRightMenuOpen(!rightMenuOpen)
-    if (leftMenuOpen) setLeftMenuOpen(false)
-    focusInput()
-  }
-
-  // Cerrar ambos menús si están abiertos (usado al empezar a tipear)
-  const closeMenus = () => {
-    if (leftMenuOpen) setLeftMenuOpen(false)
-    if (rightMenuOpen) setRightMenuOpen(false)
-  }
-
-  // Manejador para cambiar el modelo
-  const handleModelChange = (modelId: string) => {
-    setSelectedModel(modelId)
-    localStorage.setItem('selectedModel', modelId)
-
-    // Guardar el modelo seleccionado para el chat actual en el historial
-    if (currentChatId) {
-      setChatHistory((prev) =>
-        prev.map((chat) =>
-          chat.id === currentChatId ? { ...chat, model: modelId } : chat,
-        ),
-      )
-    }
-
-    focusInput()
-  }
-
-  // Manejador para crear una nueva conversación
-  const handleNewChat = () => {
-    const newMessages = [createWelcomeMessage(selectedModel)]
-
-    // Generar un nuevo ID para esta conversación
-    const newChatId = `chat_${Date.now()}`
-
-    // Actualizar el localStorage con la nueva conversación
-    try {
-      // 1. Actualizar las conversaciones
-      const storedConversations = localStorage.getItem(STORAGE_KEY)
-      let conversations = {}
-
-      if (storedConversations) {
-        try {
-          const parsed = JSON.parse(storedConversations)
-          if (parsed && typeof parsed === 'object') {
-            conversations = parsed as Record<string, ChatMessageType[]>
-          }
-        } catch (e) {
-          console.error('Error al parsear conversaciones:', e)
-        }
-      }
-
-      // Agregar la nueva conversación
-      conversations = {
-        ...conversations,
-        [newChatId]: newMessages,
-      }
-
-      // Guardar todas las conversaciones
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
-
-      // 2. Actualizar el historial de chats (NO borrar los anteriores)
-      const newChatHistory = [
-        ...chatHistory,
-        {
-          id: newChatId,
-          title: 'Nuevo Chat',
-          date: new Date(),
-          model: selectedModel, // Guardar el modelo seleccionado actualmente
-        },
-      ]
-
-      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newChatHistory))
-
-      // 3. Actualizar el estado de React
-      setMessages(newMessages)
-      setCurrentChatId(newChatId)
-      setChatHistory(newChatHistory)
-    } catch (error) {
-      console.error('Error al crear nueva conversación:', error)
-      // En caso de error, solo actualizamos el estado de React
-      setMessages(newMessages)
-      setCurrentChatId(newChatId)
-      setChatHistory((prevHistory) => [
-        ...prevHistory,
-        {
-          id: newChatId,
-          title: 'Nuevo Chat',
-          date: new Date(),
-          model: selectedModel, // Incluir el modelo seleccionado actual
-        },
-      ])
-    }
-
-    // Cerrar los menús laterales
-    setLeftMenuOpen(false)
-    setRightMenuOpen(false)
-    focusInput()
-  }
-
-  // Manejador para limpiar el chat actual, borrarlo del historial y crear uno nuevo
-  const handleClearChat = useCallback(() => {
-    if (!currentChatId) return
-
-    // Crear un chat nuevo
-    const newChatId = `chat_${Date.now()}`
-
-    // Mensaje de bienvenida para el nuevo chat
-    const welcomeMessage = [createWelcomeMessage(selectedModel)]
-
-    try {
-      // 1. Actualizar los mensajes en localStorage
-      const storedConversations = localStorage.getItem(STORAGE_KEY)
-      let conversations: Record<string, ChatMessageType[]> = {}
-
-      if (storedConversations) {
-        conversations = JSON.parse(storedConversations)
-        // Eliminar la conversación actual
-        delete conversations[currentChatId]
-      }
-
-      // Añadir la nueva conversación
-      conversations[newChatId] = welcomeMessage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
-
-      // 2. Actualizar el historial de chats
-      const updatedHistory = chatHistory.filter(
-        (chat) => chat.id !== currentChatId,
-      )
-      const newChatEntry = {
-        id: newChatId,
-        title: 'Nuevo Chat',
-        date: new Date(),
-        model: selectedModel,
-      }
-
-      const newChatHistory = [...updatedHistory, newChatEntry]
-      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newChatHistory))
-
-      // 3. Actualizar el estado
-      setMessages(welcomeMessage)
-      setCurrentChatId(newChatId)
-      setChatHistory(newChatHistory)
-    } catch (error) {
-      console.error('Error al limpiar y crear nueva conversación:', error)
-    }
-
-    focusInput()
-  }, [currentChatId, selectedModel, chatHistory, focusInput])
-
-  // Modificar el tipo de handleUpdateChatHistory para que sea compatible con React.Dispatch<React.SetStateAction<...>>
-  const handleUpdateChatHistory = useCallback(
-    (
-      value: React.SetStateAction<
-        { id: string; title: string; date: Date; model?: string }[]
-      >,
-    ) => {
-      if (typeof value === 'function') {
-        setChatHistory((prev) => {
-          const newValue = value(prev)
-          // Almacenar en localStorage
-          try {
-            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newValue))
-          } catch (error) {
-            console.error('Error al guardar historial de chat:', error)
-          }
-          return newValue
-        })
-      } else {
-        // Almacenar en localStorage
-        try {
-          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(value))
-        } catch (error) {
-          console.error('Error al guardar historial de chat:', error)
-        }
-        setChatHistory(value)
-      }
-    },
-    [],
-  ) // Sin dependencias para evitar recreaciones innecesarias
-
-  // Manejador para actualizar el estado de carga
-  const handleLoadingChange = (loading: boolean) => {
-    setIsLoading(loading)
-  }
-
-  // Manejador para actualizar el título de un chat
-  const handleUpdateChatTitle = useCallback(
-    (chatId: string, newTitle: string) => {
-      setChatHistory((prev) =>
-        prev.map((chat) =>
-          chat.id === chatId ? { ...chat, title: newTitle } : chat,
-        ),
-      )
-    },
-    [],
-  )
-
-  // Manejador para eliminar un chat y navegar a otro
-  const handleDeleteChat = useCallback(
-    (chatIdToDelete: string) => {
-      if (!chatIdToDelete) return
-
-      try {
-        // 1. Eliminar los mensajes de esta conversación de localStorage
-        const storedConversations = localStorage.getItem(STORAGE_KEY)
-        if (storedConversations) {
-          const conversations = JSON.parse(storedConversations)
-          // Eliminar la conversación
-          delete conversations[chatIdToDelete]
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
-        }
-
-        // 2. Actualizar el historial de chats
-        const updatedHistory = chatHistory.filter(
-          (chat) => chat.id !== chatIdToDelete,
-        )
-
-        // Actualizar el historial en localStorage y estado inmediatamente
-        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(updatedHistory))
-        setChatHistory(updatedHistory)
-
-        // 3. Si estamos eliminando el chat actual, navegar a otro
-        if (currentChatId === chatIdToDelete) {
-          // Si era el último chat, crear uno nuevo completamente separado
-          if (updatedHistory.length === 0) {
-            // Importante: limpiar el chat actual antes de crear uno nuevo
-            setCurrentChatId(undefined)
-            setMessages([])
-
-            // Crear un nuevo chat con un pequeño retraso para asegurar que el estado se actualice
-            setTimeout(() => {
-              // Generar un nuevo ID único
-              const newChatId = `chat_${Date.now()}`
-              const welcomeMessage = [createWelcomeMessage(selectedModel)]
-
-              // Guardar el nuevo chat en localStorage
-              const newConversations: Record<string, ChatMessageType[]> = {}
-              newConversations[newChatId] = welcomeMessage
-              localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(newConversations),
-              )
-
-              // Crear un nuevo historial con solo el nuevo chat
-              const newHistory = [
-                {
-                  id: newChatId,
-                  title: 'Nuevo Chat',
-                  date: new Date(),
-                  model: selectedModel,
-                },
-              ]
-              localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newHistory))
-
-              // Actualizar el estado
-              setMessages(welcomeMessage)
-              setCurrentChatId(newChatId)
-              setChatHistory(newHistory)
-            }, 50)
-
-            return
-          }
-
-          // Si quedan chats, buscar otro chat para navegar
-          // Intentar encontrar un chat más reciente
-          const newerChats = updatedHistory.filter(
-            (chat) =>
-              new Date(chat.date) >
-              new Date(
-                chatHistory.find((c) => c.id === chatIdToDelete)?.date || 0,
-              ),
-          )
-
-          // Si hay chats más recientes, ir al más antiguo de ellos
-          if (newerChats.length > 0) {
-            const sortedNewer = newerChats.toSorted(
-              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-            )
-            setCurrentChatId(sortedNewer[0].id)
-
-            // Cargar mensajes del chat seleccionado
-            const storedData = localStorage.getItem(STORAGE_KEY)
-            if (storedData) {
-              const parsedData = JSON.parse(storedData)
-              if (parsedData?.[sortedNewer[0].id]) {
-                setMessages(parsedData[sortedNewer[0].id])
-                // Actualizar modelo si es necesario
-                if (sortedNewer[0].model) {
-                  setSelectedModel(sortedNewer[0].model)
-                }
-              }
-            }
-          }
-          // Si no hay chats más recientes, ir al más reciente de los anteriores
-          else if (updatedHistory.length > 0) {
-            const latestChat = updatedHistory.reduce(
-              (latest, chat) =>
-                new Date(chat.date) > new Date(latest.date) ? chat : latest,
-              updatedHistory[0],
-            )
-            setCurrentChatId(latestChat.id)
-
-            // Cargar mensajes del chat seleccionado
-            const storedData = localStorage.getItem(STORAGE_KEY)
-            if (storedData) {
-              const parsedData = JSON.parse(storedData)
-              if (parsedData?.[latestChat.id]) {
-                setMessages(parsedData[latestChat.id])
-                // Actualizar modelo si es necesario
-                if (latestChat.model) {
-                  setSelectedModel(latestChat.model)
-                }
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error al eliminar chat:', error)
-      }
-    },
-    [chatHistory, currentChatId, selectedModel],
-  )
 
   const handleApiKeyProvided = () => {
     setIsApiKeySet(true)
@@ -648,110 +297,40 @@ export const App = () => {
         isDarkTheme={isDarkTheme}
         onApiKeyProvided={handleApiKeyProvided}
       />
-      {isApiKeySet && (
-        <>
-          {/* Header con título, versión y selector de modelos */}
-          <Header
-            title="PROMPTING"
-            version={APP_VERSION}
-            selectedModel={selectedModel}
-            onModelChange={handleModelChange}
-            theme={theme}
-            isDarkTheme={isDarkTheme}
-            onToggleLeftMenu={handleToggleLeftMenu}
-            onToggleRightMenu={handleToggleRightMenu}
-            selectedProvider={selectedProvider}
-            onProviderChange={handleProviderChange}
-            yoloEnabled={yoloEnabled}
-            onYoloChange={setYoloEnabled}
-          />
-          {/* Contenedor principal del chat */}
-          <ChatContainer
-            messages={messages}
-            setMessages={setMessages}
-            isLoading={isLoading}
-            setIsLoading={handleLoadingChange}
-            theme={theme}
-            isDarkTheme={isDarkTheme}
-            toggleTheme={toggleTheme}
-            selectedModel={selectedModel}
-            currentChatId={currentChatId}
-            setCurrentChatId={setCurrentChatId}
-            chatHistory={chatHistory}
-            setChatHistory={handleUpdateChatHistory}
-            leftMenuOpen={leftMenuOpen}
-            rightMenuOpen={rightMenuOpen}
-            onCloseLeftMenu={() => {
-              setLeftMenuOpen(false)
-              focusInput()
-            }}
-            onCloseRightMenu={() => {
-              setRightMenuOpen(false)
-              focusInput()
-            }}
-            onSelectChat={(chatId) => {
-              const selectedChat = chatHistory.find(
-                (chat) => chat.id === chatId,
-              )
-              setCurrentChatId(chatId)
-              if (selectedChat?.model) {
-                setSelectedModel(selectedChat.model)
+      {isApiKeySet &&
+        roomsState.opened.map((roomId) => {
+          const roomEntry = roomsState.rooms[roomId]
+          return (
+            <ChatRoom
+              key={roomId}
+              roomId={roomId}
+              isActive={roomId === roomsState.active}
+              theme={theme}
+              isDarkTheme={isDarkTheme}
+              toggleTheme={toggleTheme}
+              chatHistory={chatHistory}
+              setChatHistory={handleUpdateChatHistory}
+              onUpdateChatTitle={handleUpdateChatTitle}
+              onDeleteChat={handleDeleteChat}
+              initialProvider={roomEntry?.provider || pickInitialProvider()}
+              initialModel={roomEntry?.model || ''}
+              initialChatId={roomEntry?.chatId}
+              onRoomStateChange={handleRoomStateChange}
+              onStatusChange={reportRoomStatus}
+              onRequestSelectChat={handleRequestSelectChat}
+              selectChatCommand={selectChatCommands[roomId]}
+              newChatCommand={newChatCommands[roomId]}
+              roomTabs={
+                <RoomTabs
+                  theme={theme}
+                  activeRoom={roomsState.active}
+                  statuses={roomStatuses}
+                  onSelectRoom={handleSelectRoom}
+                />
               }
-              focusInput()
-            }}
-            onNewChat={handleNewChat}
-            onModelChange={handleModelChange}
-            onFocusInput={focusInput}
-            onUpdateChatTitle={handleUpdateChatTitle}
-            onDeleteChat={handleDeleteChat}
-            selectedProvider={selectedProvider}
-            onRepeatMessage={(message) => {
-              if (footerRef.current) {
-                footerRef.current.setMessage(message)
-              }
-            }}
-            searchEnabled={searchEnabled}
-            yoloEnabled={yoloEnabled}
-          />
-          {/* Footer con área de entrada y controles */}
-          <Footer
-            ref={footerRef}
-            onSendMessage={(message, images, files) => {
-              if (
-                message.trim() ||
-                (images && images.length > 0) ||
-                (files && files.length > 0)
-              ) {
-                const event = new CustomEvent('send-message', {
-                  detail: { message, images, files },
-                })
-                document.dispatchEvent(event)
-                focusInput()
-              }
-            }}
-            toggleTheme={toggleTheme}
-            clearContext={handleClearChat}
-            hasContext={messages.length > 1}
-            theme={theme}
-            isDarkTheme={isDarkTheme}
-            isLoading={isLoading}
-            selectedModel={selectedModel}
-            selectedProvider={selectedProvider}
-            chatTitle={
-              chatHistory.find((chat) => chat.id === currentChatId)?.title
-            }
-            onUpdateChatTitle={(newTitle) => {
-              if (currentChatId) {
-                handleUpdateChatTitle(currentChatId, newTitle)
-              }
-            }}
-            currentChatId={currentChatId}
-            onCloseMenus={closeMenus}
-            searchEnabled={searchEnabled}
-            onToggleSearch={handleToggleSearch}
-          />
-        </>
-      )}
+            />
+          )
+        })}
     </div>
   )
 }
