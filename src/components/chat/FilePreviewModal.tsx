@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 
 export type FilePreview =
@@ -33,7 +34,9 @@ export default function FilePreviewModal({
 
   if (!preview) return null
 
-  return (
+  // Portal a <body>: el chat crea su propio contexto de apilado, así que
+  // dentro de él ni `fixed` ni z-index alcanzan para tapar header y footer.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -99,6 +102,7 @@ export default function FilePreviewModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

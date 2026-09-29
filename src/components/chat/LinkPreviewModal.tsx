@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { FRAME_CHECK_PATH } from '../../utils/frameCheck'
 
@@ -104,7 +105,9 @@ export default function LinkPreviewModal({
     </a>
   )
 
-  return (
+  // Portal a <body>: el chat crea su propio contexto de apilado, así que
+  // dentro de él ni `fixed` ni z-index alcanzan para tapar header y footer.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -170,6 +173,7 @@ export default function LinkPreviewModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
