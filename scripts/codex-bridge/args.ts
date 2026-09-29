@@ -296,3 +296,88 @@ export function diffTokenUsage(
     output: Math.max(0, after.outputTokens - before.outputTokens),
   }
 }
+
+/**
+ * Tokens de entrada que se informan para UN mensaje. Un turno de Codex puede
+ * hacer varias llamadas al modelo (búsqueda web, pasos con herramientas) y
+ * cada una reenvía todo el contexto, así que el delta acumulado puede superar
+ * la ventana de contexto (visto en vivo: 500k de "entrada" contra 258k). La
+ * app compara con el límite de contexto el tamaño de la ÚLTIMA llamada
+ * (`last`); el delta queda solo como respaldo si Codex no informa `last`.
+ */
+export function turnInputTokens(
+  before: TokenUsageBreakdown,
+  after: TokenUsageBreakdown,
+  last: TokenUsageBreakdown | undefined,
+): number {
+  if (last && last.inputTokens > 0) return last.inputTokens
+  return diffTokenUsage(before, after).input
+}
+
+// ─── Aislamiento de la configuración personal de Codex del usuario ─────────
+
+/**
+ * Funciones de la config global de Codex que convierten el chat en un agente
+ * de escritorio (uso de la computadora, navegador, plugins, skills,
+ * memorias...). Con ellas activas, "una imagen de Google Maps de X" se
+ * respondió con pasos para configurar Chrome y ~9k tokens extra por llamada.
+ * La herramienta de shell queda: los comandos siguen pidiendo permiso por
+ * GET/POST /permission.
+ */
+export const CODEX_DISABLED_FEATURES = [
+  'apps',
+  'browser_use',
+  'browser_use_external',
+  'computer_use',
+  'goals',
+  'hooks',
+  'image_generation',
+  'in_app_browser',
+  'memories',
+  'multi_agent',
+  'plugins',
+  'realtime_conversation',
+  'remote_plugin',
+  'skill_search',
+  'sleep_tool',
+  'tool_suggest',
+  'workspace_dependencies',
+  'worktrees',
+] as const
+
+/**
+ * argv de `codex app-server`: mantiene el login de ChatGPT de `~/.codex` pero
+ * sin los servidores MCP del usuario ni las funciones de agente de arriba.
+ */
+export function buildAppServerArgv(): string[] {
+  const argv = ['codex', 'app-server', '-c', 'mcp_servers={}']
+  for (const feature of CODEX_DISABLED_FEATURES) argv.push('--disable', feature)
+  return argv
+}
+
+/** "lunes, 28 de septiembre de 2026, 10:32" en horario de Argentina. */
+export function formatBuenosAiresDateTime(now: Date): string {
+  return now.toLocaleString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    dateStyle: 'full',
+    timeStyle: 'short',
+  })
+}
+
+/**
+ * Instrucciones base que se mandan en thread/start y thread/resume. Reemplazan
+ * las instrucciones propias de Codex del usuario (`model_instructions_file`)
+ * para que el modelo actúe como asistente de chat y no como agente de código.
+ * Se arman en cada pedido para que la hora no quede congelada en una
+ * conversación larga.
+ */
+export function buildCodexInstructions(now: Date = new Date()): string {
+  return [
+    'Sos un asistente de chat general dentro de una app web. Respondé directamente con tu conocimiento, en el idioma del usuario, de forma clara y breve.',
+    '',
+    `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${now.toISOString()}.`,
+    '',
+    'No podés generar imágenes, capturas de pantalla ni abrir un navegador. Si el usuario pide un mapa o una ubicación, dale un link de Google Maps (https://www.google.com/maps/search/?api=1&query=...).',
+    'Podés ejecutar comandos locales solo cuando el pedido realmente lo necesita; cada comando requiere que el usuario lo apruebe, así que explicá brevemente qué vas a hacer.',
+  ].join('\n')
+}

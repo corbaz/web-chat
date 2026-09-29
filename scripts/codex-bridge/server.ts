@@ -24,6 +24,8 @@ import {
   checkBasicAuth,
   type CodexTurn,
   codexApprovalDecision,
+  buildAppServerArgv,
+  buildCodexInstructions,
   diffTokenUsage,
   extractFinalAgentText,
   isAllowedOrigin,
@@ -35,6 +37,7 @@ import {
   MAX_BODY_BYTES_WITH_IMAGES,
   parseCodexLine,
   type TokenUsageBreakdown,
+  turnInputTokens,
   ZERO_TOKEN_USAGE,
 } from './args'
 
@@ -184,6 +187,10 @@ function resolvePendingPermission(
 // (diffTokenUsage), ver args.ts.
 const threadCumulativeTokens = new Map<string, TokenUsageBreakdown>()
 
+// Última llamada al modelo por thread (`tokenUsage.last`): su entrada es lo
+// que ocupa el contexto, ver turnInputTokens en args.ts.
+const threadLastCallTokens = new Map<string, TokenUsageBreakdown>()
+
 // Resolvers de turnos en curso: cuando llega `turn/completed` con un
 // `turn.id` que coincide, se resuelve la promesa que espera ese turno
 // (permite que /chat espere sin bloquear la lectura de stdout de otros
@@ -303,9 +310,15 @@ function handleServerRequest(id: number | string, method: string, params: unknow
 
 function handleNotification(method: string, params: unknown): void {
   if (method === 'thread/tokenUsage/updated') {
-    const p = params as { threadId?: string; tokenUsage?: { total?: TokenUsageBreakdown } }
+    const p = params as {
+      threadId?: string
+      tokenUsage?: { total?: TokenUsageBreakdown; last?: TokenUsageBreakdown }
+    }
     if (p.threadId && p.tokenUsage?.total) {
       threadCumulativeTokens.set(p.threadId, p.tokenUsage.total)
+    }
+    if (p.threadId && p.tokenUsage?.last) {
+      threadLastCallTokens.set(p.threadId, p.tokenUsage.last)
     }
     return
   }
@@ -328,7 +341,7 @@ function handleNotification(method: string, params: unknown): void {
 }
 
 function startCodexProcess(): void {
-  codexProc = Bun.spawn(['codex', 'app-server'], {
+  codexProc = Bun.spawn(buildAppServerArgv(), {
     cwd: DATA_DIR,
     env: subscriptionEnv(),
     stdin: 'pipe',
@@ -521,6 +534,7 @@ async function resolveThreadId(
       const resumed = (await callCodex('thread/resume', {
         threadId: sessionId,
         excludeTurns: true,
+        baseInstructions: buildCodexInstructions(),
       })) as { thread?: { id?: string } }
       if (resumed?.thread?.id) return resumed.thread.id
     } catch {
@@ -532,6 +546,7 @@ async function resolveThreadId(
     cwd,
     sandbox,
     approvalPolicy,
+    baseInstructions: buildCodexInstructions(),
   })) as { thread?: { id?: string } }
   const threadId = started?.thread?.id
   if (!threadId) throw new Error('codex app-server no devolvió threadId en thread/start')
@@ -623,6 +638,7 @@ async function handleChat(
     input.push({ type: 'text', text: message })
 
     const beforeTokens = threadCumulativeTokens.get(threadId) ?? ZERO_TOKEN_USAGE
+    threadLastCallTokens.delete(threadId)
 
     const startResult = (await callCodex('turn/start', {
       threadId,
@@ -689,7 +705,10 @@ async function handleChat(
     })
 
     const afterTokens = threadCumulativeTokens.get(threadId) ?? beforeTokens
-    const tokens = diffTokenUsage(beforeTokens, afterTokens)
+    const tokens = {
+      input: turnInputTokens(beforeTokens, afterTokens, threadLastCallTokens.get(threadId)),
+      output: diffTokenUsage(beforeTokens, afterTokens).output,
+    }
     log.tokensIn = tokens.input
     log.tokensOut = tokens.output
 

@@ -3,6 +3,8 @@
 
 import { describe, expect, test } from 'bun:test'
 import {
+  buildAppServerArgv,
+  buildCodexInstructions,
   buildRequestLine,
   buildServerResponseLine,
   checkBasicAuth,
@@ -18,6 +20,7 @@ import {
   MAX_BODY_BYTES,
   MAX_BODY_BYTES_WITH_IMAGES,
   parseCodexLine,
+  turnInputTokens,
   ZERO_TOKEN_USAGE,
 } from './args'
 
@@ -217,5 +220,39 @@ describe('diffTokenUsage', () => {
     const before = { ...ZERO_TOKEN_USAGE, inputTokens: 100, outputTokens: 10 }
     const after = { ...ZERO_TOKEN_USAGE, inputTokens: 50, outputTokens: 5 }
     expect(diffTokenUsage(before, after)).toEqual({ input: 0, output: 0 })
+  })
+})
+
+describe('turnInputTokens', () => {
+  test('usa la entrada de la última llamada, no la suma del turno', () => {
+    const before = { ...ZERO_TOKEN_USAGE, inputTokens: 0 }
+    const after = { ...ZERO_TOKEN_USAGE, inputTokens: 499860 }
+    const last = { ...ZERO_TOKEN_USAGE, inputTokens: 41000 }
+    expect(turnInputTokens(before, after, last)).toBe(41000)
+  })
+
+  test('sin `last` cae al delta acumulado', () => {
+    const before = { ...ZERO_TOKEN_USAGE, inputTokens: 100 }
+    const after = { ...ZERO_TOKEN_USAGE, inputTokens: 350 }
+    expect(turnInputTokens(before, after, undefined)).toBe(250)
+  })
+})
+
+describe('buildAppServerArgv', () => {
+  test('vacía los servidores MCP y apaga las funciones de agente', () => {
+    const argv = buildAppServerArgv()
+    expect(argv.slice(0, 4)).toEqual(['codex', 'app-server', '-c', 'mcp_servers={}'])
+    expect(argv).toContain('computer_use')
+    expect(argv).toContain('plugins')
+    expect(argv).not.toContain('shell_tool')
+  })
+})
+
+describe('buildCodexInstructions', () => {
+  test('incluye fecha/hora de Argentina y el link de mapas', () => {
+    const text = buildCodexInstructions(new Date('2026-09-29T15:00:00Z'))
+    expect(text).toContain('2026-09-29T15:00:00.000Z')
+    expect(text).toContain('Buenos_Aires')
+    expect(text).toContain('google.com/maps')
   })
 })

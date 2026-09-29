@@ -142,6 +142,55 @@ function diffTokenUsage(before, after) {
     output: Math.max(0, after.outputTokens - before.outputTokens)
   };
 }
+function turnInputTokens(before, after, last) {
+  if (last && last.inputTokens > 0)
+    return last.inputTokens;
+  return diffTokenUsage(before, after).input;
+}
+var CODEX_DISABLED_FEATURES = [
+  "apps",
+  "browser_use",
+  "browser_use_external",
+  "computer_use",
+  "goals",
+  "hooks",
+  "image_generation",
+  "in_app_browser",
+  "memories",
+  "multi_agent",
+  "plugins",
+  "realtime_conversation",
+  "remote_plugin",
+  "skill_search",
+  "sleep_tool",
+  "tool_suggest",
+  "workspace_dependencies",
+  "worktrees"
+];
+function buildAppServerArgv() {
+  const argv = ["codex", "app-server", "-c", "mcp_servers={}"];
+  for (const feature of CODEX_DISABLED_FEATURES)
+    argv.push("--disable", feature);
+  return argv;
+}
+function formatBuenosAiresDateTime(now) {
+  return now.toLocaleString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    dateStyle: "full",
+    timeStyle: "short"
+  });
+}
+function buildCodexInstructions(now = new Date) {
+  return [
+    "Sos un asistente de chat general dentro de una app web. Respond\xE9 directamente con tu conocimiento, en el idioma del usuario, de forma clara y breve.",
+    "",
+    `Fecha y hora actual en Argentina (America/Argentina/Buenos_Aires): ${formatBuenosAiresDateTime(now)}. Hora UTC (ISO 8601): ${now.toISOString()}.`,
+    "",
+    "No pod\xE9s generar im\xE1genes, capturas de pantalla ni abrir un navegador. Si el usuario pide un mapa o una ubicaci\xF3n, dale un link de Google Maps (https://www.google.com/maps/search/?api=1&query=...).",
+    "Pod\xE9s ejecutar comandos locales solo cuando el pedido realmente lo necesita; cada comando requiere que el usuario lo apruebe, as\xED que explic\xE1 brevemente qu\xE9 vas a hacer."
+  ].join(`
+`);
+}
 
 // scripts/codex-bridge/server.ts
 var HOSTNAME = "127.0.0.1";
@@ -230,6 +279,7 @@ function resolvePendingPermission(id, decision) {
   return true;
 }
 var threadCumulativeTokens = new Map;
+var threadLastCallTokens = new Map;
 var pendingTurns = new Map;
 function writeToCodex(line) {
   if (!codexProc)
@@ -315,6 +365,9 @@ function handleNotification(method, params) {
     if (p.threadId && p.tokenUsage?.total) {
       threadCumulativeTokens.set(p.threadId, p.tokenUsage.total);
     }
+    if (p.threadId && p.tokenUsage?.last) {
+      threadLastCallTokens.set(p.threadId, p.tokenUsage.last);
+    }
     return;
   }
   if (method === "turn/completed") {
@@ -331,7 +384,7 @@ function handleNotification(method, params) {
   }
 }
 function startCodexProcess() {
-  codexProc = Bun.spawn(["codex", "app-server"], {
+  codexProc = Bun.spawn(buildAppServerArgv(), {
     cwd: DATA_DIR,
     env: subscriptionEnv(),
     stdin: "pipe",
@@ -463,7 +516,8 @@ async function resolveThreadId(sessionId, cwd, sandbox, approvalPolicy) {
     try {
       const resumed = await callCodex("thread/resume", {
         threadId: sessionId,
-        excludeTurns: true
+        excludeTurns: true,
+        baseInstructions: buildCodexInstructions()
       });
       if (resumed?.thread?.id)
         return resumed.thread.id;
@@ -472,7 +526,8 @@ async function resolveThreadId(sessionId, cwd, sandbox, approvalPolicy) {
   const started = await callCodex("thread/start", {
     cwd,
     sandbox,
-    approvalPolicy
+    approvalPolicy,
+    baseInstructions: buildCodexInstructions()
   });
   const threadId = started?.thread?.id;
   if (!threadId)
@@ -538,6 +593,7 @@ async function handleChat(req, origin, log) {
     }
     input.push({ type: "text", text: message });
     const beforeTokens = threadCumulativeTokens.get(threadId) ?? ZERO_TOKEN_USAGE;
+    threadLastCallTokens.delete(threadId);
     const startResult = await callCodex("turn/start", {
       threadId,
       input,
@@ -598,7 +654,10 @@ async function handleChat(req, origin, log) {
       });
     });
     const afterTokens = threadCumulativeTokens.get(threadId) ?? beforeTokens;
-    const tokens = diffTokenUsage(beforeTokens, afterTokens);
+    const tokens = {
+      input: turnInputTokens(beforeTokens, afterTokens, threadLastCallTokens.get(threadId)),
+      output: diffTokenUsage(beforeTokens, afterTokens).output
+    };
     log.tokensIn = tokens.input;
     log.tokensOut = tokens.output;
     const text = extractFinalAgentText(completedTurn);
