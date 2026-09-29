@@ -1,7 +1,7 @@
 // Vercel Function: GET /api/frame-check?url=<https://...> ->
 // { framable: true | false | null }. Solo lee los headers de la página para
 // saber si el chat la puede mostrar en un iframe (ver src/utils/frameCheck.ts).
-import { checkFrameable } from '../src/utils/frameCheck'
+import { checkFrameable } from '../src/utils/frameCheck.js'
 
 export async function GET(request: Request): Promise<Response> {
   const target = new URL(request.url).searchParams.get('url') ?? ''
