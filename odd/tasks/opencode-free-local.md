@@ -57,3 +57,5 @@ OpenCode serves its free models only to requests that look like a coding agent w
 
 ## Next step
 Committed and pushed 2026-09-26 after the user's local test. Future: Tauri desktop app that starts the server on demand.
+
+- 2026-09-29: Hang fix. OpenCode 1.18.33 (latest) answers `GET /permission` with 400 "Expected JSON value, got undefined at [0].metadata.timeout" while a `webfetch` permission is pending, so polling never saw it and the message hung (server log repeated the WARN every second). The client now also listens to `GET /event` (SSE via fetch with Basic auth) and handles `permission.asked` for the session (src/services/opencodeLocal/permissionEvents.ts); polling stays as fallback, one shared handler dedupes by id. Verified live with the app client: mimo-v2.6-flash-free asked webfetch for clarin.com, approved, answered in 29 s. `bun test` 292 pass, `bunx tsc -b` exit 0.

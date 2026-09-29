@@ -16,6 +16,8 @@
 //   el POST de arriba sigue bloqueado. Se responde con
 //   POST /session/:sessionID/permissions/:permissionID {response}.
 
+import { permissionFromEvent, splitSseEvents } from './permissionEvents'
+
 const FREE_PROVIDER_ID = 'opencode'
 const EXCLUDED_ID_PREFIX = 'jev-'
 const PERMISSION_POLL_MS = 1000
@@ -203,6 +205,44 @@ async function respondPermission(
   )
 }
 
+/**
+ * Escucha `GET /event` (text/event-stream) y avisa cada `permission.asked` de
+ * esta sesión (ver permissionEvents.ts). Con fetch y no EventSource porque
+ * hace falta el header de Basic auth. Se corta con `signal`; cualquier error
+ * de red termina en silencio (el sondeo de `/permission` sigue como respaldo).
+ */
+async function watchPermissionEvents(
+  baseUrl: string,
+  password: string,
+  sessionId: string,
+  signal: AbortSignal,
+  onPermission: (permission: PendingPermission) => void,
+): Promise<void> {
+  try {
+    const res = await fetch(`${baseUrl}/event`, {
+      headers: authHeader(password),
+      signal,
+    })
+    if (!res.ok || !res.body) return
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    while (!signal.aborted) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const { events, rest } = splitSseEvents(buffer)
+      buffer = rest
+      for (const data of events) {
+        const permission = permissionFromEvent(data, sessionId)
+        if (permission) onPermission(permission)
+      }
+    }
+  } catch {
+    // Abortado al terminar el mensaje, o el servidor cortó el stream.
+  }
+}
+
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -220,9 +260,10 @@ interface MessageResponse {
 }
 
 /**
- * Envía un mensaje y bloquea hasta la respuesta, sondeando `GET /permission`
- * cada ~1s mientras espera: cada permiso pendiente nuevo se resuelve con
- * `onPermission` (que decide 'reject' | 'once') antes de seguir esperando.
+ * Envía un mensaje y bloquea hasta la respuesta. Mientras espera, escucha los
+ * permisos por el stream de eventos (`GET /event`) y además sondea
+ * `GET /permission` cada ~1s como respaldo; cada permiso nuevo se resuelve una
+ * sola vez con `onPermission` (que decide 'reject' | 'once').
  */
 export async function sendMessage(
   baseUrl: string,
@@ -234,6 +275,38 @@ export async function sendMessage(
 ): Promise<SendMessageResult> {
   const seen = new Set<string>()
   let polling = true
+  const events = new AbortController()
+
+  const handlePermission = async (
+    permission: PendingPermission,
+  ): Promise<void> => {
+    if (seen.has(permission.id)) return
+    seen.add(permission.id)
+    const response = await options.onPermission(permission)
+    try {
+      await respondPermission(
+        baseUrl,
+        password,
+        sessionId,
+        permission.id,
+        response,
+      )
+    } catch {
+      // Falló la respuesta (red/servidor): se reintenta cuando el sondeo o
+      // el stream lo vuelvan a mostrar, tratándolo como si no se hubiera visto.
+      seen.delete(permission.id)
+    }
+  }
+
+  const eventsLoop = watchPermissionEvents(
+    baseUrl,
+    password,
+    sessionId,
+    events.signal,
+    (permission) => {
+      void handlePermission(permission)
+    },
+  )
 
   const pollLoop = (async () => {
     while (polling) {
@@ -248,22 +321,7 @@ export async function sendMessage(
       }
 
       for (const permission of pending) {
-        if (seen.has(permission.id)) continue
-        seen.add(permission.id)
-        const response = await options.onPermission(permission)
-        try {
-          await respondPermission(
-            baseUrl,
-            password,
-            sessionId,
-            permission.id,
-            response,
-          )
-        } catch {
-          // Falló la respuesta (red/servidor): se reintenta en la próxima
-          // vuelta del sondeo, tratándolo como si no se hubiera visto.
-          seen.delete(permission.id)
-        }
+        await handlePermission(permission)
       }
     }
   })()
@@ -311,6 +369,7 @@ export async function sendMessage(
     }
   } finally {
     polling = false
-    await pollLoop
+    events.abort()
+    await Promise.all([pollLoop, eventsLoop])
   }
 }
