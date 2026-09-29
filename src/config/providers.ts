@@ -38,6 +38,7 @@ export interface ProviderConfig {
     messages: Message[],
     maxTokens: number,
     toolsConfig?: ToolConfig,
+    effort?: string,
   ) => Record<string, unknown>
   parseResponse?: (data: Record<string, unknown>, model: string) => string
   parseActualModel?: (data: Record<string, unknown>) => string
@@ -60,6 +61,7 @@ export interface ProviderConfig {
     messages: Message[],
     maxTokens: number,
     toolsConfig?: ToolConfig,
+    effort?: string,
   ) => { url: string; body: Record<string, unknown>; parser: string } | null
   buildSearchContinuation?: (
     model: string,
@@ -223,6 +225,7 @@ const buildAnthropicPayload = (
   messages: Message[],
   maxTokens: number,
   toolsConfig?: ToolConfig,
+  effort?: string,
 ): Record<string, unknown> => {
   const systemContents: string[] = []
   const contentMessages: Message[] = []
@@ -242,6 +245,10 @@ const buildAnthropicPayload = (
     max_tokens: maxTokens,
     ...(systemMessage && { system: systemMessage }),
     messages: contentMessages.map(toAnthropicMessage),
+    // T17: esfuerzo de razonamiento (`output_config.effort`), verificado en
+    // vivo. Solo se envía si el modelo tiene niveles (MODEL_EFFORT), así un
+    // pedido sin effort queda byte-idéntico al de antes de esta funcionalidad.
+    ...(effort && { output_config: { effort } }),
     ...(toolsConfig?.searchEnabled === true && {
       tools: [
         {
@@ -399,12 +406,16 @@ const buildResponsesPayload = (
   model: string,
   messages: Message[],
   toolsConfig?: ToolConfig,
+  effort?: string,
 ): Record<string, unknown> => {
   const input = messages.map(toResponsesItem)
 
   return {
     model,
     input,
+    // T17: OpenAI Responses usa `reasoning.effort` (distinto de Chat
+    // Completions, que usa `reasoning_effort` top-level).
+    ...(effort && { reasoning: { effort } }),
     ...(toolsConfig?.searchEnabled === true && {
       tools: [
         {
@@ -421,6 +432,7 @@ const buildOpenAIRequest = (
   messages: Message[],
   _maxTokens: number,
   toolsConfig?: ToolConfig,
+  effort?: string,
 ) => {
   // Las imágenes y los PDF nativos de OpenAI solo viajan por la Responses
   // API (ver tabla de formatos en odd/tasks/image-input.md y
@@ -432,7 +444,7 @@ const buildOpenAIRequest = (
 
   return {
     url: 'https://api.openai.com/v1/responses',
-    body: buildResponsesPayload(model, messages, toolsConfig),
+    body: buildResponsesPayload(model, messages, toolsConfig, effort),
     parser: 'openai-responses',
   }
 }
@@ -446,11 +458,39 @@ const getGeminiSearchInstruction = (): string => {
   return `Fecha actual en Buenos Aires: ${currentDate}. El usuario activó la búsqueda web: antes de responder debes ejecutar al menos una búsqueda de Google y basar la respuesta en los resultados encontrados. Si el pedido incluye varias entidades o datos, busca y responde cada uno antes de finalizar, y contrasta cada dato con al menos dos fuentes cuando sea posible. En consultas deportivas ambiguas entre dos equipos, busca primero el enfrentamiento más reciente y especifica fecha y competencia; no respondas con el historial general salvo que el usuario lo pida. Los seguimientos breves conservan el tema de los turnos recientes. Si no puedes buscar, indícalo y no respondas desde información antigua.`
 }
 
+// T17: presupuesto de pensamiento por nivel de esfuerzo para modelos Gemini
+// 2.5 (`thinkingConfig.thinkingBudget`, numérico). Los 3.x usan
+// `thinkingConfig.thinkingLevel` con el string de esfuerzo directo
+// (verificado en vivo con gemini-3.6-flash). Hoy ningún modelo 2.5 tiene
+// niveles en MODEL_EFFORT (ver modelEffort.generated.ts), así que esta rama
+// no se ejercita todavía, pero queda lista si models.dev empieza a listarlos.
+const GEMINI_THINKING_BUDGET_BY_EFFORT: Record<string, number> = {
+  minimal: 128,
+  low: 1024,
+  medium: 8192,
+  high: 24576,
+  xhigh: 32768,
+  max: 32768,
+}
+
+const geminiThinkingConfig = (
+  model: string,
+  effort: string | undefined,
+): Record<string, unknown> | undefined => {
+  if (!effort) return undefined
+  if (model.startsWith('gemini-2.5')) {
+    const thinkingBudget = GEMINI_THINKING_BUDGET_BY_EFFORT[effort]
+    return thinkingBudget === undefined ? undefined : { thinkingBudget }
+  }
+  return { thinkingLevel: effort }
+}
+
 const buildGeminiNativePayload = (
-  _model: string,
+  model: string,
   messages: Message[],
   maxTokens: number,
   toolsConfig?: ToolConfig,
+  effort?: string,
 ): Record<string, unknown> => {
   const contents: Array<{ role: string; parts: GeminiPart[] }> = []
   let systemText = ''
@@ -467,6 +507,7 @@ const buildGeminiNativePayload = (
   }
 
   const isSearchOn = toolsConfig?.searchEnabled === true
+  const thinkingConfig = geminiThinkingConfig(model, effort)
   const searchInstruction = isSearchOn ? getGeminiSearchInstruction() : ''
   const continuityInstruction =
     'Trata cada mensaje como continuación de esta conversación, incluso si cambió el modelo. Antes de pedir aclaraciones, resuelve sujetos omitidos y referencias breves usando los turnos recientes. Pregunta solo si después de revisar el historial quedan varias interpretaciones plausibles.'
@@ -488,6 +529,7 @@ const buildGeminiNativePayload = (
     generationConfig: {
       maxOutputTokens: maxTokens,
       temperature: isSearchOn ? 0.2 : 1.0,
+      ...(thinkingConfig && { thinkingConfig }),
     },
     ...(isSearchOn && {
       tools: [
@@ -685,6 +727,7 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       messages: Message[],
       maxTokens: number,
       toolsConfig?: ToolConfig,
+      effort?: string,
     ) => {
       const base: Record<string, unknown> = {
         model,
@@ -692,6 +735,9 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
         temperature: 0.7,
         max_tokens: maxTokens,
         presence_penalty: 0.1,
+        // T17: Chat Completions usa `reasoning_effort` top-level, verificado
+        // en vivo con qwen/qwen3.8-27b y openai/gpt-oss-20b.
+        ...(effort && { reasoning_effort: effort }),
       }
       // Solo se inyectan tools cuando toolsConfig está presente y el modelo es
       // tool-capable (verificación live 1.1). Sin toolsConfig no hay inyección.
@@ -732,11 +778,16 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       model: string,
       messages: Message[],
       maxTokens: number,
+      _toolsConfig?: ToolConfig,
+      effort?: string,
     ) => ({
       model,
       messages,
       max_completion_tokens: maxTokens,
       service_tier: 'priority',
+      // T17: Chat Completions usa `reasoning_effort` top-level (no
+      // verificado en vivo, sin key de OpenAI; implementado según docs).
+      ...(effort && { reasoning_effort: effort }),
     }),
     parseResponse: parseOpenAIResponse,
     parseCitations: parseOpenAICitations,
@@ -790,18 +841,28 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       messages: Message[],
       maxTokens: number,
       toolsConfig?: ToolConfig,
+      effort?: string,
     ) => {
       if (usesOpenCodeGoAnthropic(model)) {
-        return buildAnthropicPayload(model, messages, maxTokens, toolsConfig)
+        return buildAnthropicPayload(
+          model,
+          messages,
+          maxTokens,
+          toolsConfig,
+          effort,
+        )
       }
       if (goRouteFor(model) === 'responses') {
-        return buildResponsesPayload(model, messages, toolsConfig)
+        return buildResponsesPayload(model, messages, toolsConfig, effort)
       }
 
       return {
         model,
         messages: toChatCompletionsMessages(messages),
         max_tokens: maxTokens,
+        // T17: Chat Completions usa `reasoning_effort` top-level, verificado
+        // en vivo con glm-5.3-flash (high).
+        ...(effort && { reasoning_effort: effort }),
         ...(toolsConfig?.searchEnabled === true && {
           tools: [
             {
@@ -866,21 +927,37 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       messages: Message[],
       maxTokens: number,
       toolsConfig?: ToolConfig,
+      effort?: string,
     ) => {
       const route = zenRouteFor(model)
       if (route === 'messages') {
-        return buildAnthropicPayload(model, messages, maxTokens, toolsConfig)
+        return buildAnthropicPayload(
+          model,
+          messages,
+          maxTokens,
+          toolsConfig,
+          effort,
+        )
       }
       if (route === 'gemini') {
-        return buildGeminiNativePayload(model, messages, maxTokens, toolsConfig)
+        return buildGeminiNativePayload(
+          model,
+          messages,
+          maxTokens,
+          toolsConfig,
+          effort,
+        )
       }
       if (route === 'responses') {
-        return buildResponsesPayload(model, messages, toolsConfig)
+        return buildResponsesPayload(model, messages, toolsConfig, effort)
       }
       return {
         model,
         messages: toChatCompletionsMessages(messages),
         max_tokens: maxTokens,
+        // T17: mismos builders que OpenCode Go (Zen no se pudo probar en
+        // vivo, cuenta sin saldo/HTTP 402 al momento de esta tarea).
+        ...(effort && { reasoning_effort: effort }),
         ...(toolsConfig?.searchEnabled === true && {
           tools: [
             {
@@ -925,7 +1002,9 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       messages: Message[],
       maxTokens: number,
       toolsConfig?: ToolConfig,
-    ) => buildGeminiNativePayload(model, messages, maxTokens, toolsConfig),
+      effort?: string,
+    ) =>
+      buildGeminiNativePayload(model, messages, maxTokens, toolsConfig, effort),
     buildRequest: buildGeminiRequest,
     buildSearchContinuation: buildGeminiSearchContinuation,
     parseResponse: (data: Record<string, unknown>) =>

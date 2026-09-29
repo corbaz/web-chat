@@ -337,3 +337,162 @@ describe('providers: payloadBuilder con documentos PDF usa la forma del protocol
     expect(req).toBeNull()
   })
 })
+
+// T17 (2026-09-28): el 5º parámetro `effort` de payloadBuilder/buildRequest
+// se aplica por protocolo, y solo cuando viene definido (un pedido sin
+// effort queda byte-idéntico, ver describe de arriba).
+describe('providers: parámetro effort por protocolo', () => {
+  test('Groq/Chat Completions: agrega reasoning_effort top-level', () => {
+    const groq = getProviderConfig('groq')
+    const payload = groq?.payloadBuilder(
+      'openai/gpt-oss-20b',
+      textOnly,
+      2048,
+      undefined,
+      'medium',
+    ) as Record<string, unknown>
+    expect(payload.reasoning_effort).toBe('medium')
+  })
+
+  test('Groq/Chat Completions: sin effort, no agrega el campo', () => {
+    const groq = getProviderConfig('groq')
+    const payload = groq?.payloadBuilder(
+      'openai/gpt-oss-20b',
+      textOnly,
+      2048,
+    ) as Record<string, unknown>
+    expect(payload.reasoning_effort).toBeUndefined()
+  })
+
+  test('Anthropic/Messages: agrega output_config.effort', () => {
+    const anthropic = getProviderConfig('anthropic')
+    const payload = anthropic?.payloadBuilder(
+      'claude-sonnet-5',
+      textOnly,
+      2048,
+      undefined,
+      'xhigh',
+    ) as Record<string, unknown>
+    expect(payload.output_config).toEqual({ effort: 'xhigh' })
+  })
+
+  test('OpenAI Responses (buildRequest): agrega reasoning.effort', () => {
+    const openai = getProviderConfig('openai')
+    const req = openai?.buildRequest?.(
+      'gpt-5.6-luna',
+      textOnly,
+      2048,
+      {
+        web_search: true,
+        code_interpreter: false,
+        visit_website: false,
+        wolfram_alpha: false,
+        browser_search: false,
+        searchEnabled: true,
+      },
+      'medium',
+    )
+    const body = req?.body as Record<string, unknown>
+    expect(body.reasoning).toEqual({ effort: 'medium' })
+  })
+
+  test('Gemini generateContent (3.x): thinkingConfig.thinkingLevel = effort', () => {
+    const gemini = getProviderConfig('gemini')
+    const payload = gemini?.payloadBuilder(
+      'gemini-3.6-flash',
+      textOnly,
+      2048,
+      undefined,
+      'medium',
+    ) as { generationConfig: Record<string, unknown> }
+    expect(payload.generationConfig.thinkingConfig).toEqual({
+      thinkingLevel: 'medium',
+    })
+  })
+
+  test('Gemini generateContent (2.5): thinkingConfig.thinkingBudget numérico', () => {
+    const gemini = getProviderConfig('gemini')
+    const payload = gemini?.payloadBuilder(
+      'gemini-2.5-flash',
+      textOnly,
+      2048,
+      undefined,
+      'high',
+    ) as { generationConfig: Record<string, unknown> }
+    expect(payload.generationConfig.thinkingConfig).toEqual({
+      thinkingBudget: 24576,
+    })
+  })
+
+  test('Gemini: sin effort, no agrega thinkingConfig', () => {
+    const gemini = getProviderConfig('gemini')
+    const payload = gemini?.payloadBuilder(
+      'gemini-3.6-flash',
+      textOnly,
+      2048,
+    ) as { generationConfig: Record<string, unknown> }
+    expect(payload.generationConfig.thinkingConfig).toBeUndefined()
+  })
+
+  test('OpenCode Go: ruta chat agrega reasoning_effort (glm-5.3-flash)', () => {
+    const opengo = getProviderConfig('opengo')
+    const payload = opengo?.payloadBuilder(
+      'glm-5.3-flash',
+      textOnly,
+      2048,
+      undefined,
+      'high',
+    ) as Record<string, unknown>
+    expect(payload.reasoning_effort).toBe('high')
+  })
+
+  test('OpenCode Go: ruta responses agrega reasoning.effort (gpt-5.6-luna)', () => {
+    const opengo = getProviderConfig('opengo')
+    const payload = opengo?.payloadBuilder(
+      'gpt-5.6-luna',
+      textOnly,
+      2048,
+      undefined,
+      'medium',
+    ) as Record<string, unknown>
+    expect(payload.reasoning).toEqual({ effort: 'medium' })
+  })
+
+  test('OpenCode Go: ruta messages agrega output_config.effort (minimax-m3)', () => {
+    const opengo = getProviderConfig('opengo')
+    const payload = opengo?.payloadBuilder(
+      'minimax-m3',
+      textOnly,
+      2048,
+      undefined,
+      'max',
+    ) as Record<string, unknown>
+    expect(payload.output_config).toEqual({ effort: 'max' })
+  })
+
+  test('OpenCode Zen: mismos builders que Go por ruta (glm-5.3, chat)', () => {
+    const opencodezen = getProviderConfig('opencodezen')
+    const payload = opencodezen?.payloadBuilder(
+      'glm-5.3',
+      textOnly,
+      2048,
+      undefined,
+      'high',
+    ) as Record<string, unknown>
+    expect(payload.reasoning_effort).toBe('high')
+  })
+
+  test('OpenCode Zen: ruta gemini agrega thinkingConfig (gemini-3.6-flash)', () => {
+    const opencodezen = getProviderConfig('opencodezen')
+    const payload = opencodezen?.payloadBuilder(
+      'gemini-3.6-flash',
+      textOnly,
+      2048,
+      undefined,
+      'medium',
+    ) as { generationConfig: Record<string, unknown> }
+    expect(payload.generationConfig.thinkingConfig).toEqual({
+      thinkingLevel: 'medium',
+    })
+  })
+})

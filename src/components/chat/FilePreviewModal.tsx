@@ -38,7 +38,7 @@ export default function FilePreviewModal({
       role="dialog"
       aria-modal="true"
       aria-label={preview.title}
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
       onClick={onClose}
       onKeyDown={(event) => {
@@ -85,7 +85,7 @@ export default function FilePreviewModal({
         <div className="grow overflow-hidden">
           {preview.kind === 'text' ? (
             <pre
-              className="w-full h-full overflow-auto p-4 text-xs whitespace-pre-wrap break-words font-mono"
+              className="w-full h-full overflow-auto p-4 text-xs whitespace-pre-wrap wrap-break-word font-mono"
               style={{ color: theme.text }}
             >
               {preview.text}

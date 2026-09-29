@@ -4,6 +4,7 @@
 // services/claudeBridge/{client,settings}.ts).
 
 import { getEffortLevels } from './effort'
+import { DEFAULT_EFFORT_BY_PROVIDER } from './modelDefaults'
 
 const STORAGE_PREFIX = 'effort:v1:'
 
@@ -39,16 +40,24 @@ export function setStoredEffort(
 
 /**
  * Nivel de esfuerzo efectivo para un modelo: sin "Por defecto" (follow-up de
- * T4), todo modelo con niveles siempre manda uno explícito. Prioridad: la
- * elección guardada si sigue siendo válida para este modelo; si no hay nada
- * guardado, o lo guardado ya no está entre los niveles del modelo (cambió de
- * modelo, o los niveles se regeneraron), el más bajo (`levels[0]`). '' cuando
- * el modelo no tiene niveles (getEffortLevels devuelve []).
+ * T4), todo modelo con niveles siempre manda uno explícito. Prioridad: (1) la
+ * elección guardada si sigue siendo válida para este modelo; (2) si no hay
+ * nada guardado (o ya no es válido, p. ej. cambió de modelo o se
+ * regeneraron los niveles), el default del proveedor (T17,
+ * `DEFAULT_EFFORT_BY_PROVIDER`) cuando ese nivel es válido para este modelo;
+ * (3) si no, el más bajo (`levels[0]`). '' cuando el modelo no tiene niveles
+ * (getEffortLevels devuelve []).
  */
 export function resolveEffort(provider: string, modelId: string): string {
   const levels = getEffortLevels(provider, modelId)
   if (levels.length === 0) return ''
 
   const stored = getStoredEffort(provider, modelId)
-  return levels.includes(stored) ? stored : levels[0]
+  if (levels.includes(stored)) return stored
+
+  const providerDefault = DEFAULT_EFFORT_BY_PROVIDER[provider]
+  if (providerDefault && levels.includes(providerDefault))
+    return providerDefault
+
+  return levels[0]
 }
