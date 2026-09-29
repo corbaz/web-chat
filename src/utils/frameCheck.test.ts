@@ -105,6 +105,34 @@ describe('checkFrameable', () => {
     expect(await checkFrameable('https://example.com/', failing)).toBeNull()
   })
 
+  test('una respuesta final con error cuenta como bloqueada', async () => {
+    expect(
+      await checkFrameable('https://example.com/', fakeFetch({ status: 429 })),
+    ).toBe(false)
+  })
+
+  test('sitios que nunca se dejan embeber, sin pedir la página', async () => {
+    const failing = (async () => {
+      throw new Error('no debería pedirla')
+    }) as unknown as typeof fetch
+    expect(
+      await checkFrameable('https://news.google.com/search?q=x', failing),
+    ).toBe(false)
+    expect(await checkFrameable('https://www.google.com.ar/', failing)).toBe(
+      false,
+    )
+    expect(await checkFrameable('https://github.com/', failing)).toBe(false)
+  })
+
+  test('redirección final a un sitio bloqueado', async () => {
+    expect(
+      await checkFrameable(
+        'https://example.com/',
+        fakeFetch({}, 'https://www.google.com/sorry/index'),
+      ),
+    ).toBe(false)
+  })
+
   test('null si una redirección termina en un host privado', async () => {
     expect(
       await checkFrameable(

@@ -50,10 +50,20 @@ export function toPublicHttpUrl(raw: string): URL | null {
   return url
 }
 
+// Sitios que nunca se dejan embeber y que además suelen rechazar pedidos de
+// servidores (Google responde 302 a /sorry y 429, sin X-Frame-Options, así
+// que el chequeo por headers daría un falso "sí"). Mapas y videos de Google
+// no pasan por acá: usan su URL de embed (ver embedUrl.ts).
+const ALWAYS_BLOCKED_HOST =
+  /(^|\.)(google\.[a-z.]+|youtube\.com|facebook\.com|instagram\.com|x\.com|twitter\.com|linkedin\.com|github\.com)$/i
+
 /**
  * Pide la página (siguiendo redirecciones) y decide con los headers de la
- * respuesta final, que es la que el navegador evalúa. null = no se pudo
- * saber (URL no permitida, timeout, error de red).
+ * respuesta final, que es la que el navegador evalúa. Una respuesta final
+ * con error (4xx/5xx, p. ej. un bloqueo anti-bots) cuenta como bloqueada: lo
+ * que ve el servidor no es lo que va a ver el navegador, y es mejor ofrecer
+ * la pestaña nueva que mostrar un recuadro roto. null = no se pudo saber
+ * (URL no permitida, timeout, error de red).
  */
 export async function checkFrameable(
   raw: string,
@@ -61,6 +71,7 @@ export async function checkFrameable(
 ): Promise<boolean | null> {
   const url = toPublicHttpUrl(raw)
   if (!url) return null
+  if (ALWAYS_BLOCKED_HOST.test(url.hostname)) return false
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
@@ -73,6 +84,8 @@ export async function checkFrameable(
     const finalUrl = response.url ? toPublicHttpUrl(response.url) : url
     void response.body?.cancel()
     if (!finalUrl) return null
+    if (!response.ok) return false
+    if (ALWAYS_BLOCKED_HOST.test(finalUrl.hostname)) return false
     return isFrameableHeaders((name) => response.headers.get(name))
   } catch {
     return null
