@@ -65,7 +65,8 @@ function useFrameStatus(preview: LinkPreview | null): FrameStatus {
 
 // Vista en la app de un link de una respuesta, para no salir del chat.
 // Mismo patrón que FilePreviewModal: overlay + Esc para cerrar. El iframe
-// ocupa todo el alto disponible, así que se adapta a cualquier pantalla.
+// ocupa todo el viewport (h-dvh: en el celular descuenta la barra del
+// navegador) con una barra fija arriba para el título y el cierre.
 export default function LinkPreviewModal({
   preview,
   theme,
@@ -108,23 +109,10 @@ export default function LinkPreviewModal({
       role="dialog"
       aria-modal="true"
       aria-label={preview.title}
-      className="fixed inset-0 z-10000 flex items-center justify-center p-2 sm:p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
-      onClick={onClose}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onClose()
-      }}
+      className="fixed inset-0 z-10000 flex h-dvh w-full"
+      style={{ backgroundColor: theme.background }}
     >
-      <div
-        role="document"
-        className="flex flex-col w-full max-w-5xl h-[90vh] rounded-xl overflow-hidden"
-        style={{
-          backgroundColor: theme.background,
-          boxShadow: theme.shadow.outer,
-        }}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
-      >
+      <div role="document" className="flex flex-col w-full h-full">
         <div
           className="flex items-center gap-2 px-4 py-2.5 shrink-0"
           style={{ boxShadow: theme.shadow.sm }}

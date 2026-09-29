@@ -9,7 +9,8 @@ interface ImageLightboxProps {
 }
 
 // Vista previa de una imagen dentro de la app. Reemplaza abrir el data: URL
-// en una pestaña nueva, que Chrome/Edge bloquean (queda en blanco).
+// en una pestaña nueva, que Chrome/Edge bloquean (queda en blanco). Ocupa
+// todo el viewport; clic en el fondo o Esc cierran.
 export default function ImageLightbox({
   src,
   alt = 'Vista previa',
@@ -32,8 +33,8 @@ export default function ImageLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={alt}
-      className="fixed inset-0 z-10000 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
+      className="fixed inset-0 z-10000 flex h-dvh w-full items-center justify-center"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.92)' }}
       onClick={onClose}
       onKeyDown={(event) => {
         if (event.key === 'Escape') onClose()
@@ -44,7 +45,7 @@ export default function ImageLightbox({
         onClick={onClose}
         aria-label="Cerrar vista previa"
         title="Cerrar (Esc)"
-        className="absolute top-4 right-4 size-10 rounded-full flex items-center justify-center text-xl"
+        className="absolute top-3 right-3 z-10 size-10 rounded-full flex items-center justify-center text-xl"
         style={{
           backgroundColor: theme.background,
           color: theme.text,
@@ -56,8 +57,7 @@ export default function ImageLightbox({
       <img
         src={src}
         alt={alt}
-        className="max-w-full max-h-full object-contain rounded-xl"
-        style={{ boxShadow: theme.shadow.outer }}
+        className="w-full h-full object-contain"
         onClick={(event) => event.stopPropagation()}
         onKeyDown={() => {}}
       />
