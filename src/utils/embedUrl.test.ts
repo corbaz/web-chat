@@ -36,6 +36,19 @@ describe('toEmbedUrl', () => {
     ).toBe(mapsFor('-38.0055,-57.5426'))
   })
 
+  test('Cómo llegar muestra el destino', () => {
+    expect(
+      toEmbedUrl(
+        'https://www.google.com/maps/dir/?api=1&destination=Azcu%C3%A9naga+2736%2C+Mar+del+Plata',
+      )?.embedUrl,
+    ).toBe(mapsFor('Azcuénaga 2736, Mar del Plata'))
+    expect(
+      toEmbedUrl(
+        'https://www.google.com/maps/dir/Plaza+Mitre/Azcu%C3%A9naga+2736,+Mar+del+Plata/@-38,-57,14z',
+      )?.embedUrl,
+    ).toBe(mapsFor('Azcuénaga 2736, Mar del Plata'))
+  })
+
   test('links cortos de Maps no se pueden embeber', () => {
     expect(toEmbedUrl('https://maps.app.goo.gl/abc123')).toBeNull()
   })

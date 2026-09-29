@@ -32,7 +32,21 @@ function googleMapsQuery(url: URL): string | null {
   const direct = params.get('query') || params.get('q')
   if (direct) return direct
 
+  const destination = params.get('destination')
+  if (destination) return destination
+
   const segments = url.pathname.split('/').filter(Boolean)
+  // "Cómo llegar" (/maps/dir/<origen>/<destino>/@...): se muestra el destino.
+  const dirIndex = segments.indexOf('dir')
+  if (dirIndex >= 0) {
+    const stops = segments
+      .slice(dirIndex + 1)
+      .filter(
+        (segment) => !segment.startsWith('@') && !segment.startsWith('data='),
+      )
+    const last = stops.at(-1)
+    if (last) return decodeURIComponent(last.replace(/\+/g, ' '))
+  }
   const placeIndex = segments.indexOf('place')
   const searchIndex = segments.indexOf('search')
   const nameIndex = placeIndex >= 0 ? placeIndex : searchIndex

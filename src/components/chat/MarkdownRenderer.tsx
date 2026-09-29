@@ -3,7 +3,11 @@ import { useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ColorPalette } from '../../interfaces/temas/temas'
-import { toEmbedUrl } from '../../utils/embedUrl'
+import {
+  isPlainClick,
+  PREVIEW_TITLE,
+  toLinkPreview,
+} from '../../utils/linkPreview'
 import ImageLightbox from './ImageLightbox'
 import LinkPreviewModal, { type LinkPreview } from './LinkPreviewModal'
 
@@ -19,18 +23,6 @@ function textOf(children: React.ReactNode): string {
   }
   if (Array.isArray(children)) return children.map(textOf).join('')
   return ''
-}
-
-// Clic "normal" (sin Ctrl/Cmd/Shift ni botón del medio): ese abre el modal;
-// los demás mantienen el comportamiento del navegador (pestaña nueva).
-function isPlainClick(event: React.MouseEvent): boolean {
-  return (
-    event.button === 0 &&
-    !event.ctrlKey &&
-    !event.metaKey &&
-    !event.shiftKey &&
-    !event.altKey
-  )
 }
 
 // Imagen de markdown `![alt](url)`: se ajusta al ancho del mensaje, se amplía
@@ -79,31 +71,25 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null)
   const [image, setImage] = useState<{ src: string; alt: string } | null>(null)
 
+  const onOpenLink = (preview: LinkPreview) => setLinkPreview(preview)
+
   const components: Components = {
     a: ({ href, children }) => {
       if (!href) return <span>{children}</span>
-      const embed = toEmbedUrl(href)
+      const preview = toLinkPreview(href, textOf(children).trim() || href)
       return (
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          title={
-            embed
-              ? `Ver ${embed.kind === 'map' ? 'el mapa' : 'el video'} en el chat`
-              : 'Abrir en una pestaña nueva'
-          }
+          title={preview ? PREVIEW_TITLE[preview.kind] : undefined}
           onClick={(event) => {
-            if (!embed || !isPlainClick(event)) return
+            if (!preview || !isPlainClick(event)) return
             event.preventDefault()
-            setLinkPreview({
-              ...embed,
-              href,
-              title: textOf(children).trim() || href,
-            })
+            onOpenLink(preview)
           }}
         >
-          {embed?.kind === 'map' && !textOf(children).includes('📍') && '📍 '}
+          {preview?.kind === 'map' && !textOf(children).includes('📍') && '📍 '}
           {children}
         </a>
       )

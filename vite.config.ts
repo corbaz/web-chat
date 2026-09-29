@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
@@ -18,11 +18,28 @@ const getBuenosAiresVersion = (): string => {
     return `v.${yy}.${mm}${dd} build ${hh}${min}`;
 };
 
+// Mismo endpoint que api/frame-check.ts (Vercel) para `bun run dev`: el
+// chat pregunta si una página se puede mostrar en su modal (ver
+// src/utils/frameCheck.ts). Se carga con ssrLoadModule para no mezclar los
+// tipos del navegador en el tsconfig de Node.
+const frameCheckDevEndpoint = (): Plugin => ({
+    name: 'frame-check-dev-endpoint',
+    configureServer(server) {
+        server.middlewares.use('/api/frame-check', async (req, res) => {
+            const target = new URL(req.url ?? '', 'http://localhost').searchParams.get('url') ?? '';
+            const { checkFrameable } = await server.ssrLoadModule('/src/utils/frameCheck.ts');
+            const framable = await checkFrameable(target);
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify({ framable }));
+        });
+    },
+});
+
 // https://vite.dev/config/
 export default defineConfig({
     // Configura base como './' para generar rutas relativas en lugar de absolutas
     base: './',
-    plugins: [react(), tailwindcss(), basicSsl()],
+    plugins: [react(), tailwindcss(), basicSsl(), frameCheckDevEndpoint()],
     define: {
         __APP_VERSION__: JSON.stringify(getBuenosAiresVersion()),
     },

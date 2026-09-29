@@ -7,8 +7,10 @@ import type {
 import type { ColorPalette } from '../../interfaces/temas/temas.tsx'
 import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
 import { base64ToBlobUrl } from '../../utils/blobUrl'
+import { isPlainClick, toLinkPreview } from '../../utils/linkPreview'
 import FilePreviewModal, { type FilePreview } from './FilePreviewModal'
 import ImageLightbox from './ImageLightbox'
+import LinkPreviewModal, { type LinkPreview } from './LinkPreviewModal'
 import './markdown-styles.css'
 
 const PDF_MIME = 'application/pdf'
@@ -62,6 +64,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [filePreview, setFilePreview] = useState<FilePreview | null>(null)
+  const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null)
 
   const closeFilePreview = () => {
     setFilePreview((current) => {
@@ -281,6 +284,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             onClose={closeFilePreview}
           />
         )}
+        <LinkPreviewModal
+          preview={linkPreview}
+          theme={theme}
+          onClose={() => setLinkPreview(null)}
+        />
         {isUser &&
           (!message.files || message.files.length === 0) &&
           !!message.fileCount && (
@@ -370,6 +378,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       host = 'Enlace'
                     }
                     const title = cit.title || host
+                    const preview = toLinkPreview(cit.url, title)
                     return (
                       <a
                         key={cit.url}
@@ -378,6 +387,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                         rel="noopener noreferrer"
                         className="text-xs px-2.5 py-1 rounded-lg transition-all duration-200 border flex items-center gap-1 hover:opacity-80"
                         title={cit.snippet || title}
+                        onClick={(event) => {
+                          if (!preview || !isPlainClick(event)) return
+                          event.preventDefault()
+                          setLinkPreview(preview)
+                        }}
                         style={{
                           backgroundColor: `${theme.accent}08`,
                           borderColor: `${theme.accent}20`,

@@ -20,7 +20,7 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 - **Visión**: se pueden pegar (Ctrl+V) o adjuntar (📎) imágenes en los modelos que las aceptan (ícono de ojo 👁).
 - **Archivos de texto y PDF**: el botón 📎 también adjunta Markdown, texto plano, CSV, JSON y código, y PDFs (nativos en los modelos que los aceptan, ícono de PDF 📄; como texto extraído en el resto), en cualquier proveedor y modelo.
 - **Búsqueda web nativa**: en los modelos que la soportan (ícono de globo 🌐), el proveedor busca en internet y la respuesta muestra las fuentes.
-- **Links sin salir del chat**: los links de las respuestas se abren en una pestaña nueva. Los de Google Maps (📍) y YouTube se ven en un modal dentro del chat, adaptado a cualquier pantalla y con botón para abrirlos en otra pestaña. Las imágenes de markdown `![descripción](url)` se muestran con vista previa y se amplían con un clic; si la URL no carga, queda como link. Todos los proveedores reciben la misma instrucción: ante un pedido de mapa o dirección, responder con un link de Google Maps (ningún modelo genera capturas de mapas).
+- **Links sin salir del chat**: los links de las respuestas y de las fuentes se abren en un modal dentro del chat, adaptado a cualquier pantalla y con botón para abrirlos en otra pestaña (Ctrl+clic o clic del medio abren directo la pestaña). Google Maps (📍, incluido "Cómo llegar") y YouTube se muestran con su versión embebible. Para el resto, la app consulta antes `/api/frame-check` (función de Vercel; en `bun run dev` lo responde Vite): si el sitio no permite mostrarse dentro de otra página (GitHub, OpenStreetMap, etc.), el modal lo avisa y ofrece la pestaña nueva. La página embebida no puede reemplazar la app. Las imágenes de markdown `![descripción](url)` se muestran con vista previa y se amplían con un clic; si la URL no carga, queda como link. Todos los proveedores reciben la misma instrucción: ante un pedido de mapa o dirección, responder con un link de Google Maps (ningún modelo genera capturas de mapas).
 - **Estadísticas de tokens** con el límite de contexto real de cada modelo.
 - **Modelos gratis de OpenCode** a través de un servidor local de OpenCode ("OpenCode Free").
 - **Claude por tu suscripción de Claude Code** (sin API key) a través de un bridge local ("Claude (suscripción)").
@@ -478,7 +478,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Claude (suscripción) con bridge local a `claude -p`: todos los modelos, slider de esfuerzo, visión, fecha y hora, navegación web, comandos con permiso y toggle YOLO.
 - Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
 - OpenAI (suscripción) con bridge local a `codex app-server`: todos los modelos, esfuerzo y visión en vivo desde `model/list`, comandos con permiso y toggle YOLO (sin PDF nativo; búsqueda web sin verificar en vivo).
-- Links en pestaña nueva; mapas de Google Maps y videos de YouTube en un modal dentro del chat; imágenes de markdown con vista previa.
+- Links y fuentes en un modal dentro del chat (con chequeo de si el sitio se deja embeber); mapas de Google Maps y videos de YouTube embebidos; imágenes de markdown con vista previa.
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.
 - Entrada de archivos de texto/código y PDF (nativo o extraído con pdf.js) en todos los modelos y proveedores.
 - Búsqueda web habilitada solo en los modelos verificados en vivo.
