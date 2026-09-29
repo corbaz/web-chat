@@ -8,3 +8,8 @@
 # y corre tal cual con `bun claude-bridge.js` en Mac o Windows, así que debe
 # quedar en LF pase lo que pase con core.autocrlf del que hace `git clone`.
 scripts/claude-bridge/*.js text eol=lf
+
+# Bundle standalone del bridge de Codex (OpenAI, suscripción de ChatGPT, ver
+# odd/tasks/openai-subscription-bridge.md): mismo criterio que
+# scripts/claude-bridge/*.js de arriba.
+scripts/codex-bridge/*.js text eol=lf

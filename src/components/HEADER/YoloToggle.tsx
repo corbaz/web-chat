@@ -12,7 +12,7 @@ import { useRef } from 'react'
 import Swal from 'sweetalert2'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 
-const YOLO_PROVIDERS = new Set(['claudecode', 'opencodefree'])
+const YOLO_PROVIDERS = new Set(['claudecode', 'opencodefree', 'codexsub'])
 
 interface YoloToggleProps {
   selectedProvider?: string

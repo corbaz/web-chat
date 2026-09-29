@@ -7,6 +7,11 @@ import {
   setClaudeCodeServerUrl,
 } from '../../../services/claudeBridge/settings'
 import {
+  DEFAULT_CODEX_URL,
+  getCodexServerUrl,
+  setCodexServerUrl,
+} from '../../../services/codexBridge/settings'
+import {
   DEFAULT_OPENCODE_FREE_URL,
   getOpenCodeFreeServerUrl,
   setOpenCodeFreeServerUrl,
@@ -111,6 +116,22 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
     window.dispatchEvent(new Event('apikey-changed'))
   }
 
+  // Campo extra solo para Codex (suscripción): URL del bridge local (ver
+  // odd/tasks/openai-subscription-bridge.md).
+  const [codexServerUrl, setCodexServerUrlState] = useState(() =>
+    getCodexServerUrl(),
+  )
+
+  useEffect(() => {
+    if (provider === 'codexsub') setCodexServerUrlState(getCodexServerUrl())
+  }, [provider])
+
+  const handleCodexServerUrlBlur = () => {
+    setCodexServerUrl(codexServerUrl)
+    setCodexServerUrlState(getCodexServerUrl())
+    window.dispatchEvent(new Event('apikey-changed'))
+  }
+
   const prevProviderRef = useRef<string>(provider)
 
   useEffect(() => {
@@ -169,9 +190,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                 ? 'OpenCode Free'
                 : id === 'claudecode'
                   ? 'Claude (suscripción)'
-                  : id === 'gemini'
-                    ? 'Gemini'
-                    : 'Anthropic'
+                  : id === 'codexsub'
+                    ? 'OpenAI (suscripción)'
+                    : id === 'gemini'
+                      ? 'Gemini'
+                      : 'Anthropic'
 
   const providerLink = (id: string) =>
     id === 'groq'
@@ -188,9 +211,11 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                 ? 'https://opencode.ai'
                 : id === 'claudecode'
                   ? 'https://claude.com/claude-code'
-                  : id === 'gemini'
-                    ? 'https://aistudio.google.com/app/apikey'
-                    : 'https://console.anthropic.com/settings/keys'
+                  : id === 'codexsub'
+                    ? 'https://developers.openai.com/codex/cli'
+                    : id === 'gemini'
+                      ? 'https://aistudio.google.com/app/apikey'
+                      : 'https://console.anthropic.com/settings/keys'
 
   return (
     <div className="mb-6">
@@ -244,6 +269,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <option value="opencodezen">OpenCode Zen</option>
             <option value="opencodefree">OpenCode Free</option>
             <option value="claudecode">Claude (suscripción)</option>
+            <option value="codexsub">OpenAI (suscripción)</option>
             <option value="gemini">Gemini</option>
           </select>
           {/* Chevron */}
@@ -313,6 +339,32 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
         </div>
       )}
 
+      {/* Bridge local — solo Codex (suscripción) */}
+      {provider === 'codexsub' && (
+        <div className="mb-3">
+          <label
+            htmlFor="codexsub-server-url"
+            className="block text-xs font-medium mb-1.5"
+            style={{ color: theme.textMuted }}
+          >
+            Bridge local
+          </label>
+          <input
+            id="codexsub-server-url"
+            name="codexsubServerUrl"
+            type="text"
+            value={codexServerUrl}
+            onChange={(e) => setCodexServerUrlState(e.target.value)}
+            onBlur={handleCodexServerUrlBlur}
+            placeholder={DEFAULT_CODEX_URL}
+            className="w-full px-3 py-2.5 text-sm"
+            style={nmInputStyle}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+      )}
+
       {/* API Key field */}
       <div className="space-y-2">
         <div className="relative">
@@ -327,7 +379,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
                 ? ''
                 : provider === 'opencodefree'
                   ? 'Sin contraseña del servidor local'
-                  : provider === 'claudecode'
+                  : provider === 'claudecode' || provider === 'codexsub'
                     ? 'Sin contraseña del bridge local'
                     : `Sin API Key de ${providerName(provider)}`
             }

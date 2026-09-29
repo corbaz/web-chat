@@ -21,6 +21,7 @@ const allProviders: ProviderOption[] = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'claudecode', label: 'Claude (suscripción)' },
+  { value: 'codexsub', label: 'OpenAI (suscripción)' },
   { value: 'opengo', label: 'OpenCode Go' },
   { value: 'opencodezen', label: 'OpenCode Zen' },
   { value: 'opencodefree', label: 'OpenCode Free' },

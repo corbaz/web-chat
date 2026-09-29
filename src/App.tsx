@@ -5,6 +5,7 @@ import ChatContainer from './components/chat/ChatContainer'
 import Footer, { type FooterRef } from './components/FOOTER/Footer'
 // Componentes principales
 import Header from './components/HEADER/Header'
+import { DEFAULT_MODEL_BY_PROVIDER } from './config/modelDefaults'
 import { isOpenCodeAvailable } from './config/providers'
 import { APP_VERSION } from './constants/appVersion'
 import { createWelcomeMessage } from './constants/messages'
@@ -21,7 +22,7 @@ import {
   getModels,
   initModelCatalog,
 } from './services/modelCatalog/store'
-import type { ProviderId } from './services/modelCatalog/types'
+import type { CatalogModel, ProviderId } from './services/modelCatalog/types'
 import { useModelCatalog } from './services/modelCatalog/useModelCatalog'
 import { generateLayoutCSS } from './utils/layoutConstants'
 import { setupMobileKeyboardHandler } from './utils/mobileUtils'
@@ -70,6 +71,19 @@ export const App = () => {
     return 'groq'
   }
 
+  // Modelo por defecto de un provider (T17, user request 2026-09-28): el id
+  // configurado en DEFAULT_MODEL_BY_PROVIDER si ya está en el catálogo
+  // (puede no estarlo todavía si el refresh en background no terminó, o si
+  // el proveedor lo retiró); si no, el primero disponible.
+  const pickDefaultModel = (
+    provider: string,
+    models: CatalogModel[],
+  ): string | undefined => {
+    const defaultId = DEFAULT_MODEL_BY_PROVIDER[provider]
+    if (defaultId && models.some((m) => m.id === defaultId)) return defaultId
+    return models[0]?.id
+  }
+
   const getInitialModel = (provider: string) => {
     // Intentar cargar el modelo guardado en localStorage
     const savedModel = localStorage.getItem('selectedModel')
@@ -86,8 +100,8 @@ export const App = () => {
       return savedModel
     }
 
-    // Si no, devolver el primer modelo del provider
-    return allModels[0]?.id || getModels('groq')[0].id
+    // Si no, el default del provider (o el primero del catálogo)
+    return pickDefaultModel(provider, allModels) || getModels('groq')[0].id
   }
 
   const initialProvider = getInitialProvider()
@@ -103,7 +117,7 @@ export const App = () => {
         ? (provider as (typeof PROVIDER_IDS)[number])
         : 'groq',
     )
-    return models[0]?.id || selectedModel
+    return pickDefaultModel(provider, models) || selectedModel
   }
 
   // Si el modelo elegido desaparece del catálogo (refresh o modelo rechazado

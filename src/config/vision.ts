@@ -3,6 +3,7 @@
 // en visionModels.generated.ts por `bun run update:vision`. Para IDs que
 // models.dev todavía no conoce se usa una heurística conservadora.
 
+import { codexSupportsVision } from '../services/codexBridge/capabilities'
 import { TEXT_ONLY_MODELS, VISION_MODELS } from './visionModels.generated'
 
 // Heurística para modelos nuevos que aún no están en models.dev.
@@ -38,6 +39,13 @@ function fallbackSupportsVision(modelId: string, provider: string): boolean {
       // (models.dev), vía el bridge en modo stream-json (ver
       // odd/tasks/claude-subscription-bridge.md).
       return modelId.startsWith('claude-')
+    case 'codexsub':
+      // Codex (suscripción de ChatGPT): `inputModalities` de `model/list`
+      // (ver Verified facts en odd/tasks/openai-subscription-bridge.md),
+      // guardado por el fetcher del catálogo. Sin dato todavía (antes del
+      // primer refresh), se asume que sí (los tres modelos vistos en vivo
+      // la tienen).
+      return codexSupportsVision(modelId)
     default:
       return false
   }

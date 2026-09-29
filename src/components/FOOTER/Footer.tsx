@@ -24,6 +24,11 @@ import {
   getClaudeCodePassword,
   getClaudeCodeServerUrl,
 } from '../../services/claudeBridge/settings'
+import { sendMessage as sendCodexMessage } from '../../services/codexBridge/client'
+import {
+  getCodexPassword,
+  getCodexServerUrl,
+} from '../../services/codexBridge/settings'
 import {
   ACCEPTED_TEXT_EXTENSIONS,
   exceedsTextFileCap,
@@ -40,6 +45,10 @@ import ImageLightbox from '../chat/ImageLightbox'
 // Modelo de Groq para la varita cuando el proveedor elegido es OpenCode Free:
 // rápido y sin herramientas.
 const MAGIC_FALLBACK_GROQ_MODEL = 'openai/gpt-oss-20b'
+
+// Modelo de Codex (suscripción) para la varita: el más chico/rápido de los
+// vistos en vivo (ver Verified facts en odd/tasks/openai-subscription-bridge.md).
+const MAGIC_FALLBACK_CODEX_MODEL = 'gpt-5.6-luna'
 
 // Constantes de adjuntos de imagen (T3, ver odd/tasks/image-input.md).
 const MAX_IMAGES = 4
@@ -547,6 +556,50 @@ ${message}`
           if (result.isError || !result.text.trim()) {
             throw new Error(
               result.error || 'Respuesta vacía del bridge de Claude',
+            )
+          }
+
+          const improved = result.text
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim()
+          setMessage(improved)
+          setShowMagicResponse(true)
+          setTimeout(adjustTextareaHeight, 0)
+          textareaRef.current?.focus()
+          return
+        }
+
+        // Codex (suscripción, bridge local): mismo criterio que Claude
+        // (suscripción) arriba — sesión nueva (sin threadId) y un modelo
+        // chico/rápido fijo, sin importar el modelo elegido para el chat
+        // (ver Scope en odd/tasks/openai-subscription-bridge.md).
+        if (selectedProvider === 'codexsub') {
+          const baseUrl = getCodexServerUrl()
+          const password = getCodexPassword()
+          if (!password.trim()) {
+            setIsMagicLoading(false)
+            alert('Falta la contraseña del bridge de Codex')
+            return
+          }
+
+          const codexPrompt = `Corrige y mejora la expresión en español del siguiente texto,
+asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
+
+Texto a mejorar:
+${message}`
+
+          const result = await sendCodexMessage(
+            baseUrl,
+            password,
+            MAGIC_FALLBACK_CODEX_MODEL,
+            codexPrompt,
+            undefined,
+            'low',
+          )
+
+          if (result.isError || !result.text.trim()) {
+            throw new Error(
+              result.error || 'Respuesta vacía del bridge de Codex',
             )
           }
 

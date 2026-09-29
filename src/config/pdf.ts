@@ -20,6 +20,12 @@ function fallbackSupportsPdf(modelId: string, provider: string): boolean {
       // Sin PDF nativo: siempre usa el fallback de texto (ver Scope del
       // feature doc, "OpenCode Free ... PDFs use the text fallback").
       return false
+    case 'codexsub':
+      // El protocolo de `codex app-server` no tiene un tipo `document`/PDF
+      // en `UserInput` (verificado con el schema generado, ver Verified
+      // facts en odd/tasks/openai-subscription-bridge.md): siempre usa el
+      // fallback de texto, igual que OpenCode Free.
+      return false
     default:
       return false
   }

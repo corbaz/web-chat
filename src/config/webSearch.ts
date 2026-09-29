@@ -39,7 +39,7 @@ const GO_WEB_SEARCH_MODELS = new Set<string>([
 
 /** Proveedores con búsqueda web siempre activa: sin botón para apagarla. */
 export function isWebSearchAlwaysOn(provider?: string): boolean {
-  return provider === 'claudecode'
+  return provider === 'claudecode' || provider === 'codexsub'
 }
 
 export function supportsWebSearch(modelId: string, provider?: string): boolean {
@@ -49,6 +49,13 @@ export function supportsWebSearch(modelId: string, provider?: string): boolean {
   // siempre disponibles (T7). El globo se muestra como capacidad en el
   // selector, pero no hay botón para apagarla (ver isWebSearchAlwaysOn).
   if (provider === 'claudecode') return true
+  // Codex (suscripción de ChatGPT): `codex app-server` tiene una
+  // herramienta de búsqueda web nativa (ThreadItem `webSearch` en el schema
+  // generado) y el bridge habilita acceso de red de solo lectura en el
+  // sandbox (ver server.ts, sandboxPolicy con networkAccess). Sin verificar
+  // en vivo (riesgo conocido, ver Riesgos en el feature doc); mismo criterio
+  // "siempre activa" que Claude (suscripción).
+  if (provider === 'codexsub') return true
   // OpenCode Zen: sin verificar (la cuenta no tenía saldo al probar).
   // OpenCode Free (servidor local): sin búsqueda web en v1 (ver
   // odd/tasks/opencode-free-local.md).

@@ -40,6 +40,20 @@ import {
   getClaudeCodeServerUrl,
 } from '../../services/claudeBridge/settings'
 import {
+  type CodexPendingPermission,
+  listPermissions as listCodexPermissions,
+  respondPermission as respondCodexPermission,
+  sendMessage as sendCodexMessage,
+} from '../../services/codexBridge/client'
+import {
+  getCodexSessionId,
+  setCodexSessionId,
+} from '../../services/codexBridge/sessionMap'
+import {
+  getCodexPassword,
+  getCodexServerUrl,
+} from '../../services/codexBridge/settings'
+import {
   markModelUnavailable,
   PROVIDER_IDS,
 } from '../../services/modelCatalog/store'
@@ -129,6 +143,14 @@ const sleep = (ms: number): Promise<void> =>
 // T7: descripción corta para el modal de permiso de Claude (suscripción).
 const describeClaudePermission = (
   permission: ClaudePendingPermission,
+): string => {
+  const detail = permission.command?.trim() || permission.description?.trim()
+  return detail ? `${permission.tool}: ${detail}` : permission.tool
+}
+
+// Descripción corta para el modal de permiso de Codex (suscripción).
+const describeCodexPermission = (
+  permission: CodexPendingPermission,
 ): string => {
   const detail = permission.command?.trim() || permission.description?.trim()
   return detail ? `${permission.tool}: ${detail}` : permission.tool
@@ -988,6 +1010,186 @@ const ChatContainer = ({
         return
       }
 
+      // Codex (suscripción, bridge local a `codex app-server`, ver
+      // odd/tasks/openai-subscription-bridge.md): mismo criterio que Claude
+      // (suscripción) arriba (sesión por chat vía threadId, historial del
+      // lado del bridge), así que se maneja aparte. Sin `documents`: el
+      // protocolo de Codex no tiene PDF nativo (ver supportsPdf en
+      // src/config/pdf.ts), los PDF siempre llegan como texto extraído.
+      if (provider === 'codexsub') {
+        const baseUrl = getCodexServerUrl()
+        const password = getCodexPassword()
+
+        if (!password.trim()) {
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content:
+              'Falta la contraseña del bridge de Codex. Guárdala en el menú de configuración antes de enviar mensajes.',
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+          return
+        }
+
+        try {
+          const appChatId = currentChatId || requestId
+          const sessionId = getCodexSessionId(appChatId)
+          const effort = resolveEffort(provider, selectedModel) || undefined
+          const codexImages =
+            images && images.length > 0
+              ? images.map(({ mimeType, data }) => ({ mimeType, data }))
+              : undefined
+
+          const codexText = resolveApiContent(
+            filteredContent,
+            files,
+            codexImages?.length ?? 0,
+            0,
+          )
+
+          // Sondeo de permisos pendientes (comandos que el modelo quiere
+          // ejecutar en la PC), mismo mecanismo que Claude (suscripción):
+          // el bridge expone GET /permission + POST /permission/:id (ver
+          // scripts/codex-bridge/server.ts). Con YOLO no hace falta: el
+          // bridge auto-aprueba (autoApprove abajo).
+          let polling = !yoloEnabled
+          const seenPermissionIds = new Set<string>()
+          const pollPermissions = async (): Promise<void> => {
+            while (polling) {
+              await sleep(1000)
+              if (!polling) break
+              let pending: CodexPendingPermission[]
+              try {
+                pending = await listCodexPermissions(baseUrl, password)
+              } catch {
+                continue
+              }
+              for (const permission of pending) {
+                if (seenPermissionIds.has(permission.id)) continue
+                seenPermissionIds.add(permission.id)
+                const decision = await askPermission(
+                  theme,
+                  isDarkTheme,
+                  describeCodexPermission(permission),
+                )
+                try {
+                  await respondCodexPermission(
+                    baseUrl,
+                    password,
+                    permission.id,
+                    decision,
+                  )
+                } catch {
+                  seenPermissionIds.delete(permission.id)
+                }
+              }
+            }
+          }
+          const pollPromise = pollPermissions()
+
+          let result: Awaited<ReturnType<typeof sendCodexMessage>>
+          try {
+            result = await sendCodexMessage(
+              baseUrl,
+              password,
+              selectedModel,
+              codexText,
+              sessionId,
+              effort,
+              codexImages,
+              yoloEnabled,
+            )
+          } finally {
+            polling = false
+            await pollPromise
+          }
+
+          if (result.isError) {
+            throw new Error(
+              result.error || 'Error desconocido del bridge de Codex',
+            )
+          }
+
+          if (result.sessionId) {
+            setCodexSessionId(appChatId, result.sessionId)
+          }
+
+          const filteredCodexResponse = result.text
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim()
+
+          if (!filteredCodexResponse) {
+            throw new Error('EMPTY_PROVIDER_RESPONSE')
+          }
+
+          const endTime = Date.now()
+          const responseTime =
+            endTime - (requestStartTimeRef.current[requestId] || endTime)
+          const formattedTime = formatResponseTime(responseTime)
+
+          const assistantMessage: ChatMessageType = {
+            id: `assistant_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: filteredCodexResponse,
+            timestamp: Date.now(),
+            responseTime: formattedTime,
+            tokensUsed: result.tokens.input,
+            tokenLimit: getModelTokenLimit(
+              result.model || selectedModel,
+              provider,
+            ),
+            modelName: selectedModel,
+            requestedModelId: selectedModel,
+            promptTokens: result.tokens.input,
+            completionTokens: result.tokens.output,
+          }
+
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            assistantMessage,
+          ])
+        } catch (error) {
+          let errorMessage =
+            'Error al obtener respuesta. Por favor, intenta de nuevo.'
+          if (
+            error instanceof Error &&
+            error.message === 'EMPTY_PROVIDER_RESPONSE'
+          ) {
+            errorMessage =
+              'Codex devolvió una respuesta sin texto. No se guardó como respuesta válida; vuelve a intentarlo.'
+          } else if (error instanceof Error && error.message) {
+            errorMessage = `Codex (suscripción): ${error.message}`
+          }
+
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: errorMessage,
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+        } finally {
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+        }
+        return
+      }
+
       try {
         if (
           (provider === 'opengo' || provider === 'opencodezen') &&
@@ -1060,6 +1262,11 @@ const ChatContainer = ({
           searchEnabled: effectiveSearch,
         }
 
+        // T17: esfuerzo de razonamiento para todo proveedor (antes solo
+        // claudecode); '' cuando el modelo no tiene niveles, así el payload
+        // queda byte-idéntico al de antes de esta funcionalidad.
+        const effort = resolveEffort(provider, selectedModel) || undefined
+
         let payload: Record<string, unknown>
         let endpoint: string
 
@@ -1069,6 +1276,7 @@ const ChatContainer = ({
             apiMessages,
             MAX_RESPONSE_TOKENS,
             toolsConfig,
+            effort,
           )
           if (customRequest) {
             endpoint = customRequest.url
@@ -1079,6 +1287,7 @@ const ChatContainer = ({
               apiMessages,
               MAX_RESPONSE_TOKENS,
               toolsConfig,
+              effort,
             )
             endpoint = providerConfig.endpoint(selectedModel)
           }
@@ -1088,6 +1297,7 @@ const ChatContainer = ({
             apiMessages,
             MAX_RESPONSE_TOKENS,
             toolsConfig,
+            effort,
           )
           endpoint = providerConfig.endpoint(selectedModel)
         }

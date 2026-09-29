@@ -12,6 +12,7 @@ export type ProviderId =
   | 'opencodezen'
   | 'opencodefree'
   | 'claudecode'
+  | 'codexsub'
   | 'gemini'
 
 export interface CatalogModel {

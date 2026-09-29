@@ -4,6 +4,7 @@
 // cambios (ver store.ts: refreshProvider no hace nada si no hay fetcher).
 
 import { anthropicModels } from '../../components/HEADER/models/anthropicModels'
+import { codexSubModels } from '../../components/HEADER/models/codexSubModels'
 import { geminiModels } from '../../components/HEADER/models/geminiModels'
 import { groqModels } from '../../components/HEADER/models/groqModels'
 import { openaiModels } from '../../components/HEADER/models/openaiModels'
@@ -11,6 +12,7 @@ import { opencodeFreeModels } from '../../components/HEADER/models/opencodeFreeM
 import { opencodeZenModels } from '../../components/HEADER/models/opencodeZenModels'
 import { opengoModels } from '../../components/HEADER/models/opengoModels'
 import { fetchAnthropicModelIds } from './fetchers/anthropicFetcher'
+import { fetchCodexSubModelIds } from './fetchers/codexSubFetcher'
 import { fetchGeminiModelIds } from './fetchers/geminiFetcher'
 import { fetchGroqModelIds } from './fetchers/groqFetcher'
 import { fetchOpenAIModelIds } from './fetchers/openaiFetcher'
@@ -61,6 +63,11 @@ export const FETCHER_REGISTRY: Partial<Record<ProviderId, ProviderFetcher>> = {
   opencodefree: {
     fetchIds: fetchOpenCodeFreeModelIds,
     staticModels: opencodeFreeModels,
+    requiresKey: true,
+  },
+  codexsub: {
+    fetchIds: fetchCodexSubModelIds,
+    staticModels: codexSubModels,
     requiresKey: true,
   },
 }

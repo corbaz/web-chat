@@ -2,6 +2,7 @@ import type React from 'react'
 import { useState } from 'react'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { ClaudeCodeStatus } from './ClaudeCodeStatus'
+import { CodexSubStatus } from './CodexSubStatus'
 import EffortSelector from './EffortSelector'
 import ModelSelector from './ModelSelector'
 import MenuButton from './menu/MenuButton'
@@ -53,6 +54,7 @@ const Header: React.FC<HeaderProps> = ({
         'openai',
         'anthropic',
         'claudecode',
+        'codexsub',
         'opengo',
         'opencodezen',
         'opencodefree',
@@ -118,6 +120,10 @@ const Header: React.FC<HeaderProps> = ({
               />
               <ClaudeCodeStatus
                 active={selectedProvider === 'claudecode'}
+                theme={theme}
+              />
+              <CodexSubStatus
+                active={selectedProvider === 'codexsub'}
                 theme={theme}
               />
             </div>

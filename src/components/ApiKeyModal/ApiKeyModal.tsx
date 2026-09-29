@@ -4,6 +4,7 @@ import { isOpenCodeAvailable } from '../../config/providers'
 import { APP_VERSION } from '../../constants/appVersion'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { checkServer as checkClaudeBridgeServer } from '../../services/claudeBridge/client'
+import { checkServer as checkCodexBridgeServer } from '../../services/codexBridge/client'
 import {
   checkServer,
   type ServerCheck,
@@ -15,6 +16,9 @@ let lastOpenCodeFreeCheck: ServerCheck = 'unreachable'
 // Idem para el bridge local de Claude (suscripción, ver
 // odd/tasks/claude-subscription-bridge.md).
 let lastClaudeCodeCheck: ServerCheck = 'unreachable'
+// Idem para el bridge local de Codex (suscripción de ChatGPT, ver
+// odd/tasks/openai-subscription-bridge.md).
+let lastCodexCheck: ServerCheck = 'unreachable'
 
 interface ApiKeyModalProps {
   theme: ColorPalette
@@ -59,6 +63,11 @@ const PROVIDERS = [
     id: 'claudecode',
     name: 'Claude (suscripción)',
     link: 'https://claude.com/claude-code',
+  },
+  {
+    id: 'codexsub',
+    name: 'OpenAI (suscripción)',
+    link: 'https://developers.openai.com/codex/cli',
   },
   {
     id: 'gemini',
@@ -212,6 +221,15 @@ const validateApiKey = async (
         apiKey.trim(),
       )
       return lastClaudeCodeCheck === 'ok'
+    } else if (provider === 'codexsub') {
+      // Mismo contrato que Claude (suscripción): GET /health exige Basic
+      // auth, así que se valida la password real contra el bridge local
+      // configurado.
+      const baseUrl =
+        localStorage.getItem('codexsubServerUrl')?.trim() ||
+        'http://127.0.0.1:4094'
+      lastCodexCheck = await checkCodexBridgeServer(baseUrl, apiKey.trim())
+      return lastCodexCheck === 'ok'
     } else if (provider === 'gemini') {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -238,14 +256,17 @@ const validateApiKey = async (
 // OpenCode Free y Claude (suscripción) no usan API key sino la contraseña
 // del servidor/bridge local.
 const usesLocalPassword = (provider: string): boolean =>
-  provider === 'opencodefree' || provider === 'claudecode'
+  provider === 'opencodefree' ||
+  provider === 'claudecode' ||
+  provider === 'codexsub'
 
 const confirmLabelFor = (provider: string): string =>
   usesLocalPassword(provider) ? 'Guardar contraseña' : 'Guardar API Key'
 
 const passwordPlaceholderFor = (provider: string): string | null => {
   if (provider === 'opencodefree') return 'Contraseña del servidor local'
-  if (provider === 'claudecode') return 'Contraseña del bridge local'
+  if (provider === 'claudecode' || provider === 'codexsub')
+    return 'Contraseña del bridge local'
   return null
 }
 
@@ -886,7 +907,11 @@ const ApiKeyModal = ({
                       ? lastClaudeCodeCheck === 'unauthorized'
                         ? `Contraseña incorrecta: tiene que ser exactamente la misma que imprimió la consola al correr "bun run claude:bridge".`
                         : `No se pudo conectar con el bridge local. Verificá que esté corriendo ("bun run claude:bridge", ver README) y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
-                      : `API Key inválida. Por favor, verifica e intenta de nuevo.`
+                      : provider === 'codexsub'
+                        ? lastCodexCheck === 'unauthorized'
+                          ? `Contraseña incorrecta: tiene que ser exactamente la misma que imprimió la consola al correr "bun run codex:bridge".`
+                          : `No se pudo conectar con el bridge local. Verificá que esté corriendo ("bun run codex:bridge", ver README) y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
+                        : `API Key inválida. Por favor, verifica e intenta de nuevo.`
               Swal.showValidationMessage(errorMsg)
               applyErrorStyles()
               if (apiKeyInput) apiKeyInput.value = ''
@@ -921,9 +946,12 @@ const ApiKeyModal = ({
                 ? 'La contraseña del servidor local de OpenCode Free ha sido guardada.'
                 : provider === 'claudecode'
                   ? 'La contraseña del bridge local de Claude ha sido guardada.'
-                  : `Tu API Key de ${
-                      PROVIDERS.find((p) => p.id === provider)?.name || provider
-                    } ha sido guardada.`,
+                  : provider === 'codexsub'
+                    ? 'La contraseña del bridge local de Codex ha sido guardada.'
+                    : `Tu API Key de ${
+                        PROVIDERS.find((p) => p.id === provider)?.name ||
+                        provider
+                      } ha sido guardada.`,
             icon: 'success',
             background: theme.background,
             color: theme.text,
