@@ -12,6 +12,12 @@ interface ChatAreaProps {
   isDarkTheme: boolean
   onRepeatMessage?: (message: string) => void
   onDeleteMessage?: (messageId: string) => void
+  // Modo "Elegir varios" para borrar (null = modo normal): cajita en cada
+  // mensaje y barra con la cantidad elegida (ver ChatContainer).
+  deleteSelection?: Set<string> | null
+  onToggleDeleteSelection?: (messageId: string) => void
+  onConfirmDeleteSelection?: () => void
+  onCancelDeleteSelection?: () => void
   searchEnabled?: boolean
   selectedModel?: string
   selectedProvider?: string
@@ -24,6 +30,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   isDarkTheme,
   onRepeatMessage,
   onDeleteMessage,
+  deleteSelection = null,
+  onToggleDeleteSelection,
+  onConfirmDeleteSelection,
+  onCancelDeleteSelection,
   searchEnabled = true,
   selectedModel,
   selectedProvider,
@@ -77,18 +87,80 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         aria-live="polite"
         aria-relevant="additions"
       >
-        {messages.map((message, index) => (
-          <div key={message.id} className={index === 0 ? 'mt-4' : ''}>
-            <ChatMessage
-              message={message}
-              theme={theme}
-              isDarkTheme={isDarkTheme}
-              onRepeatMessage={onRepeatMessage}
-              onDeleteMessage={onDeleteMessage}
-              isDeleteDisabled={isLoading}
-            />
+        {messages.map((message, index) => {
+          const selectable =
+            deleteSelection !== null && message.id !== 'intro-message'
+          const checked = selectable && deleteSelection.has(message.id)
+          return (
+            <div
+              key={message.id}
+              className={index === 0 ? 'mt-4' : undefined}
+              style={checked ? { opacity: 0.55 } : undefined}
+            >
+              <ChatMessage
+                message={message}
+                theme={theme}
+                isDarkTheme={isDarkTheme}
+                onRepeatMessage={onRepeatMessage}
+                onDeleteMessage={onDeleteMessage}
+                isDeleteDisabled={isLoading || deleteSelection !== null}
+                selectControl={
+                  selectable ? (
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggleDeleteSelection?.(message.id)}
+                      aria-label={`Elegir este mensaje (${
+                        message.role === 'user' ? 'pregunta' : 'respuesta'
+                      }) para borrar`}
+                      className="mt-3 size-4 shrink-0 cursor-pointer"
+                      style={{ accentColor: theme.accent }}
+                    />
+                  ) : undefined
+                }
+              />
+            </div>
+          )
+        })}
+
+        {deleteSelection !== null && (
+          <div
+            className="sticky bottom-2 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl px-4 py-2 text-sm"
+            style={{
+              backgroundColor: theme.surface,
+              color: theme.text,
+              boxShadow: theme.shadow.outer,
+            }}
+            role="toolbar"
+            aria-label="Borrar mensajes elegidos"
+          >
+            <span>
+              {deleteSelection.size === 1
+                ? '1 mensaje elegido'
+                : `${deleteSelection.size} mensajes elegidos`}
+            </span>
+            <button
+              type="button"
+              onClick={onConfirmDeleteSelection}
+              disabled={deleteSelection.size === 0 || isLoading}
+              className="nm-press rounded-full px-3 py-1 font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ backgroundColor: theme.accent, color: '#ffffff' }}
+            >
+              Eliminar
+            </button>
+            <button
+              type="button"
+              onClick={onCancelDeleteSelection}
+              className="nm-press rounded-full px-3 py-1"
+              style={{
+                backgroundColor: theme.background,
+                boxShadow: theme.shadow.sm,
+              }}
+            >
+              Cancelar
+            </button>
           </div>
-        ))}
+        )}
 
         {isLoading && (
           <div

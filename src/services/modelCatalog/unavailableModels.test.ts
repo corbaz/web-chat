@@ -19,6 +19,14 @@ class LocalStorageStub {
 }
 
 describe('isModelUnavailableMessage', () => {
+  test('reconoce el modelo gratis de Zen sin ruta (OpenCode Free)', () => {
+    expect(
+      isModelUnavailableMessage(
+        'Not Found: Cannot find any route matching [POST] https://opencode.ai/zen/v1/chat/completions',
+      ),
+    ).toBe(true)
+  })
+
   test('reconoce los errores de modelo no usable', () => {
     expect(
       isModelUnavailableMessage(

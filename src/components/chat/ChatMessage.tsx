@@ -25,6 +25,9 @@ interface ChatMessageProps {
   onRepeatMessage?: (message: string) => void
   onDeleteMessage?: (messageId: string) => void
   isDeleteDisabled?: boolean
+  // Cajita de "Elegir varios" (ver ChatArea): va en la misma fila que la
+  // burbuja, así queda pegada al mensaje aunque sea del usuario (derecha).
+  selectControl?: React.ReactNode
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -33,6 +36,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   onRepeatMessage,
   onDeleteMessage,
   isDeleteDisabled = false,
+  selectControl,
 }) => {
   const isUser = message.role === 'user'
   const isDeletable =
@@ -153,7 +157,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   }
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 ${
+        selectControl ? 'items-start gap-2' : ''
+      }`}
+    >
+      {selectControl}
       <div
         className="max-w-[82%] md:max-w-[72%] px-4 py-3"
         style={isUser ? userMsgStyle : aiMsgStyle}

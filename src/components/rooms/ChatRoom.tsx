@@ -23,7 +23,12 @@ import {
   TOOLS_STORAGE_KEY,
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
-import { getModels } from '../../services/modelCatalog/store'
+import {
+  PROVIDER_IDS as CATALOG_PROVIDER_IDS,
+  expireUnavailableModels,
+  getModels,
+  refreshProvider,
+} from '../../services/modelCatalog/store'
 import type {
   CatalogModel,
   ProviderId,
@@ -75,14 +80,21 @@ export function pickInitialProvider(): string {
   return 'groq'
 }
 
+// Catálogo de un proveedor. Tiene que ser la lista COMPLETA del catálogo
+// (incluye claudecode/codexsub), no API_KEY_PROVIDER_IDS: con esa, las
+// suscripciones caían en los modelos de Groq y se mandaba p. ej.
+// qwen/qwen3.8-27b al bridge de Codex (colgado hasta el timeout).
+const toCatalogProvider = (provider: string): ProviderId =>
+  CATALOG_PROVIDER_IDS.includes(provider as ProviderId)
+    ? (provider as ProviderId)
+    : 'groq'
+
+// Cuánto se esconde un modelo gratis de OpenCode que falló (ver
+// handleProviderChange): los gratis rotan y uno puede volver a funcionar.
+const UNAVAILABLE_FREE_MAX_AGE_MS = 24 * 60 * 60 * 1000
+
 const resolveModelsForProvider = (provider: string): CatalogModel[] =>
-  getModels(
-    API_KEY_PROVIDER_IDS.includes(
-      provider as (typeof API_KEY_PROVIDER_IDS)[number],
-    )
-      ? (provider as (typeof API_KEY_PROVIDER_IDS)[number])
-      : 'groq',
-  )
+  getModels(toCatalogProvider(provider))
 
 // Modelo por defecto de un proveedor (T17): el id configurado en
 // DEFAULT_MODEL_BY_PROVIDER si ya está en el catálogo, si no el primero
@@ -290,13 +302,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   // Si el modelo elegido desaparece del catálogo (refresh o modelo
   // rechazado por el proveedor), se pasa al primero disponible del mismo
   // proveedor.
-  const providerModels = useModelCatalog(
-    API_KEY_PROVIDER_IDS.includes(
-      selectedProvider as (typeof API_KEY_PROVIDER_IDS)[number],
-    )
-      ? (selectedProvider as ProviderId)
-      : 'groq',
-  )
+  const providerModels = useModelCatalog(toCatalogProvider(selectedProvider))
   useEffect(() => {
     if (providerModels.length === 0) return
     if (providerModels.some((model) => model.id === selectedModel)) return
@@ -315,6 +321,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   const handleProviderChange = useCallback(
     (providerId: string) => {
       setSelectedProvider(providerId)
+      // Los modelos gratis de OpenCode aparecen y desaparecen: al elegir el
+      // proveedor se pide la lista actual al servidor local (el efecto de
+      // fallback de arriba corrige el modelo si el elegido ya no está).
+      if (providerId === 'opencodefree') {
+        expireUnavailableModels('opencodefree', UNAVAILABLE_FREE_MAX_AGE_MS)
+        void refreshProvider('opencodefree')
+      }
       const newModel = getDefaultModelForProvider(providerId)
       setSelectedModel(newModel)
       // Las claves legacy solo las sigue escribiendo la sala 1: son las que

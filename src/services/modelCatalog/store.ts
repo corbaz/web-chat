@@ -21,6 +21,7 @@ import { FETCHER_REGISTRY } from './registry'
 import type { CatalogModel, ProviderId } from './types'
 import {
   readUnavailableModels,
+  readUnavailableSince,
   writeUnavailableModels,
 } from './unavailableModels'
 
@@ -124,6 +125,24 @@ export function getModels(provider: ProviderId): CatalogModel[] {
 export function markModelUnavailable(provider: ProviderId, id: string): void {
   if (unavailable[provider].has(id)) return
   unavailable[provider].add(id)
+  writeUnavailableModels(provider, unavailable[provider])
+  notify()
+}
+
+/**
+ * Vuelve a mostrar los modelos ocultos de un proveedor si se ocultaron hace
+ * más de `maxAgeMs` (OpenCode Free: los modelos gratis rotan y uno que hoy
+ * falla puede volver mañana).
+ */
+export function expireUnavailableModels(
+  provider: ProviderId,
+  maxAgeMs: number,
+  now = Date.now(),
+): void {
+  if (unavailable[provider].size === 0) return
+  const since = readUnavailableSince(provider)
+  if (since !== null && now - since <= maxAgeMs) return
+  unavailable[provider].clear()
   writeUnavailableModels(provider, unavailable[provider])
   notify()
 }

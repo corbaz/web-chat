@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
 import { LINKS_AND_IMAGES_RULE } from '../../config/chatInstructions'
 import { resolveEffort } from '../../config/effortSettings'
@@ -497,75 +497,108 @@ const ChatContainer = ({
     [selectedProvider],
   )
 
+  // Ids de un turno: la pregunta y su respuesta (o la respuesta y su
+  // pregunta), nunca el mensaje de bienvenida.
+  const turnIds = useCallback(
+    (currentMessages: ChatMessageType[], messageId: string): string[] => {
+      const index = currentMessages.findIndex((m) => m.id === messageId)
+      const message = currentMessages[index]
+      if (
+        !message ||
+        message.id === 'intro-message' ||
+        (message.role !== 'user' && message.role !== 'assistant')
+      ) {
+        return []
+      }
+      const ids = [message.id]
+      const neighbor =
+        message.role === 'user'
+          ? currentMessages[index + 1]
+          : currentMessages[index - 1]
+      const expectedRole = message.role === 'user' ? 'assistant' : 'user'
+      if (neighbor?.role === expectedRole && neighbor.id !== 'intro-message') {
+        ids.push(neighbor.id)
+      }
+      return ids
+    },
+    [],
+  )
+
+  // Selección múltiple para borrar (null = modo normal). Los mensajes
+  // borrados salen del historial que se manda como contexto en la próxima
+  // pregunta (prepareMessagesForApi arma el contexto desde `messages`).
+  const [deleteSelection, setDeleteSelection] = useState<Set<string> | null>(
+    null,
+  )
+
+  const isBusy = useCallback(
+    () => isLoading || Object.keys(requestStartTimeRef.current).length > 0,
+    [isLoading],
+  )
+
   const handleDeleteMessage = useCallback(
     async (messageId: string) => {
-      if (
-        isLoading ||
-        Object.keys(requestStartTimeRef.current).length > 0 ||
-        messageId === 'intro-message'
-      ) {
-        return
-      }
+      if (isBusy() || messageId === 'intro-message') return
 
       const result = await Swal.fire({
-        title: '¿Eliminar este turno?',
-        text: 'Se eliminarán la pregunta y su respuesta asociada, si existe.',
+        title: '¿Qué querés eliminar?',
+        text: 'Con "Eliminar varios" marcás con una cajita todos los mensajes que quieras borrar.',
         icon: 'question',
         iconColor: theme.accent,
         showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
+        showDenyButton: true,
+        confirmButtonText: 'Eliminar solo este',
         confirmButtonColor: theme.accent,
+        denyButtonText: 'Eliminar varios',
+        denyButtonColor: theme.accentAlt,
         cancelButtonText: 'Cancelar',
         cancelButtonColor: isDarkTheme ? theme.surface : theme.secondary,
         background: theme.background,
         color: theme.text,
       })
 
-      if (
-        !result.isConfirmed ||
-        Object.keys(requestStartTimeRef.current).length > 0
-      ) {
+      if (isBusy()) return
+
+      if (result.isDenied) {
+        // Arranca con el turno del mensaje tocado ya marcado (se puede
+        // desmarcar), que es lo que se suele querer borrar junto.
+        setDeleteSelection(new Set(turnIds(messages, messageId)))
         return
       }
+      if (!result.isConfirmed) return
 
-      setMessages((currentMessages) => {
-        const messageIndex = currentMessages.findIndex(
-          (message) => message.id === messageId,
-        )
-        const message = currentMessages[messageIndex]
-
-        if (
-          !message ||
-          message.id === 'intro-message' ||
-          (message.role !== 'user' && message.role !== 'assistant')
-        ) {
-          return currentMessages
-        }
-
-        const messageIdsToDelete = new Set([message.id])
-
-        if (message.role === 'user') {
-          const nextMessage = currentMessages[messageIndex + 1]
-          if (
-            nextMessage?.role === 'assistant' &&
-            nextMessage.id !== 'intro-message'
-          ) {
-            messageIdsToDelete.add(nextMessage.id)
-          }
-        } else {
-          const previousMessage = currentMessages[messageIndex - 1]
-          if (previousMessage?.role === 'user') {
-            messageIdsToDelete.add(previousMessage.id)
-          }
-        }
-
-        return currentMessages.filter(
-          (currentMessage) => !messageIdsToDelete.has(currentMessage.id),
-        )
-      })
+      setMessages((currentMessages) =>
+        currentMessages.filter((message) => message.id !== messageId),
+      )
     },
-    [isDarkTheme, isLoading, setMessages, theme],
+    [isBusy, isDarkTheme, messages, setMessages, theme, turnIds],
   )
+
+  const handleToggleDeleteSelection = useCallback((messageId: string) => {
+    if (messageId === 'intro-message') return
+    setDeleteSelection((prev) => {
+      if (!prev) return prev
+      const next = new Set(prev)
+      if (next.has(messageId)) next.delete(messageId)
+      else next.add(messageId)
+      return next
+    })
+  }, [])
+
+  const handleConfirmDeleteSelection = useCallback(() => {
+    if (!deleteSelection || deleteSelection.size === 0 || isBusy()) return
+    const ids = deleteSelection
+    setMessages((currentMessages) =>
+      currentMessages.filter((message) => !ids.has(message.id)),
+    )
+    setDeleteSelection(null)
+  }, [deleteSelection, isBusy, setMessages])
+
+  // Cambiar de chat sale del modo selección.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: solo al cambiar de chat
+  useEffect(() => {
+    setDeleteSelection(null)
+  }, [currentChatId])
 
   // Función para enviar un mensaje al API de Groq
   const sendMessage = useCallback(
@@ -807,6 +840,16 @@ const ChatContainer = ({
               'El modelo intentó ejecutar comandos en tu PC, se rechazaron y no llegó a responder. Reformulá la pregunta para que responda con lo que sabe (por ejemplo: "sin ejecutar nada, explicame...") o probá con otro modelo.'
           } else if (error instanceof Error && error.message) {
             errorMessage = `OpenCode Free: ${error.message}`
+            // Zen a veces anuncia un modelo gratis que después no sirve
+            // (p. ej. "Cannot find any route matching ..."): se oculta del
+            // selector y la sala pasa sola a otro (efecto de fallback en
+            // ChatRoom). Vuelve a probarse a las 24 h (expireUnavailableModels).
+            if (isModelUnavailableMessage(error.message)) {
+              markModelUnavailable('opencodefree', selectedModel)
+              errorMessage += `
+
+El modelo ${selectedModel} se ocultó del selector porque OpenCode no lo está sirviendo ahora. Se vuelve a probar mañana; mientras tanto elegí otro modelo gratis.`
+            }
           }
 
           const errorResponseMessage: ChatMessageType = {
@@ -1834,6 +1877,10 @@ const ChatContainer = ({
           isDarkTheme={isDarkTheme}
           onRepeatMessage={onRepeatMessage}
           onDeleteMessage={handleDeleteMessage}
+          deleteSelection={deleteSelection}
+          onToggleDeleteSelection={handleToggleDeleteSelection}
+          onConfirmDeleteSelection={handleConfirmDeleteSelection}
+          onCancelDeleteSelection={() => setDeleteSelection(null)}
           searchEnabled={searchEnabled}
           selectedModel={selectedModel}
           selectedProvider={selectedProvider}
