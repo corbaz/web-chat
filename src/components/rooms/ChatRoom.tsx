@@ -27,13 +27,13 @@ import {
   PROVIDER_IDS as CATALOG_PROVIDER_IDS,
   expireUnavailableModels,
   getModels,
-  refreshProvider,
 } from '../../services/modelCatalog/store'
 import type {
   CatalogModel,
   ProviderId,
 } from '../../services/modelCatalog/types'
 import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
+import { checkFreeModelsIfDue } from '../../services/opencodeLocal/freeModelCheck'
 import { ensureFreshPrices } from '../../services/pricing/store'
 import ChatContainer from '../chat/ChatContainer'
 import Footer, { type FooterRef } from '../FOOTER/Footer'
@@ -318,6 +318,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     if (selectedProvider && selectedModel) void ensureFreshPrices()
   }, [selectedProvider, selectedModel])
 
+  // OpenCode Free: al elegirlo (o al abrir una sala que ya lo tiene) se
+  // actualiza la lista de modelos gratis y, como máximo cada 6 h, se hace
+  // ping a cada uno para ocultar los que Zen publica pero no sirve (ver
+  // services/opencodeLocal/freeModelCheck.ts).
+  useEffect(() => {
+    if (selectedProvider === 'opencodefree') void checkFreeModelsIfDue()
+  }, [selectedProvider])
+
   const handleProviderChange = useCallback(
     (providerId: string) => {
       setSelectedProvider(providerId)
@@ -326,7 +334,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
       // fallback de arriba corrige el modelo si el elegido ya no está).
       if (providerId === 'opencodefree') {
         expireUnavailableModels('opencodefree', UNAVAILABLE_FREE_MAX_AGE_MS)
-        void refreshProvider('opencodefree')
       }
       const newModel = getDefaultModelForProvider(providerId)
       setSelectedModel(newModel)

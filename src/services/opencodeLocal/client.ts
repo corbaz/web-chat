@@ -57,7 +57,7 @@ export interface SendMessageOptions {
   ) => Promise<PermissionResponse> | PermissionResponse
 }
 
-function authHeader(password: string): Record<string, string> {
+export function authHeader(password: string): Record<string, string> {
   // btoa asume password/usuario ASCII (contraseña generada en hex, ver
   // scripts/opencode-free/config.ts): seguro para Basic auth.
   const token = btoa(`opencode:${password}`)

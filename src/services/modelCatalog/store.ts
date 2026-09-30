@@ -121,6 +121,19 @@ export function getModels(provider: ProviderId): CatalogModel[] {
   return visible[provider]
 }
 
+/** Ids de todo el catálogo de un proveedor, incluidos los ocultos. */
+export function getCatalogModelIds(provider: ProviderId): string[] {
+  return catalog[provider].map((model) => model.id)
+}
+
+/** Vuelve a mostrar un modelo oculto que ya funciona (ping de OpenCode Free). */
+export function markModelAvailable(provider: ProviderId, id: string): void {
+  if (!unavailable[provider].has(id)) return
+  unavailable[provider].delete(id)
+  writeUnavailableModels(provider, unavailable[provider])
+  notify()
+}
+
 /** Oculta un modelo que el proveedor rechazó como no usable. */
 export function markModelUnavailable(provider: ProviderId, id: string): void {
   if (unavailable[provider].has(id)) return
