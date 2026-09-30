@@ -447,6 +447,25 @@ async function fetchModels(): Promise<CodexModelInfo[]> {
     }))
 }
 
+// Ids de modelos que Codex acepta, cacheados unos minutos: un id que no está
+// (p. ej. uno de Groq mandado por error desde la app) dejaba el turno
+// colgado hasta el timeout de 10 min en vez de fallar enseguida.
+const KNOWN_MODELS_TTL_MS = 5 * 60 * 1000
+let knownModels: { ids: Set<string>; fetchedAt: number } | null = null
+
+async function isKnownCodexModel(model: string): Promise<boolean> {
+  if (!knownModels || Date.now() - knownModels.fetchedAt > KNOWN_MODELS_TTL_MS) {
+    try {
+      const models = await fetchModels()
+      knownModels = { ids: new Set(models.map((m) => m.id)), fetchedAt: Date.now() }
+    } catch {
+      // Sin lista (Codex todavía arrancando, error de red): no se bloquea.
+      return true
+    }
+  }
+  return knownModels.ids.size === 0 || knownModels.ids.has(model)
+}
+
 // ─── /chat ──────────────────────────────────────────────────────────────
 
 interface ChatRequestBody {
@@ -577,6 +596,15 @@ async function handleChat(
 
   if (!isValidModel(body.model)) {
     return jsonResponse({ error: 'Modelo inválido.' }, { status: 400 }, origin)
+  }
+  if (!(await isKnownCodexModel(body.model))) {
+    return jsonResponse(
+      {
+        error: `Codex no tiene el modelo "${body.model}". Elegí uno de la lista de OpenAI (suscripción).`,
+      },
+      { status: 400 },
+      origin,
+    )
   }
   const hasImages = Array.isArray(body.images) && body.images.length > 0
   if (typeof body.message !== 'string' || (!body.message.trim() && !hasImages)) {

@@ -477,6 +477,19 @@ async function fetchModels() {
     isDefault: m.isDefault === true
   }));
 }
+var KNOWN_MODELS_TTL_MS = 5 * 60 * 1000;
+var knownModels = null;
+async function isKnownCodexModel(model) {
+  if (!knownModels || Date.now() - knownModels.fetchedAt > KNOWN_MODELS_TTL_MS) {
+    try {
+      const models = await fetchModels();
+      knownModels = { ids: new Set(models.map((m) => m.id)), fetchedAt: Date.now() };
+    } catch {
+      return true;
+    }
+  }
+  return knownModels.ids.size === 0 || knownModels.ids.has(model);
+}
 function formatLog(req, url, status, ms, info) {
   const hora = new Date().toLocaleTimeString("es-AR", { hour12: false });
   const parts = [`[${hora}]`, req.method, url.pathname, String(status), `${(ms / 1000).toFixed(1)}s`];
@@ -562,6 +575,11 @@ async function handleChat(req, origin, log) {
   }
   if (!isValidModel(body.model)) {
     return jsonResponse({ error: "Modelo inv\xE1lido." }, { status: 400 }, origin);
+  }
+  if (!await isKnownCodexModel(body.model)) {
+    return jsonResponse({
+      error: `Codex no tiene el modelo "${body.model}". Eleg\xED uno de la lista de OpenAI (suscripci\xF3n).`
+    }, { status: 400 }, origin);
   }
   const hasImages = Array.isArray(body.images) && body.images.length > 0;
   if (typeof body.message !== "string" || !body.message.trim() && !hasImages) {
