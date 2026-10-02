@@ -48,6 +48,7 @@ export const estimateMessagesTokens = (
 }
 
 import { MODEL_LIMITS } from '../config/modelLimits.generated'
+import { stripGeminiSubEffortSuffix } from '../services/geminiBridge/modelId'
 import { getAllModels } from '../services/modelCatalog/store'
 
 // Claude (suscripción, bridge local a `claude -p`, ver
@@ -83,9 +84,14 @@ export const getModelTokenLimit = (
       ? 'opencodezen'
       : provider === 'claudecode'
         ? 'anthropic'
-        : provider
+        : provider === 'geminisub'
+          ? 'gemini'
+          : provider
+  // Gemini (suscripción): el esfuerzo va en el id, los límites no lo tienen.
+  const limitsModelId =
+    provider === 'geminisub' ? stripGeminiSubEffortSuffix(modelId) : modelId
   let known = limitsProvider
-    ? MODEL_LIMITS[limitsProvider]?.[modelId]
+    ? MODEL_LIMITS[limitsProvider]?.[limitsModelId]
     : undefined
   if (!known && provider === 'claudecode') {
     const aliasId = CLAUDE_CODE_ALIAS_TO_ANTHROPIC_ID[modelId]

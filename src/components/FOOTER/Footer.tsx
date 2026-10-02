@@ -514,7 +514,10 @@ const Footer: React.FC<FooterProps> = ({
 
   // OpenCode Free no sirve para la varita (sesiones con ~25k tokens de
   // contexto y pedidos de permisos): en ese caso se usa Groq, si hay key.
-  const magicUsesGroqFallback = selectedProvider === 'opencodefree'
+  // Gemini (suscripción) tampoco: cada respuesta de agy tarda 25-45 s y
+  // arrastra ~29k tokens de contexto del agente.
+  const magicUsesGroqFallback =
+    selectedProvider === 'opencodefree' || selectedProvider === 'geminisub'
   const hasGroqKey = Boolean(localStorage.getItem('groqApiKey')?.trim())
 
   const handleMagicButton = async () => {
@@ -1163,7 +1166,7 @@ ${message}`
                   magicUsesGroqFallback
                     ? hasGroqKey
                       ? 'Mejorar Prompt (con Groq)'
-                      : 'Mejorar Prompt en OpenCode Free necesita una API key de Groq'
+                      : 'Mejorar Prompt con este proveedor necesita una API key de Groq'
                     : 'Mejorar Prompt'
                 }
                 aria-label="Mejorar Prompt"

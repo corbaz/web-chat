@@ -16,6 +16,7 @@ export const PROVIDER_OPTIONS: ProviderOption[] = [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'claudecode', label: 'Claude (suscripción)' },
   { value: 'codexsub', label: 'OpenAI (suscripción)' },
+  { value: 'geminisub', label: 'Gemini (suscripción)' },
   { value: 'opengo', label: 'OpenCode Go' },
   { value: 'opencodezen', label: 'OpenCode Zen' },
   { value: 'opencodefree', label: 'OpenCode Free' },

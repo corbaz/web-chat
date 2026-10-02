@@ -1,6 +1,6 @@
 # Prompting
 
-Chat web con varios proveedores de IA en un solo lugar: Groq, OpenAI, Anthropic, Gemini, RouteLLM, OpenCode Go, OpenCode Zen, OpenCode Free, Claude (suscripción) y OpenAI (suscripción). Cada usuario usa sus propias API keys, que se guardan solo en su navegador.
+Chat web con varios proveedores de IA en un solo lugar: Groq, OpenAI, Anthropic, Gemini, RouteLLM, OpenCode Go, OpenCode Zen, OpenCode Free, Claude (suscripción), OpenAI (suscripción) y Gemini (suscripción). Cada usuario usa sus propias API keys, que se guardan solo en su navegador.
 
 [![Vercel](https://img.shields.io/badge/Vercel-prompting--chat-black?style=flat&logo=vercel)](https://prompting-chat.vercel.app/) [![GitHub](https://img.shields.io/badge/GitHub-corbaz%2Fweb--chat-blue?style=flat&logo=github)](https://github.com/corbaz/web-chat)
 
@@ -22,13 +22,14 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 - **Búsqueda web nativa**: en los modelos que la soportan (ícono de globo 🌐), el proveedor busca en internet y la respuesta muestra las fuentes.
 - **Links sin salir del chat**: los links de las respuestas y de las fuentes se abren en un modal dentro del chat, adaptado a cualquier pantalla y con botón para abrirlos en otra pestaña (Ctrl+clic o clic del medio abren directo la pestaña). Google Maps (📍, incluido "Cómo llegar") y YouTube se muestran con su versión embebible. Para el resto, la app consulta antes `/api/frame-check` (función de Vercel; en `bun run dev` lo responde Vite): si el sitio no permite mostrarse dentro de otra página (GitHub, OpenStreetMap, etc.), el modal lo avisa y ofrece la pestaña nueva. La página embebida no puede reemplazar la app. Las imágenes de markdown `![descripción](url)` se muestran con vista previa y se amplían con un clic; si la URL no carga, queda como link. Todos los proveedores reciben la misma instrucción: ante un pedido de mapa o dirección, responder con un link de Google Maps (ningún modelo genera capturas de mapas).
 - **Estadísticas de tokens** con el límite de contexto real de cada modelo.
-- **Costo de cada respuesta** (💲): al lado de los tokens, cuánto costó el mensaje (entrada + salida) con el precio público del modelo en models.dev (USD por millón de tokens, con los tramos por tamaño de contexto). Los precios los resume `/api/prices` (función de Vercel; en `bun run dev` lo responde Vite, ~13 KB en vez de los 5 MB de models.dev) y el navegador los renueva una vez por día, al abrir la app o al cambiar de modelo. El costo queda guardado en el mensaje. Claude y OpenAI por suscripción muestran el equivalente por API ("incluido en tu suscripción"; en Claude, el costo exacto que informa `claude -p`); OpenCode Free muestra "Gratis"; un modelo sin precio publicado no muestra costo. No descuenta la caché de entrada, así que puede sobrestimar un poco.
+- **Costo de cada respuesta** (💲): al lado de los tokens, cuánto costó el mensaje (entrada + salida) con el precio público del modelo en models.dev (USD por millón de tokens, con los tramos por tamaño de contexto). Los precios los resume `/api/prices` (función de Vercel; en `bun run dev` lo responde Vite, ~13 KB en vez de los 5 MB de models.dev) y el navegador los renueva una vez por día, al abrir la app o al cambiar de modelo. El costo queda guardado en el mensaje. Claude, OpenAI y Gemini por suscripción muestran el equivalente por API ("incluido en tu suscripción"; en Claude, el costo exacto que informa `claude -p`); OpenCode Free muestra "Gratis"; un modelo sin precio publicado no muestra costo. No descuenta la caché de entrada, así que puede sobrestimar un poco.
 - **Modelos gratis de OpenCode** a través de un servidor local de OpenCode ("OpenCode Free"). Al elegirlo se actualiza la lista y, como máximo cada 6 horas, se prueba cada modelo gratis con un mensaje mínimo (en paralelo, unos segundos): los que Zen publica pero no sirve se ocultan y vuelven cuando responden.
 - **Claude por tu suscripción de Claude Code** (sin API key) a través de un bridge local ("Claude (suscripción)").
 - **OpenAI por tu suscripción de ChatGPT** (sin API key) a través de un bridge local ("OpenAI (suscripción)").
+- **Gemini por tu suscripción de Google AI Pro** (sin API key) a través de un bridge local sobre Antigravity CLI ("Gemini (suscripción)"; ~25-45 s por respuesta).
 - **Revisar modelos** (🔎 en el menú de configuración): actualiza la lista de cada proveedor habilitado, prueba cada modelo con un mensaje mínimo y tu propia clave (desde el navegador), deshabilita los que tu cuenta no puede usar (sin cuota, bloqueados o retirados, con el motivo al pasar el mouse) y muestra el informe completo por proveedor. Los bridges de suscripción no se prueban por modelo (solo se verifica que respondan) y no consume nada de la suscripción.
 - **Modelos que el proveedor rechaza** para tu cuenta (bloqueados, retirados, sin acceso) se ocultan solos del selector.
-- **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (no disponible en OpenCode Free; en Claude (suscripción) siempre usa Haiku).
+- **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (en OpenCode Free y Gemini (suscripción) usa Groq si hay una key; en Claude (suscripción) siempre usa Haiku).
 - **10 salas de chat** (cajitas 1-10 al lado del selector de modelo): cada una es un chat independiente, con su propio proveedor, modelo, búsqueda web, YOLO y respuestas en curso; cambiar de sala nunca interrumpe una que está esperando respuesta. Las cajitas muestran si esa sala está pensando, tiene una respuesta sin leer o un permiso pendiente. Las cajitas de las salas con conversación se ven en verde; al abrir una sala vacía, un cartel pregunta con qué proveedor arranca (solo los habilitados) y la sala usa su modelo por defecto.
 - Tema claro y oscuro, historial de chats en el navegador.
 
@@ -48,6 +49,7 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 | OpenCode Free | No usa API key: contraseña del servidor local | No | No | Modelos gratis de Zen. Ver [OpenCode Free](#opencode-free-servidor-local) |
 | Claude (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre `claude -p` con tu suscripción de Claude Code. Ver [Claude (suscripción)](#claude-suscripción-bridge-local) |
 | OpenAI (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre `codex app-server` con tu suscripción de ChatGPT. Sin PDF nativo (fallback a texto). Ver [OpenAI (suscripción)](#openai-suscripción-bridge-local) |
+| Gemini (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre Antigravity CLI (`agy`) con tu suscripción de Google AI Pro. **25-45 s por respuesta.** Sin imágenes ni PDF nativo. Ver [Gemini (suscripción)](#gemini-suscripción-bridge-local) |
 
 Detalle modelo por modelo, al 2026-09-26:
 
@@ -91,6 +93,8 @@ bun run dev      # https://localhost:5173 (certificado local de Vite)
 | `bun run build:bridge` | Regenera `scripts/claude-bridge/claude-bridge.js`, el bundle standalone (ver [Claude (suscripción) sin el repo](#claude-suscripción-sin-el-repo)) |
 | `bun run codex:bridge` | Corre el bridge local de OpenAI (suscripción) — arranque manual, sin autostart |
 | `bun run build:codex-bridge` | Regenera `scripts/codex-bridge/codex-bridge.js`, el bundle standalone (ver [OpenAI (suscripción) sin el repo](#openai-suscripción-sin-el-repo)) |
+| `bun run gemini:bridge` | Corre el bridge local de Gemini (suscripción) — arranque manual, sin autostart |
+| `bun run build:gemini-bridge` | Regenera `scripts/gemini-bridge/gemini-bridge.js`, el bundle standalone (ver [Gemini (suscripción) sin el repo](#gemini-suscripción-sin-el-repo)) |
 
 Convenciones del proyecto:
 
@@ -127,6 +131,7 @@ La lista de modelos de cada proveedor se consulta a su API `/models` al iniciar 
 | OpenCode Zen | `opencode.ai/zen/v1/models` | Modelos pagos del workspace; sin gratis (`-free`, `big-pickle`), `jev-*` ni los internos de prueba (`test*`) |
 | OpenCode Free | `<servidor local>/config/providers` | IDs `-free` y `big-pickle`, sin `jev-*` |
 | OpenAI (suscripción) | `<bridge local>/models` | Todos los que devuelve `model/list` de `codex app-server`, sin ocultos |
+| Gemini (suscripción) | `<bridge local>/models` | Todos los que lista `agy models` (el esfuerzo va en el id) |
 | RouteLLM | — | Catálogo fijo |
 
 Los modelos del catálogo fijo conservan sus datos (nombre, precio, velocidad); los nuevos se muestran con un nombre armado a partir del ID.
@@ -169,6 +174,7 @@ El slider de esfuerzo (entre el selector de proveedor y el de modelo) ya no es e
 | OpenCode Go | `glm-5.3-flash` | Alto *(GLM no tiene "medio": low/high/max, se eligió el del medio)* |
 | OpenCode Zen | `glm-5.3` | Alto *(mismo motivo)* |
 | Gemini | `gemini-3.6-flash` | Medio |
+| Gemini (suscripción) | `gemini-3.6-flash-medium` | — *(el esfuerzo va en el id del modelo)* |
 
 Si el modelo por defecto todavía no llegó al catálogo (o el proveedor lo retiró), se usa el primero disponible; si el esfuerzo por defecto no es válido para el modelo resuelto, se usa el más bajo. OpenAI, Anthropic y RouteLLM no tienen default propio (siguen usando el primer modelo del catálogo).
 
@@ -249,19 +255,20 @@ Código: `scripts/opencode-free/`, `src/services/opencodeLocal/`, `src/component
 
 ## Arranque manual de los servidores locales (resumen)
 
-**Instalador para Mac (un solo comando):** revisa Bun, OpenCode, Claude Code y Codex CLI (si falta alguno pregunta antes de instalarlo), crea la carpeta de OpenCode Free y baja `claude-bridge.js` y `codex-bridge.js`. Se puede repetir para actualizar los puentes.
+**Instalador para Mac (un solo comando):** revisa Bun, OpenCode, Claude Code y Codex CLI (si falta alguno pregunta antes de instalarlo; Antigravity `agy` solo se avisa, no se instala), crea la carpeta de OpenCode Free y baja `claude-bridge.js`, `codex-bridge.js` y `gemini-bridge.js`. Se puede repetir para actualizar los puentes.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/install-mac.sh | bash
 ```
 
-OpenCode Free, Claude (suscripción) y OpenAI (suscripción) se arrancan a mano, cada uno en su terminal, y pueden correr los tres a la vez (puertos distintos: 4096, 4098, 4094). **La contraseña la elegís vos y va en el comando**; en la app, cada proveedor lleva la misma contraseña que usaste en su comando. Usá comillas simples en Mac y PowerShell, y `set "VAR=..."` en cmd, para que caracteres como `*` no se interpreten.
+OpenCode Free, Claude (suscripción), OpenAI (suscripción) y Gemini (suscripción) se arrancan a mano, cada uno en su terminal, y pueden correr los cuatro a la vez (puertos distintos: 4096, 4098, 4094, 4092). **La contraseña la elegís vos y va en el comando**; en la app, cada proveedor lleva la misma contraseña que usaste en su comando. Usá comillas simples en Mac y PowerShell, y `set "VAR=..."` en cmd, para que caracteres como `*` no se interpreten.
 
 | | Mac | Windows (cmd) |
 |---|---|---|
 | **OpenCode Free** (puerto 4096) | `cd ~/Library/Application\ Support/prompting/opencode-free && XDG_CONFIG_HOME="$PWD/config-home" OPENCODE_SERVER_PASSWORD='TuClave' opencode serve --port 4096 --hostname 127.0.0.1 --cors https://localhost:5173 --cors https://prompting-chat.vercel.app` | `cd /d "%LOCALAPPDATA%\prompting\opencode-free" && set "XDG_CONFIG_HOME=%LOCALAPPDATA%\prompting\opencode-free\config-home" && set "OPENCODE_SERVER_PASSWORD=TuClave" && opencode serve --port 4096 --hostname 127.0.0.1 --cors https://localhost:5173 --cors https://prompting-chat.vercel.app` |
 | **Claude (suscripción)** (puerto 4098) | `cd ~/Library/Application\ Support/prompting/claude-bridge && CLAUDE_BRIDGE_PASSWORD='TuClave' bun claude-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "CLAUDE_BRIDGE_PASSWORD=TuClave" && bun scripts/claude-bridge/server.ts` |
 | **OpenAI (suscripción)** (puerto 4094) | `cd ~/Library/Application\ Support/prompting/codex-bridge && CODEX_BRIDGE_PASSWORD='TuClave' bun codex-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "CODEX_BRIDGE_PASSWORD=TuClave" && bun scripts/codex-bridge/server.ts` |
+| **Gemini (suscripción)** (puerto 4092) | `cd ~/Library/Application\ Support/prompting/gemini-bridge && GEMINI_BRIDGE_PASSWORD='TuClave' bun gemini-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "GEMINI_BRIDGE_PASSWORD=TuClave" && bun scripts/gemini-bridge/server.ts` |
 
 Preparación, una sola vez:
 
@@ -452,6 +459,45 @@ En cualquiera de los tres casos, la consola imprime la URL y la contraseña (si 
 
 ---
 
+## Gemini (suscripción, bridge local)
+
+Chatea con Gemini usando tu propia suscripción de **Google AI Pro** (no una API key de Gemini, que la suscripción no incluye): la app le habla a un bridge local que corre **Antigravity CLI** (`agy`) en modo headless (`--print` con entrada y salida `stream-json`). Gemini CLI ya no sirve para esto: Google lo migró a Antigravity para las cuentas personales. Nota sobre los términos: usar la suscripción desde una app de terceros no es el uso previsto por Google; es para uso personal y bajo tu propio riesgo.
+
+**Requisitos:** [Antigravity CLI](https://antigravity.google/) (`agy`) instalado y con sesión iniciada con tu cuenta de Google AI Pro (corré `agy` y seguí el login). El instalador de Mac no lo instala: solo avisa si falta.
+
+**Latencia:** cada respuesta tarda **entre 25 y 45 segundos** (medido con `gemini-3.6-flash-low`: ~35 a 55 s el primer mensaje de un chat y ~30 a 40 s los siguientes). Es el costo de pasar por el agente de Antigravity, que arrastra ~29.000 tokens de contexto propio en cada turno y no se puede desactivar.
+
+```bash
+bun run gemini:bridge
+```
+
+La consola imprime la URL (`http://127.0.0.1:4092` por defecto) y la contraseña generada. Con `GEMINI_BRIDGE_PASSWORD=miclave bun run gemini:bridge` se fija una contraseña propia. Después, en la app: elegir **Gemini (suscripción)**, pegar la contraseña y **Guardar contraseña**. Al lado del selector de proveedor, un punto indica si el bridge responde (🟢) o no (🔴).
+
+- **Modelos:** los que lista `agy models` para tu plan (el bridge los cachea 10 minutos): Gemini 3.8 / 3.7 / 3.6 Flash y Gemini 3.1 Pro, cada uno en variantes High / Medium / Low, más Claude Sonnet 4.6, Claude Opus 4.6 (Thinking) y GPT-OSS 120B. **El esfuerzo va en el id del modelo**, así que no hay slider: cada variante es un modelo distinto en el selector. Por defecto: `gemini-3.6-flash-medium`. Un id que `agy` no lista se rechaza con 400.
+- **Un proceso `agy` por chat:** el bridge mantiene un proceso persistente por conversación (la clave es el `conversation_id` de agy) y le va mandando los turnos; se cierra tras 10 minutos sin uso y, si el chat sigue, se reanuda con `--conversation <id>` (el historial lo guarda agy). Si cambiás de modelo en el mismo chat, se reanuda la misma conversación con el modelo nuevo. Los turnos de un mismo chat se hacen de a uno; tope de 5 minutos por turno (504).
+- **Instrucciones:** `agy` no tiene un flag de system prompt: el bridge antepone al primer mensaje de cada chat las instrucciones de asistente, la fecha y hora de Argentina y la regla de links e imágenes (las mismas que en Codex).
+- **Tokens y costo:** `agy` informa el uso acumulado de toda la conversación; el bridge lo convierte en el de cada turno (diferencia con la lectura anterior; tras reiniciar el bridge, el promedio por turno) y cuenta como entrada `input_tokens + cache_read_tokens`. El costo es el equivalente por API ("incluido en tu suscripción"), buscando el precio del modelo sin el sufijo `-low/-medium/-high`.
+- **Siempre usa la suscripción:** el bridge quita `GEMINI_API_KEY` y `GOOGLE_API_KEY` solo para el `agy` que lanza (y lo avisa al arrancar): con ellas, `agy` usaba esa clave en vez de tu login.
+- **Errores transitorios:** si `agy` informa un error de la API pero igual devuelve texto (p. ej. un 503 "No capacity" que reintenta y supera), la respuesta se entrega igual.
+- **Varita mágica:** no usa este bridge (tardaría ~40 s); usa Groq si hay una key guardada, como OpenCode Free.
+
+**Límites de la v1:** sin imágenes ni PDF nativo (los PDF viajan como texto extraído), sin búsqueda web anunciada, sin slider de esfuerzo, sin YOLO ni modal de permisos: las herramientas del agente corren con los valores por defecto de `agy` en modo `--print` y el bridge arranca el proceso en su propia carpeta de datos (`%LOCALAPPDATA%\prompting\gemini-bridge` en Windows, `~/Library/Application Support/prompting/gemini-bridge` en Mac), no en tus proyectos.
+
+Código: `scripts/gemini-bridge/`, `src/services/geminiBridge/`, `src/components/HEADER/GeminiSubStatus.tsx`.
+
+### Gemini (suscripción) sin el repo
+
+Alcanza con un archivo: `scripts/gemini-bridge/gemini-bridge.js`, un bundle standalone (generado con `bun run build:gemini-bridge`). En Mac, el instalador lo baja a `~/Library/Application Support/prompting/gemini-bridge/`. A mano:
+
+```bash
+curl -fsSLo gemini-bridge.js https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/gemini-bridge/gemini-bridge.js
+GEMINI_BRIDGE_PASSWORD='tu contraseña' bun gemini-bridge.js
+```
+
+En Windows (PowerShell): `$env:GEMINI_BRIDGE_PASSWORD = 'tu contraseña'; bun gemini-bridge.js`.
+
+---
+
 ## Estructura
 
 ```
@@ -481,6 +527,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Claude (suscripción) con bridge local a `claude -p`: todos los modelos, slider de esfuerzo, visión, fecha y hora, navegación web, comandos con permiso y toggle YOLO.
 - Claude (suscripción) con bridge local a `claude -p` (arranque manual, sin API key de Anthropic).
 - OpenAI (suscripción) con bridge local a `codex app-server`: todos los modelos, esfuerzo y visión en vivo desde `model/list`, comandos con permiso y toggle YOLO (sin PDF nativo); búsqueda web en vivo.
+- Gemini (suscripción) con bridge local a Antigravity CLI (`agy`): un proceso persistente por chat, modelos de `agy models` con el esfuerzo en el id, ~25-45 s por respuesta (sin imágenes ni PDF nativo).
 - Costo de cada respuesta con precios de models.dev renovados una vez por día.
 - Links y fuentes en un modal dentro del chat (con chequeo de si el sitio se deja embeber); mapas de Google Maps y videos de YouTube embebidos; imágenes de markdown con vista previa.
 - Entrada de imágenes para modelos con visión, detectados desde models.dev.

@@ -26,5 +26,6 @@ describe('supportsWebSearch', () => {
     expect(supportsWebSearch('gpt-5.6-luna', 'codexsub')).toBe(true)
     expect(supportsWebSearch('claude-opus-5-5', 'claudecode')).toBe(true)
     expect(supportsWebSearch('big-pickle', 'opencodefree')).toBe(false)
+    expect(supportsWebSearch('gemini-3.6-flash-low', 'geminisub')).toBe(false)
   })
 })

@@ -16,6 +16,11 @@ import {
 } from '../claudeBridge/settings'
 import { checkServer as checkCodexServer } from '../codexBridge/client'
 import { getCodexPassword, getCodexServerUrl } from '../codexBridge/settings'
+import { checkServer as checkGeminiSubServer } from '../geminiBridge/client'
+import {
+  getGeminiSubPassword,
+  getGeminiSubServerUrl,
+} from '../geminiBridge/settings'
 import { recordFreeModelCheckDone } from '../opencodeLocal/freeModelCheck'
 import { probeFreeModels } from '../opencodeLocal/modelProbe'
 import {
@@ -100,9 +105,13 @@ const BRIDGE_ERRORS: Record<Exclude<ServerCheck, 'ok'>, string> = {
 }
 
 async function checkBridge(provider: ProviderId): Promise<ServerCheck> {
-  return provider === 'claudecode'
-    ? checkClaudeServer(getClaudeCodeServerUrl(), getClaudeCodePassword())
-    : checkCodexServer(getCodexServerUrl(), getCodexPassword())
+  if (provider === 'claudecode') {
+    return checkClaudeServer(getClaudeCodeServerUrl(), getClaudeCodePassword())
+  }
+  if (provider === 'geminisub') {
+    return checkGeminiSubServer(getGeminiSubServerUrl(), getGeminiSubPassword())
+  }
+  return checkCodexServer(getCodexServerUrl(), getCodexPassword())
 }
 
 /** Revisa todos los proveedores habilitados. Nunca lanza. */
@@ -162,7 +171,11 @@ async function runModelCheckOnce(
       const results = new Map<string, Omit<ModelCheckEntry, 'id' | 'name'>>()
       addTotal(ids.length)
 
-      if (provider === 'claudecode' || provider === 'codexsub') {
+      if (
+        provider === 'claudecode' ||
+        provider === 'codexsub' ||
+        provider === 'geminisub'
+      ) {
         const status = await checkBridge(provider)
         if (status === 'ok') {
           for (const id of ids) results.set(id, { result: 'subscription' })

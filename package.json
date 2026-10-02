@@ -42,7 +42,9 @@
     "claude:bridge": "bun scripts/claude-bridge/server.ts",
     "build:bridge": "bun build scripts/claude-bridge/server.ts --target bun --outfile scripts/claude-bridge/claude-bridge.js",
     "codex:bridge": "bun scripts/codex-bridge/server.ts",
-    "build:codex-bridge": "bun build scripts/codex-bridge/server.ts --target bun --outfile scripts/codex-bridge/codex-bridge.js"
+    "build:codex-bridge": "bun build scripts/codex-bridge/server.ts --target bun --outfile scripts/codex-bridge/codex-bridge.js",
+    "gemini:bridge": "bun scripts/gemini-bridge/server.ts",
+    "build:gemini-bridge": "bun build scripts/gemini-bridge/server.ts --target bun --outfile scripts/gemini-bridge/gemini-bridge.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",

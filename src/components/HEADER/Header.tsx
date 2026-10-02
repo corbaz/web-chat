@@ -4,6 +4,7 @@ import type { ColorPalette } from '../../interfaces/temas/temas'
 import { ClaudeCodeStatus } from './ClaudeCodeStatus'
 import { CodexSubStatus } from './CodexSubStatus'
 import EffortSelector from './EffortSelector'
+import { GeminiSubStatus } from './GeminiSubStatus'
 import ModelSelector from './ModelSelector'
 import MenuButton from './menu/MenuButton'
 import Title from './menu/Title'
@@ -59,6 +60,7 @@ const Header: React.FC<HeaderProps> = ({
         'anthropic',
         'claudecode',
         'codexsub',
+        'geminisub',
         'opengo',
         'opencodezen',
         'opencodefree',
@@ -128,6 +130,10 @@ const Header: React.FC<HeaderProps> = ({
               />
               <CodexSubStatus
                 active={selectedProvider === 'codexsub'}
+                theme={theme}
+              />
+              <GeminiSubStatus
+                active={selectedProvider === 'geminisub'}
                 theme={theme}
               />
             </div>

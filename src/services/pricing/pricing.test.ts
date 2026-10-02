@@ -83,6 +83,26 @@ describe('computeMessageCost', () => {
     ).toBeCloseTo(0.004, 9)
   })
 
+  test('Gemini (suscripción): quita el sufijo de esfuerzo antes de buscar el precio', () => {
+    const googleTable = compactPricing({
+      google: {
+        models: { 'gemini-3.6-flash': { cost: { input: 1, output: 4 } } },
+      },
+    })
+    const cost = computeMessageCost(
+      googleTable,
+      'geminisub',
+      'gemini-3.6-flash-low',
+      1000,
+      1000,
+    )
+    expect(cost?.kind).toBe('subscription')
+    expect(cost?.total).toBeCloseTo(0.005, 9)
+    expect(
+      computeMessageCost(googleTable, 'geminisub', 'claude-sonnet-4-6', 1, 1),
+    ).toBeNull()
+  })
+
   test('OpenCode Free es gratis aunque no haya tabla', () => {
     expect(
       computeMessageCost(null, 'opencodefree', 'big-pickle', 5000, 50),

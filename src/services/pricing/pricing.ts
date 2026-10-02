@@ -3,6 +3,8 @@
 // por `compactPricing` (lo usa api/prices.ts en Vercel y el middleware de
 // desarrollo en vite.config.ts). Ver odd/tasks/message-cost.md.
 
+import { stripGeminiSubEffortSuffix } from '../geminiBridge/modelId'
+
 /** Precio de un modelo en USD por millón de tokens. */
 export interface ModelPrice {
   input: number
@@ -43,6 +45,7 @@ const PROVIDER_PRICING: Record<
   opencodefree: { kind: 'free' },
   claudecode: { source: 'anthropic', kind: 'subscription' },
   codexsub: { source: 'openai', kind: 'subscription' },
+  geminisub: { source: 'google', kind: 'subscription' },
 }
 
 export interface MessageCost {
@@ -141,8 +144,12 @@ export function computeMessageCost(
   if (pricing.kind === 'free') {
     return { input: 0, output: 0, total: 0, kind: 'free' }
   }
+  // En agy el esfuerzo va en el id (-low/-medium/-high): el precio es el del
+  // modelo base.
+  const priceModelId =
+    provider === 'geminisub' ? stripGeminiSubEffortSuffix(modelId) : modelId
   const price =
-    pricing.source && table ? table[pricing.source]?.[modelId] : undefined
+    pricing.source && table ? table[pricing.source]?.[priceModelId] : undefined
   if (!price) return null
   const effective = priceForInput(price, inputTokens)
   const input = (Math.max(0, inputTokens) * effective.input) / 1_000_000

@@ -20,6 +20,10 @@ export const DEFAULT_MODEL_BY_PROVIDER: Readonly<Record<string, string>> = {
   // así que no hace falta fijar un id acá — DEFAULT_MODEL_BY_PROVIDER solo
   // sirve de ancla estática mientras no llegó el refresh del catálogo.
   codexsub: 'gpt-5.6-sol',
+  // Gemini (suscripción de Google AI Pro, vía agy): el esfuerzo va en el id.
+  // El nivel medio de la familia Flash 3.6 es el equilibrio entre calidad y
+  // los ~25-45 s por respuesta (ver odd/tasks/gemini-subscription-bridge.md).
+  geminisub: 'gemini-3.6-flash-medium',
 }
 
 // GLM (opengo/opencodezen) solo tiene low/high/max, sin "medium": se eligió

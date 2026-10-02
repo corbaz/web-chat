@@ -54,6 +54,15 @@ import {
   getCodexPassword,
   getCodexServerUrl,
 } from '../../services/codexBridge/settings'
+import { sendMessage as sendGeminiSubMessage } from '../../services/geminiBridge/client'
+import {
+  getGeminiSubSessionId,
+  setGeminiSubSessionId,
+} from '../../services/geminiBridge/sessionMap'
+import {
+  getGeminiSubPassword,
+  getGeminiSubServerUrl,
+} from '../../services/geminiBridge/settings'
 import {
   markModelUnavailable,
   PROVIDER_IDS,
@@ -1248,6 +1257,126 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
               'Codex devolvió una respuesta sin texto. No se guardó como respuesta válida; vuelve a intentarlo.'
           } else if (error instanceof Error && error.message) {
             errorMessage = `Codex (suscripción): ${error.message}`
+          }
+
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: errorMessage,
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+        } finally {
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+        }
+        return
+      }
+
+      // Gemini (suscripción, bridge local a Antigravity CLI `agy`, ver
+      // odd/tasks/gemini-subscription-bridge.md): sesión por chat vía
+      // conversation_id (historial del lado de agy), así que se manda solo el
+      // último mensaje, como Codex. Sin imágenes, PDF, esfuerzo (va en el id
+      // del modelo) ni permisos de comandos en v1. Cada respuesta tarda
+      // 25-45 s.
+      if (provider === 'geminisub') {
+        const baseUrl = getGeminiSubServerUrl()
+        const password = getGeminiSubPassword()
+
+        if (!password.trim()) {
+          const errorResponseMessage: ChatMessageType = {
+            id: `error_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content:
+              'Falta la contraseña del bridge de Gemini. Guárdala en el menú de configuración antes de enviar mensajes.',
+            timestamp: Date.now(),
+          }
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            errorResponseMessage,
+          ])
+          setIsLoading(false)
+          delete requestStartTimeRef.current[requestId]
+          return
+        }
+
+        try {
+          const appChatId = currentChatId || requestId
+          const sessionId = getGeminiSubSessionId(appChatId)
+          const geminiText = resolveApiContent(filteredContent, files, 0, 0)
+
+          const result = await sendGeminiSubMessage(
+            baseUrl,
+            password,
+            selectedModel,
+            geminiText,
+            sessionId,
+          )
+
+          if (result.isError) {
+            throw new Error(
+              result.error || 'Error desconocido del bridge de Gemini',
+            )
+          }
+
+          if (result.sessionId) {
+            setGeminiSubSessionId(appChatId, result.sessionId)
+          }
+
+          const filteredGeminiResponse = result.text
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .trim()
+
+          if (!filteredGeminiResponse) {
+            throw new Error('EMPTY_PROVIDER_RESPONSE')
+          }
+
+          const endTime = Date.now()
+          const responseTime =
+            endTime - (requestStartTimeRef.current[requestId] || endTime)
+          const formattedTime = formatResponseTime(responseTime)
+
+          const assistantMessage: ChatMessageType = {
+            id: `assistant_${Date.now()}_${Math.random()
+              .toString(36)
+              .substring(2, 9)}`,
+            role: 'assistant',
+            content: filteredGeminiResponse,
+            timestamp: Date.now(),
+            responseTime: formattedTime,
+            tokensUsed: result.tokens.input,
+            tokenLimit: getModelTokenLimit(
+              result.model || selectedModel,
+              provider,
+            ),
+            modelName: selectedModel,
+            requestedModelId: selectedModel,
+            promptTokens: result.tokens.input,
+            completionTokens: result.tokens.output,
+          }
+
+          setMessages((prevMessages: ChatMessageType[]) => [
+            ...prevMessages,
+            assistantMessage,
+          ])
+        } catch (error) {
+          let errorMessage =
+            'Error al obtener respuesta. Por favor, intenta de nuevo.'
+          if (
+            error instanceof Error &&
+            error.message === 'EMPTY_PROVIDER_RESPONSE'
+          ) {
+            errorMessage =
+              'Gemini devolvió una respuesta sin texto. No se guardó como respuesta válida; vuelve a intentarlo.'
+          } else if (error instanceof Error && error.message) {
+            errorMessage = `Gemini (suscripción): ${error.message}`
           }
 
           const errorResponseMessage: ChatMessageType = {

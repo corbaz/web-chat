@@ -56,6 +56,9 @@ export function supportsWebSearch(modelId: string, provider?: string): boolean {
   // en vivo (riesgo conocido, ver Riesgos en el feature doc); mismo criterio
   // "siempre activa" que Claude (suscripción).
   if (provider === 'codexsub') return true
+  // Gemini (suscripción, agy): sin verificar la búsqueda web del agente en
+  // modo --print; no se anuncia hasta confirmarla (ver feature doc).
+  if (provider === 'geminisub') return false
   // OpenCode Zen: sin verificar (la cuenta no tenía saldo al probar).
   // OpenCode Free (servidor local): sin búsqueda web en v1 (ver
   // odd/tasks/opencode-free-local.md).

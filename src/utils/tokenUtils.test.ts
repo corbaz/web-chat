@@ -34,6 +34,14 @@ describe('getModelTokenLimit', () => {
     expect(getModelTokenLimit('sonnet', 'claudecode')).toBe(1000000)
   })
 
+  test('Gemini (suscripción) quita el sufijo de esfuerzo y usa los límites de Gemini', async () => {
+    const { getModelTokenLimit } = await import('./tokenUtils')
+    expect(getModelTokenLimit('gemini-3.6-flash-low', 'geminisub')).toBe(
+      1048576,
+    )
+    expect(getModelTokenLimit('claude-sonnet-4-6', 'geminisub')).toBe(200000)
+  })
+
   test('8192 solo para modelos desconocidos', async () => {
     const { getModelTokenLimit } = await import('./tokenUtils')
     expect(getModelTokenLimit('modelo-inventado', 'opengo')).toBe(8192)

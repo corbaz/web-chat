@@ -87,5 +87,8 @@ describe('getEffortLevels (T17: otros proveedores)', () => {
   test('proveedor sin entrada en MODEL_EFFORT (routellm, opencodefree) siempre devuelve []', () => {
     expect(getEffortLevels('routellm', 'claude-opus-4-8')).toEqual([])
     expect(getEffortLevels('opencodefree', 'big-pickle')).toEqual([])
+    // Gemini (suscripción): el esfuerzo va en el id del modelo, sin slider.
+    expect(getEffortLevels('geminisub', 'gemini-3.6-flash-medium')).toEqual([])
+    expect(getEffortLevels('geminisub', 'claude-sonnet-4-6')).toEqual([])
   })
 })

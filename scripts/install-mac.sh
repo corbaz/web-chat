@@ -3,7 +3,7 @@
 # instalar lo que falte) y prepara las carpetas de los 3 puentes locales.
 # Uso: curl -fsSL https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/install-mac.sh | bash
 # (o descargarlo y correr: bash install-mac.sh). Se puede repetir: sirve
-# también para actualizar claude-bridge.js y codex-bridge.js.
+# también para actualizar claude-bridge.js, codex-bridge.js y gemini-bridge.js.
 set -u
 
 BASE="$HOME/Library/Application Support/prompting"
@@ -67,12 +67,24 @@ curl -fsSLo "$BASE/codex-bridge/codex-bridge.js" "$RAW/codex-bridge/codex-bridge
   && echo "✔ codex-bridge.js" || echo "✖ No se pudo bajar codex-bridge.js"
 
 echo
+echo "== 5. Puente de Gemini (Antigravity CLI) =="
+mkdir -p "$BASE/gemini-bridge"
+curl -fsSLo "$BASE/gemini-bridge/gemini-bridge.js" "$RAW/gemini-bridge/gemini-bridge.js" \
+  && echo "✔ gemini-bridge.js" || echo "✖ No se pudo bajar gemini-bridge.js"
+if ! command -v agy >/dev/null 2>&1; then
+  echo "  Nota: Antigravity CLI (agy) no está instalado y este script no lo instala."
+  echo "  Instalalo desde https://antigravity.google/ para usar Gemini (suscripción)."
+fi
+
+echo
 echo "== Pendiente a mano (una sola vez) =="
 echo "  claude   → /login        (con tu suscripción de Claude)"
 echo "  codex login              (con tu cuenta de ChatGPT)"
+echo "  agy                      (con tu cuenta de Google AI Pro)"
 echo "  opencode → mandá 'hola' con un modelo gratis y salí"
 echo
 echo "== Arranque (cada vez, una terminal para cada uno; la contraseña la elegís vos) =="
 echo "  cd \"$BASE/opencode-free\" && XDG_CONFIG_HOME=\"\$PWD/config-home\" OPENCODE_SERVER_PASSWORD='TuClave' opencode serve --port 4096 --hostname 127.0.0.1 --cors https://localhost:5173 --cors https://prompting-chat.vercel.app"
 echo "  cd \"$BASE/claude-bridge\" && CLAUDE_BRIDGE_PASSWORD='TuClave' bun claude-bridge.js"
 echo "  cd \"$BASE/codex-bridge\" && CODEX_BRIDGE_PASSWORD='TuClave' bun codex-bridge.js"
+echo "  cd \"$BASE/gemini-bridge\" && GEMINI_BRIDGE_PASSWORD='TuClave' bun gemini-bridge.js"

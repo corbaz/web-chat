@@ -39,6 +39,9 @@ function fallbackSupportsVision(modelId: string, provider: string): boolean {
       // (models.dev), vía el bridge en modo stream-json (ver
       // odd/tasks/claude-subscription-bridge.md).
       return modelId.startsWith('claude-')
+    case 'geminisub':
+      // Sin imágenes en v1 (ver odd/tasks/gemini-subscription-bridge.md).
+      return false
     case 'codexsub':
       // Codex (suscripción de ChatGPT): `inputModalities` de `model/list`
       // (ver Verified facts en odd/tasks/openai-subscription-bridge.md),

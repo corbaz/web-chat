@@ -9,6 +9,7 @@ import { anthropicModels } from '../../components/HEADER/models/anthropicModels'
 import { claudeCodeModels } from '../../components/HEADER/models/claudeCodeModels'
 import { codexSubModels } from '../../components/HEADER/models/codexSubModels'
 import { geminiModels } from '../../components/HEADER/models/geminiModels'
+import { geminiSubModels } from '../../components/HEADER/models/geminiSubModels'
 import { groqModels } from '../../components/HEADER/models/groqModels'
 import { openaiModels } from '../../components/HEADER/models/openaiModels'
 import { opencodeFreeModels } from '../../components/HEADER/models/opencodeFreeModels'
@@ -38,6 +39,7 @@ export const PROVIDER_IDS: ProviderId[] = [
   'opencodefree',
   'claudecode',
   'codexsub',
+  'geminisub',
   'gemini',
 ]
 
@@ -51,6 +53,7 @@ const STATIC_MODELS: Record<ProviderId, readonly CatalogModel[]> = {
   opencodefree: opencodeFreeModels,
   claudecode: claudeCodeModels,
   codexsub: codexSubModels,
+  geminisub: geminiSubModels,
   gemini: geminiModels,
 }
 
