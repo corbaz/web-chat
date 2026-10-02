@@ -35,6 +35,11 @@ function writeLastCheck(at: number): void {
   }
 }
 
+/** Anota que ya se chequeó (lo usa "Revisar modelos"). */
+export function recordFreeModelCheckDone(): void {
+  writeLastCheck(Date.now())
+}
+
 export function isFreeModelCheckDue(
   lastCheck: number,
   now = Date.now(),

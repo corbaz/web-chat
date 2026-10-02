@@ -25,10 +25,33 @@ describe('parseGeminiModelIds', () => {
     ])
   })
 
-  test('descarta Pro, variantes no-chat, snapshots y generaciones deprecadas', () => {
+  test('conserva los Pro (se deshabilitan si no hay cuota, no se esconden)', () => {
     const payload = {
       models: [
-        { name: 'models/gemini-3.1-pro', supportedGenerationMethods: chat },
+        {
+          name: 'models/gemini-3.1-pro-preview',
+          supportedGenerationMethods: chat,
+        },
+        { name: 'models/gemini-2.5-pro', supportedGenerationMethods: chat },
+      ],
+    }
+    expect(parseGeminiModelIds(payload)).toEqual([
+      'gemini-3.1-pro-preview',
+      'gemini-2.5-pro',
+    ])
+  })
+
+  test('descarta variantes no-chat, snapshots y generaciones deprecadas', () => {
+    const payload = {
+      models: [
+        {
+          name: 'models/gemini-omni-flash-preview',
+          supportedGenerationMethods: chat,
+        },
+        {
+          name: 'models/gemini-2.5-computer-use-preview-10-2025',
+          supportedGenerationMethods: chat,
+        },
         {
           name: 'models/gemini-2.5-flash-image',
           supportedGenerationMethods: chat,

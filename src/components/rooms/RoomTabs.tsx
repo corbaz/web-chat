@@ -15,7 +15,13 @@ import {
 export interface RoomTabStatus extends RoomIndicatorStatus {
   chatTitle?: string
   model?: string
+  /** La sala tiene una conversación (al menos una pregunta): cajita verde. */
+  hasConversation?: boolean
 }
+
+// Verde de "sala con chat", el mismo en los dos temas; texto blanco para que
+// el número se lea sobre el verde.
+const ROOM_WITH_CHAT_BG = '#16a34a'
 
 interface RoomTabsProps {
   theme: ColorPalette
@@ -61,11 +67,21 @@ const RoomTabs: React.FC<RoomTabsProps> = ({
             aria-label={`Sala ${roomId}`}
             aria-selected={isActive}
             className="nm-press relative shrink-0 size-6 sm:size-7 rounded-md text-[11px] font-semibold flex items-center justify-center"
-            style={{
-              backgroundColor: theme.background,
-              boxShadow: isActive ? theme.shadow.inset : theme.shadow.sm,
-              color: isActive ? theme.accent : theme.textMuted,
-            }}
+            style={
+              status?.hasConversation
+                ? {
+                    backgroundColor: ROOM_WITH_CHAT_BG,
+                    color: '#ffffff',
+                    boxShadow: isActive
+                      ? `${theme.shadow.inset}, 0 0 0 2px ${theme.accent}`
+                      : theme.shadow.sm,
+                  }
+                : {
+                    backgroundColor: theme.background,
+                    boxShadow: isActive ? theme.shadow.inset : theme.shadow.sm,
+                    color: isActive ? theme.accent : theme.textMuted,
+                  }
+            }
           >
             {roomId}
             {indicator === 'permission' && (

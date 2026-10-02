@@ -26,9 +26,10 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 - **Modelos gratis de OpenCode** a través de un servidor local de OpenCode ("OpenCode Free"). Al elegirlo se actualiza la lista y, como máximo cada 6 horas, se prueba cada modelo gratis con un mensaje mínimo (en paralelo, unos segundos): los que Zen publica pero no sirve se ocultan y vuelven cuando responden.
 - **Claude por tu suscripción de Claude Code** (sin API key) a través de un bridge local ("Claude (suscripción)").
 - **OpenAI por tu suscripción de ChatGPT** (sin API key) a través de un bridge local ("OpenAI (suscripción)").
+- **Revisar modelos** (🔎 en el menú de configuración): actualiza la lista de cada proveedor habilitado, prueba cada modelo con un mensaje mínimo y tu propia clave (desde el navegador), deshabilita los que tu cuenta no puede usar (sin cuota, bloqueados o retirados, con el motivo al pasar el mouse) y muestra el informe completo por proveedor. Los bridges de suscripción no se prueban por modelo (solo se verifica que respondan) y no consume nada de la suscripción.
 - **Modelos que el proveedor rechaza** para tu cuenta (bloqueados, retirados, sin acceso) se ocultan solos del selector.
 - **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (no disponible en OpenCode Free; en Claude (suscripción) siempre usa Haiku).
-- **10 salas de chat** (cajitas 1-10 al lado del selector de modelo): cada una es un chat independiente, con su propio proveedor, modelo, búsqueda web, YOLO y respuestas en curso; cambiar de sala nunca interrumpe una que está esperando respuesta. Las cajitas muestran si esa sala está pensando, tiene una respuesta sin leer o un permiso pendiente.
+- **10 salas de chat** (cajitas 1-10 al lado del selector de modelo): cada una es un chat independiente, con su propio proveedor, modelo, búsqueda web, YOLO y respuestas en curso; cambiar de sala nunca interrumpe una que está esperando respuesta. Las cajitas muestran si esa sala está pensando, tiene una respuesta sin leer o un permiso pendiente. Las cajitas de las salas con conversación se ven en verde; al abrir una sala vacía, un cartel pregunta con qué proveedor arranca (solo los habilitados) y la sala usa su modelo por defecto.
 - Tema claro y oscuro, historial de chats en el navegador.
 
 ---
@@ -487,6 +488,7 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 - Búsqueda web habilitada solo en los modelos verificados en vivo.
 - Límites de contexto reales desde models.dev (antes muchos modelos mostraban 8192).
 - Modelos rechazados por el proveedor se ocultan solos.
+- Botón "Revisar modelos": prueba todos los modelos de los proveedores habilitados, deshabilita los no usables y muestra un informe por proveedor.
 - Groq: solo los modelos disponibles hoy; se quitó `compound` (apagado por Groq).
 - ESLint reemplazado por Biome; build sin commitear; Vercel como único hosting.
 - 10 salas de chat internas (cajitas junto al selector de modelo), cada una con su propio proveedor/modelo/chat/YOLO/búsqueda web e indicadores de estado (pensando, sin leer, permiso pendiente).

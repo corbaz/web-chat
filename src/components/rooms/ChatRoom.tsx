@@ -23,6 +23,7 @@ import {
   TOOLS_STORAGE_KEY,
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { checkGeminiModelsIfDue } from '../../services/modelCatalog/geminiProbe'
 import {
   PROVIDER_IDS as CATALOG_PROVIDER_IDS,
   expireUnavailableModels,
@@ -159,6 +160,9 @@ interface ChatRoomProps {
   // número/objeto distinto en cada pedido, para que el efecto lo detecte.
   selectChatCommand?: { chatId: string; nonce: number }
   newChatCommand?: number
+  // Comando de App: "arrancá con este proveedor" (el usuario lo eligió en el
+  // cartel al abrir esta sala vacía).
+  providerCommand?: { provider: string; nonce: number }
   // Las cajitas de salas, ya armadas por App (necesitan el estado de todas
   // las salas, no solo el de esta).
   roomTabs: React.ReactNode
@@ -200,6 +204,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   onRequestSelectChat,
   selectChatCommand,
   newChatCommand,
+  providerCommand,
   roomTabs,
 }) => {
   const [selectedProvider, setSelectedProvider] = useState(initialProvider)
@@ -324,6 +329,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   // services/opencodeLocal/freeModelCheck.ts).
   useEffect(() => {
     if (selectedProvider === 'opencodefree') void checkFreeModelsIfDue()
+    // Gemini: se muestran todos sus modelos de chat y un ping diario
+    // deshabilita los que la cuenta no puede usar (ver geminiProbe.ts).
+    if (selectedProvider === 'gemini') void checkGeminiModelsIfDue()
   }, [selectedProvider])
 
   const handleProviderChange = useCallback(
@@ -458,6 +466,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     handleNewChat()
   }, [newChatCommand])
 
+  // Proveedor elegido en el cartel de sala vacía (ver App.handleSelectRoom).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dispara por nonce, no por handleProviderChange
+  useEffect(() => {
+    if (!providerCommand) return
+    handleProviderChange(providerCommand.provider)
+    focusInput()
+  }, [providerCommand?.nonce])
+
   const handleSelectChat = useCallback(
     (chatId: string) => {
       onRequestSelectChat(roomId, chatId)
@@ -517,6 +533,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     if (finished) setUnread(true)
   }, [isLoading, isActive])
 
+  const hasConversation = messages.some((message) => message.role === 'user')
+
   // Reporta el estado en vivo hacia App (indicadores de la cajita, T4/T5).
   useEffect(() => {
     onStatusChange(roomId, {
@@ -525,6 +543,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
       permissionPending,
       chatTitle: chatHistory.find((c) => c.id === currentChatId)?.title,
       model: selectedModel,
+      hasConversation,
     })
   }, [
     roomId,
@@ -534,6 +553,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     currentChatId,
     selectedModel,
     chatHistory,
+    hasConversation,
     onStatusChange,
   ])
 

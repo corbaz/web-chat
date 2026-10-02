@@ -59,7 +59,10 @@ import {
   PROVIDER_IDS,
 } from '../../services/modelCatalog/store'
 import type { ProviderId } from '../../services/modelCatalog/types'
-import { isModelUnavailableMessage } from '../../services/modelCatalog/unavailableModels'
+import {
+  isModelUnavailableMessage,
+  isQuotaExhaustedMessage,
+} from '../../services/modelCatalog/unavailableModels'
 import {
   createSession as createOpenCodeFreeSession,
   sendMessage as sendOpenCodeFreeMessage,
@@ -848,7 +851,7 @@ const ChatContainer = ({
               markModelUnavailable('opencodefree', selectedModel)
               errorMessage += `
 
-El modelo ${selectedModel} se ocultó del selector porque OpenCode no lo está sirviendo ahora. Se vuelve a probar mañana; mientras tanto elegí otro modelo gratis.`
+El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode no lo está sirviendo ahora. Se vuelve a probar más tarde; mientras tanto elegí otro modelo gratis.`
             }
           }
 
@@ -1719,19 +1722,27 @@ El modelo ${selectedModel} se ocultó del selector porque OpenCode no lo está s
           }
         }
 
-        // Modelo rechazado como no usable (bloqueado, retirado, sin acceso):
-        // se oculta del selector para no volver a elegirlo por error.
+        // Modelo rechazado como no usable (bloqueado, retirado, sin acceso)
+        // o sin cuota/crédito: queda deshabilitado en el selector (se ve,
+        // con el motivo al pasar el mouse) para no volver a elegirlo por error.
         const rawServerMessage =
           axios.isAxiosError(error) && error.response
             ? getApiErrorMessage(error.response.data)
             : ''
-        if (
-          rawServerMessage &&
-          isModelUnavailableMessage(rawServerMessage) &&
-          PROVIDER_IDS.includes(provider as ProviderId)
-        ) {
-          markModelUnavailable(provider as ProviderId, selectedModel)
-          errorMessage += `\n\nEl modelo ${selectedModel} se ocultó del selector porque ${providerConfig?.name || 'el proveedor'} no permite usarlo con tu cuenta. Vuelve a aparecer si guardas de nuevo la API key.`
+        if (rawServerMessage && PROVIDER_IDS.includes(provider as ProviderId)) {
+          const reason = isQuotaExhaustedMessage(rawServerMessage)
+            ? 'quota'
+            : isModelUnavailableMessage(rawServerMessage)
+              ? 'unavailable'
+              : null
+          if (reason) {
+            markModelUnavailable(provider as ProviderId, selectedModel, reason)
+            errorMessage += `\n\nEl modelo ${selectedModel} quedó deshabilitado en el selector (${
+              reason === 'quota'
+                ? 'sin cuota o sin crédito en tu cuenta'
+                : `${providerConfig?.name || 'el proveedor'} no permite usarlo con tu cuenta`
+            }). Se vuelve a habilitar si guardás de nuevo la API key.`
+          }
         }
 
         // Añadir mensaje de error
@@ -1879,6 +1890,7 @@ El modelo ${selectedModel} se ocultó del selector porque OpenCode no lo está s
           onDeleteMessage={handleDeleteMessage}
           deleteSelection={deleteSelection}
           onToggleDeleteSelection={handleToggleDeleteSelection}
+          onSetDeleteSelection={(ids) => setDeleteSelection(ids)}
           onConfirmDeleteSelection={handleConfirmDeleteSelection}
           onCancelDeleteSelection={() => setDeleteSelection(null)}
           searchEnabled={searchEnabled}

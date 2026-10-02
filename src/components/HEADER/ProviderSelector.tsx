@@ -1,32 +1,18 @@
 import type React from 'react'
 import { useEffect, useMemo, useReducer } from 'react'
 import Select, { type SingleValue, type StylesConfig } from 'react-select'
-import { isOpenCodeAvailable } from '../../config/providers'
+import {
+  getEnabledProviders,
+  type ProviderOption,
+} from '../../config/enabledProviders'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
 
 interface ProviderSelectorProps {
   selectedProvider: string
   onProviderChange: (providerId: string) => void
   theme: ColorPalette
 }
-
-interface ProviderOption {
-  value: string
-  label: string
-}
-
-const allProviders: ProviderOption[] = [
-  { value: 'groq', label: 'Groq' },
-  { value: 'routellm', label: 'RouteLLM' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'claudecode', label: 'Claude (suscripción)' },
-  { value: 'codexsub', label: 'OpenAI (suscripción)' },
-  { value: 'opengo', label: 'OpenCode Go' },
-  { value: 'opencodezen', label: 'OpenCode Zen' },
-  { value: 'opencodefree', label: 'OpenCode Free' },
-  { value: 'gemini', label: 'Gemini' },
-]
 
 const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   selectedProvider,
@@ -41,15 +27,19 @@ const ProviderSelector: React.FC<ProviderSelectorProps> = ({
     return () => window.removeEventListener('apikey-changed', handler)
   }, [])
 
-  const providers = allProviders.filter((provider) => {
-    if (
-      (provider.value === 'opengo' || provider.value === 'opencodezen') &&
-      !isOpenCodeAvailable()
-    ) {
-      return false
-    }
-    const apiKey = localStorage.getItem(`${provider.value}ApiKey`)
-    return apiKey && apiKey.trim() !== ''
+  // Al lado de cada proveedor, cuántos modelos se pueden usar (sin contar
+  // los deshabilitados por cuota o acceso). Se actualiza con el catálogo.
+  const allModels = useModelCatalog()
+  const usableCount = new Map<string, number>()
+  for (const model of allModels) {
+    if (model.disabledReason) continue
+    usableCount.set(model.provider, (usableCount.get(model.provider) ?? 0) + 1)
+  }
+  const providers = getEnabledProviders().map((provider) => {
+    const count = usableCount.get(provider.value)
+    return count
+      ? { ...provider, label: `${provider.label} (${count})` }
+      : provider
   })
 
   useEffect(() => {

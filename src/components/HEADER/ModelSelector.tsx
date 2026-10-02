@@ -13,6 +13,7 @@ import { supportsPdf } from '../../config/pdf'
 import { supportsVision } from '../../config/vision'
 import { supportsWebSearch } from '../../config/webSearch'
 import type { ColorPalette } from '../../interfaces/temas/temas'
+import { UNAVAILABLE_REASON_LABELS } from '../../services/modelCatalog/unavailableModels'
 import { useModelCatalog } from '../../services/modelCatalog/useModelCatalog'
 
 interface ModelSelectorProps {
@@ -26,6 +27,8 @@ interface ModelOption {
   value: string
   label: string
   provider?: string
+  /** Motivo por el que la cuenta no puede usarlo: opción deshabilitada. */
+  disabledReason?: string
 }
 
 const GlobeIcon: React.FC<{ className?: string }> = ({
@@ -107,6 +110,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         value: model.id,
         label: model.name,
         provider: model.provider,
+        disabledReason: model.disabledReason
+          ? UNAVAILABLE_REASON_LABELS[model.disabledReason]
+          : undefined,
       })
       groups.set(model.developer, options)
       return groups
@@ -157,7 +163,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       ...provided,
       backgroundColor: theme.background,
       color: state.isSelected ? theme.accent : theme.text,
-      cursor: 'pointer',
+      cursor: state.isDisabled ? 'not-allowed' : 'pointer',
+      opacity: state.isDisabled ? 0.45 : 1,
       borderRadius: '10px',
       margin: '4px auto',
       width: 'calc(100% - 4px)',
@@ -166,10 +173,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       boxShadow: state.isSelected ? theme.shadow.inset : 'none',
       whiteSpace: 'nowrap' as const,
       transition: 'box-shadow 0.2s ease, color 0.2s ease',
-      '&:hover': {
-        boxShadow: theme.shadow.sm,
-        color: theme.accent,
-      },
+      '&:hover': state.isDisabled
+        ? {}
+        : {
+            boxShadow: theme.shadow.sm,
+            color: theme.accent,
+          },
     }),
     singleValue: (provided) => ({
       ...provided,
@@ -245,6 +254,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         }
       }}
       options={groupedOptions}
+      isOptionDisabled={(option: ModelOption) => Boolean(option.disabledReason)}
       styles={customStyles}
       isSearchable={false}
       placeholder="Seleccionar modelo"
@@ -266,8 +276,16 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
           const hasPdf = supportsPdf(props.data.value, props.data.provider)
           return (
             <components.Option {...props}>
-              <div className="flex items-center justify-between w-full">
-                <span>{props.data.label}</span>
+              <div
+                className="flex items-center justify-between w-full"
+                title={props.data.disabledReason}
+              >
+                <span>
+                  {props.data.label}
+                  {props.data.disabledReason && (
+                    <span className="ml-1.5 text-[10px]">🚫</span>
+                  )}
+                </span>
                 <span className="ml-2 flex items-center gap-1 shrink-0">
                   {hasVision && (
                     <span

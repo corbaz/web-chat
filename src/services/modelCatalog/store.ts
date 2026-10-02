@@ -21,8 +21,11 @@ import { FETCHER_REGISTRY } from './registry'
 import type { CatalogModel, ProviderId } from './types'
 import {
   readUnavailableModels,
+  readUnavailableReasons,
   readUnavailableSince,
+  type UnavailableReason,
   writeUnavailableModels,
+  writeUnavailableReasons,
 } from './unavailableModels'
 
 export const PROVIDER_IDS: ProviderId[] = [
@@ -77,6 +80,25 @@ const unavailable: Record<ProviderId, Set<string>> = PROVIDER_IDS.reduce(
   {} as Record<ProviderId, Set<string>>,
 )
 
+const unavailableReasons: Record<
+  ProviderId,
+  Map<string, UnavailableReason>
+> = PROVIDER_IDS.reduce(
+  (acc, provider) => {
+    acc[provider] = readUnavailableReasons(provider)
+    return acc
+  },
+  {} as Record<ProviderId, Map<string, UnavailableReason>>,
+)
+
+function persistUnavailable(provider: ProviderId): void {
+  for (const id of unavailableReasons[provider].keys()) {
+    if (!unavailable[provider].has(id)) unavailableReasons[provider].delete(id)
+  }
+  writeUnavailableModels(provider, unavailable[provider])
+  writeUnavailableReasons(provider, unavailableReasons[provider])
+}
+
 function computeVisible(provider: ProviderId): CatalogModel[] {
   const hidden = unavailable[provider]
   if (hidden.size === 0) return catalog[provider]
@@ -130,15 +152,25 @@ export function getCatalogModelIds(provider: ProviderId): string[] {
 export function markModelAvailable(provider: ProviderId, id: string): void {
   if (!unavailable[provider].has(id)) return
   unavailable[provider].delete(id)
-  writeUnavailableModels(provider, unavailable[provider])
+  persistUnavailable(provider)
   notify()
 }
 
 /** Oculta un modelo que el proveedor rechazó como no usable. */
-export function markModelUnavailable(provider: ProviderId, id: string): void {
-  if (unavailable[provider].has(id)) return
+export function markModelUnavailable(
+  provider: ProviderId,
+  id: string,
+  reason: UnavailableReason = 'unavailable',
+): void {
+  if (
+    unavailable[provider].has(id) &&
+    (unavailableReasons[provider].get(id) ?? 'unavailable') === reason
+  ) {
+    return
+  }
   unavailable[provider].add(id)
-  writeUnavailableModels(provider, unavailable[provider])
+  unavailableReasons[provider].set(id, reason)
+  persistUnavailable(provider)
   notify()
 }
 
@@ -156,7 +188,7 @@ export function expireUnavailableModels(
   const since = readUnavailableSince(provider)
   if (since !== null && now - since <= maxAgeMs) return
   unavailable[provider].clear()
-  writeUnavailableModels(provider, unavailable[provider])
+  persistUnavailable(provider)
   notify()
 }
 
@@ -166,7 +198,7 @@ export function clearUnavailableModels(): void {
   for (const provider of PROVIDER_IDS) {
     if (unavailable[provider].size === 0) continue
     unavailable[provider].clear()
-    writeUnavailableModels(provider, unavailable[provider])
+    persistUnavailable(provider)
     changed = true
   }
   if (changed) notify()
@@ -176,7 +208,21 @@ export function getAllModels(): CatalogModel[] {
   if (allModelsCache && allModelsCache.version === version) {
     return allModelsCache.models
   }
-  const models = PROVIDER_IDS.flatMap((provider) => visible[provider])
+  // Todos los modelos, también los que la cuenta no puede usar (con su
+  // motivo): el selector los muestra deshabilitados en vez de esconderlos.
+  // getModels(provider) sigue devolviendo solo los usables (elección del
+  // modelo por defecto y del reemplazo cuando el elegido deja de servir).
+  const models = PROVIDER_IDS.flatMap((provider) =>
+    catalog[provider].map((model) =>
+      unavailable[provider].has(model.id)
+        ? {
+            ...model,
+            disabledReason:
+              unavailableReasons[provider].get(model.id) ?? 'unavailable',
+          }
+        : model,
+    ),
+  )
   allModelsCache = { version, models }
   return models
 }
@@ -201,6 +247,16 @@ function readApiKey(provider: ProviderId): string {
   }
 }
 
+// Último error al bajar la lista de cada proveedor (null = la última vez
+// anduvo). Antes el fallo era silencioso y se seguía con una lista vieja o la
+// de respaldo como si fuera la real; "Revisar modelos" lo muestra.
+const refreshErrors: Partial<Record<ProviderId, string | null>> = {}
+
+/** Error de la última actualización de la lista, o null si anduvo. */
+export function getRefreshError(provider: ProviderId): string | null {
+  return refreshErrors[provider] ?? null
+}
+
 export async function refreshProvider(provider: ProviderId): Promise<void> {
   const fetcher = FETCHER_REGISTRY[provider]
   if (!fetcher) return // Proveedor estático: nada que refrescar todavía.
@@ -217,8 +273,11 @@ export async function refreshProvider(provider: ProviderId): Promise<void> {
     const merged = mergeWithStatic(ids, fetcher.staticModels, provider)
     catalog[provider] = merged
     writeCatalogCache(provider, merged)
+    refreshErrors[provider] = null
     notify()
   } catch (error) {
+    refreshErrors[provider] =
+      error instanceof Error ? error.message : String(error)
     console.warn(
       `No se pudo actualizar el catálogo de modelos para "${provider}", se mantiene la lista actual:`,
       error,

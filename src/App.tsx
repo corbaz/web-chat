@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Swal from 'sweetalert2'
 import ApiKeyModal from './components/ApiKeyModal/ApiKeyModal.tsx'
 import ChatRoom, {
   API_KEY_PROVIDER_IDS,
@@ -12,6 +13,7 @@ import {
   readRoomsState,
   writeRoomsState,
 } from './components/rooms/roomStorage'
+import { getEnabledProviders } from './config/enabledProviders'
 import { isOpenCodeAvailable } from './config/providers'
 import { APP_VERSION } from './constants/appVersion'
 import {
@@ -20,6 +22,7 @@ import {
   STORAGE_KEY,
 } from './interfaces/chat/chatTypes'
 import { darkTheme, lightTheme } from './interfaces/temas/temas.tsx'
+import { initModelCatalog } from './services/modelCatalog/store'
 import { generateLayoutCSS } from './utils/layoutConstants'
 import { setupMobileKeyboardHandler } from './utils/mobileUtils'
 
@@ -112,7 +115,8 @@ export const App = () => {
           existing.unread === status.unread &&
           existing.permissionPending === status.permissionPending &&
           existing.chatTitle === status.chatTitle &&
-          existing.model === status.model
+          existing.model === status.model &&
+          existing.hasConversation === status.hasConversation
         ) {
           return prev
         }
@@ -141,7 +145,13 @@ export const App = () => {
   )
 
   // Abre (si hace falta) y activa una sala al tocar su cajita (T4).
-  const handleSelectRoom = useCallback((roomId: number) => {
+  // Proveedor elegido en el cartel de sala vacía para una sala ya montada
+  // (a una sala nueva se le pasa como proveedor inicial en rooms:v1).
+  const [providerCommands, setProviderCommands] = useState<
+    Partial<Record<number, { provider: string; nonce: number }>>
+  >({})
+
+  const activateRoom = useCallback((roomId: number) => {
     setRoomsState((prev) => {
       if (prev.active === roomId && prev.opened.includes(roomId)) return prev
       const opened = prev.opened.includes(roomId)
@@ -150,6 +160,76 @@ export const App = () => {
       return { ...prev, active: roomId, opened }
     })
   }, [])
+
+  // Al tocar la cajita de una sala sin conversación se pregunta con qué
+  // proveedor arranca (solo los habilitados). Con uno solo habilitado, o si
+  // la sala ya tiene chat, se abre directo.
+  const handleSelectRoom = useCallback(
+    async (roomId: number) => {
+      if (roomId === roomsState.active) return
+      if (roomStatuses[roomId]?.hasConversation) {
+        activateRoom(roomId)
+        return
+      }
+      const enabled = getEnabledProviders()
+      let provider: string | undefined
+      if (enabled.length === 1) {
+        provider = enabled[0].value
+      } else if (enabled.length > 1) {
+        const current =
+          roomsState.rooms[roomId]?.provider ||
+          roomsState.rooms[roomsState.active]?.provider ||
+          enabled[0].value
+        const result = await Swal.fire({
+          title: `Sala ${roomId}`,
+          text: '¿Con qué proveedor arranca esta sala?',
+          input: 'select',
+          inputOptions: Object.fromEntries(
+            enabled.map((option) => [option.value, option.label]),
+          ),
+          inputValue: enabled.some((option) => option.value === current)
+            ? current
+            : enabled[0].value,
+          showCancelButton: true,
+          confirmButtonText: 'Abrir sala',
+          confirmButtonColor: theme.accent,
+          cancelButtonText: 'Cancelar',
+          cancelButtonColor: isDarkTheme ? theme.surface : theme.secondary,
+          background: theme.background,
+          color: theme.text,
+          didOpen: (popup) => {
+            const select = popup.querySelector('select')
+            if (select) {
+              select.style.backgroundColor = theme.surface
+              select.style.color = theme.text
+            }
+          },
+        })
+        if (!result.isConfirmed || typeof result.value !== 'string') return
+        provider = result.value
+      }
+
+      if (provider) {
+        const chosen = provider
+        if (roomsState.opened.includes(roomId)) {
+          setProviderCommands((prev) => ({
+            ...prev,
+            [roomId]: { provider: chosen, nonce: Date.now() },
+          }))
+        } else {
+          setRoomsState((prev) => ({
+            ...prev,
+            rooms: {
+              ...prev.rooms,
+              [roomId]: { ...prev.rooms[roomId], provider: chosen, model: '' },
+            },
+          }))
+        }
+      }
+      activateRoom(roomId)
+    },
+    [activateRoom, isDarkTheme, roomStatuses, roomsState, theme],
+  )
 
   // T5: al elegir un chat del historial, si ya está abierto en OTRA sala se
   // activa esa sala en vez de duplicarlo; si no, se le pide a la sala que lo
@@ -215,6 +295,14 @@ export const App = () => {
   )
 
   // Reaccionar a cambios en API keys (guardar o borrar)
+  // Catálogo dinámico de modelos: refresca todos los proveedores al abrir la
+  // app y cada vez que cambia una API key (se había perdido al pasar a las
+  // salas: las listas quedaban en la caché o el respaldo, p. ej. Go con 20
+  // modelos en vez de los de la cuenta).
+  useEffect(() => {
+    initModelCatalog()
+  }, [])
+
   useEffect(() => {
     const handleApiKeyChange = () => {
       const hasKey = hasAnyApiKey()
@@ -320,6 +408,7 @@ export const App = () => {
               onRequestSelectChat={handleRequestSelectChat}
               selectChatCommand={selectChatCommands[roomId]}
               newChatCommand={newChatCommands[roomId]}
+              providerCommand={providerCommands[roomId]}
               roomTabs={
                 <RoomTabs
                   theme={theme}

@@ -220,6 +220,16 @@ export const OPENCODE_UNAVAILABLE_MESSAGE =
 const getOpenCodeBase = (): string =>
   isLocalhost() ? '/opencode-go-api' : configuredOpenCodeProxy
 
+/**
+ * URL de la lista de modelos de OpenCode Go, por el mismo proxy que usa el
+ * chat. Pedida directo a opencode.ai, el navegador la bloquea: la respuesta
+ * del GET no trae Access-Control-Allow-Origin (solo el preflight), así que la
+ * app se quedaba con los 20 modelos de respaldo en vez de los ~43 reales
+ * (verificado 2026-10-02).
+ */
+export const getOpenCodeGoModelsUrl = (): string =>
+  `${getOpenCodeBase()}/zen/go/v1/models`
+
 const buildAnthropicPayload = (
   model: string,
   messages: Message[],

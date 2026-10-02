@@ -16,6 +16,7 @@ interface ChatAreaProps {
   // mensaje y barra con la cantidad elegida (ver ChatContainer).
   deleteSelection?: Set<string> | null
   onToggleDeleteSelection?: (messageId: string) => void
+  onSetDeleteSelection?: (messageIds: Set<string>) => void
   onConfirmDeleteSelection?: () => void
   onCancelDeleteSelection?: () => void
   searchEnabled?: boolean
@@ -32,6 +33,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onDeleteMessage,
   deleteSelection = null,
   onToggleDeleteSelection,
+  onSetDeleteSelection,
   onConfirmDeleteSelection,
   onCancelDeleteSelection,
   searchEnabled = true,
@@ -134,6 +136,33 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             role="toolbar"
             aria-label="Borrar mensajes elegidos"
           >
+            {(() => {
+              // Todos los mensajes borrables (nunca la bienvenida): "Marcar
+              // todos" y después se desmarcan los que se quieren dejar.
+              const selectableIds = messages
+                .map((message) => message.id)
+                .filter((id) => id !== 'intro-message')
+              const allSelected =
+                selectableIds.length > 0 &&
+                selectableIds.every((id) => deleteSelection.has(id))
+              return (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSetDeleteSelection?.(
+                      allSelected ? new Set() : new Set(selectableIds),
+                    )
+                  }
+                  className="nm-press rounded-full px-3 py-1"
+                  style={{
+                    backgroundColor: theme.background,
+                    boxShadow: theme.shadow.sm,
+                  }}
+                >
+                  {allSelected ? 'Desmarcar todos' : 'Marcar todos'}
+                </button>
+              )
+            })()}
             <span>
               {deleteSelection.size === 1
                 ? '1 mensaje elegido'

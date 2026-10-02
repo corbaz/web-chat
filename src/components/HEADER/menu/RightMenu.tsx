@@ -1,11 +1,14 @@
 import type React from 'react'
+import { useState } from 'react'
 import LunaIcon from '../../../assets/luna.svg'
 import { supportsPdf } from '../../../config/pdf'
 import { supportsVision } from '../../../config/vision'
 import { supportsWebSearch } from '../../../config/webSearch'
 import type { ColorPalette } from '../../../interfaces/temas/temas.tsx'
+import { UNAVAILABLE_REASON_LABELS } from '../../../services/modelCatalog/unavailableModels'
 import { useModelCatalog } from '../../../services/modelCatalog/useModelCatalog'
 import ApiKeyInput from './ApiKeyInput.tsx'
+import ModelCheckModal from './ModelCheckModal.tsx'
 import PieBrand from './PieBrand.tsx'
 
 interface RightMenuProps {
@@ -33,6 +36,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
   // condicional de abajo: este componente permanece montado mientras
   // `isOpen` alterna.
   const allModels = useModelCatalog()
+  const [checkOpen, setCheckOpen] = useState(false)
 
   if (!isOpen) return null
 
@@ -210,14 +214,34 @@ const RightMenu: React.FC<RightMenuProps> = ({
             {/* ── Modelo de IA ─────────────────────────────────────────────── */}
             <div>
               <p style={sectionHeadingStyle}>Modelo de IA</p>
+              <button
+                type="button"
+                onClick={() => setCheckOpen(true)}
+                title="Prueba cada modelo con tus claves y deshabilita los que tu cuenta no puede usar"
+                className="nm-press w-full mb-3 px-3 py-2 rounded-xl text-sm font-medium"
+                style={{
+                  backgroundColor: theme.background,
+                  boxShadow: theme.shadow.sm,
+                  color: theme.accent,
+                }}
+              >
+                🔎 Revisar modelos
+              </button>
               <div className="space-y-1.5">
                 {filteredModels.map((model) => {
                   const isSelected = selectedModel === model.id
+                  const disabledLabel = model.disabledReason
+                    ? UNAVAILABLE_REASON_LABELS[model.disabledReason]
+                    : undefined
                   return (
                     <label
                       key={model.id}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer nm-press"
+                      title={disabledLabel}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl nm-press ${
+                        disabledLabel ? 'cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                       style={{
+                        opacity: disabledLabel ? 0.45 : 1,
                         backgroundColor: theme.background,
                         boxShadow: isSelected
                           ? theme.shadow.inset
@@ -232,6 +256,7 @@ const RightMenu: React.FC<RightMenuProps> = ({
                         name="model"
                         className="sr-only"
                         checked={isSelected}
+                        disabled={Boolean(disabledLabel)}
                         onChange={() => onModelChange(model.id)}
                       />
                       {/* Custom radio dot */}
@@ -361,6 +386,11 @@ const RightMenu: React.FC<RightMenuProps> = ({
           <PieBrand theme={theme} isDarkTheme={isDarkTheme} />
         </div>
       </div>
+      <ModelCheckModal
+        isOpen={checkOpen}
+        onClose={() => setCheckOpen(false)}
+        theme={theme}
+      />
     </>
   )
 }

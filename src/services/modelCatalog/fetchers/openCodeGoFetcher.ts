@@ -1,10 +1,10 @@
 // Fetcher/parser de OpenCode Go.
-// GET https://opencode.ai/zen/go/v1/models → {data:[{id}]}.
+// GET <proxy>/zen/go/v1/models → {data:[{id}]} (ver getOpenCodeGoModelsUrl:
+// directo a opencode.ai el navegador lo bloquea por CORS).
 // Todos los IDs listados pertenecen al plan Go, no hace falta filtrar.
 
+import { getOpenCodeGoModelsUrl } from '../../../config/providers'
 import { fetchJson, parseDataIds } from './http'
-
-const OPENCODE_GO_MODELS_URL = 'https://opencode.ai/zen/go/v1/models'
 
 export function parseOpenCodeGoModelIds(payload: unknown): string[] {
   return parseDataIds(payload)
@@ -13,7 +13,7 @@ export function parseOpenCodeGoModelIds(payload: unknown): string[] {
 export async function fetchOpenCodeGoModelIds(
   apiKey: string,
 ): Promise<string[]> {
-  const payload = await fetchJson(OPENCODE_GO_MODELS_URL, 'OpenCode Go', {
+  const payload = await fetchJson(getOpenCodeGoModelsUrl(), 'OpenCode Go', {
     Authorization: `Bearer ${apiKey}`,
   })
   return parseOpenCodeGoModelIds(payload)

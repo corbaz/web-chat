@@ -27,4 +27,7 @@ export interface CatalogModel {
   velocidad?: string
   precio?: string
   fecha?: string
+  /** El modelo existe pero la cuenta no lo puede usar: se muestra
+   * deshabilitado en el selector (ver unavailableModels.ts). */
+  disabledReason?: 'unavailable' | 'quota'
 }
