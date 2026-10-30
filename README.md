@@ -268,7 +268,7 @@ Usa los modelos cloud de [Ollama](https://ollama.com) a través del `ollama serv
 
 ## Arranque manual de los servidores locales (resumen)
 
-**Instalador para Mac (un solo comando):** revisa Bun, OpenCode, Claude Code y Codex CLI (si falta alguno pregunta antes de instalarlo; Antigravity `agy` solo se avisa, no se instala), crea la carpeta de OpenCode Free y baja `claude-bridge.js`, `codex-bridge.js` y `gemini-bridge.js`. Se puede repetir para actualizar los puentes.
+**Instalador para Mac (un solo comando):** revisa Bun, OpenCode, Claude Code y Codex CLI (si falta alguno pregunta antes de instalarlo; Antigravity `agy` solo se avisa, no se instala), crea la carpeta de OpenCode Free, baja `claude-bridge.js`, `codex-bridge.js` y `gemini-bridge.js`, y agrega a `~/.zshrc` los comandos `zen-server`, `claude-server`, `codex-server`, `gemini-server` y `ollama-server` (uno por terminal, como el `$PROFILE` de Windows). Pide una contraseña para los servidores (Enter = generar una) y la guarda en `~/Library/Application Support/prompting/password.txt`, no en `~/.zshrc`; `prompting-password` la muestra. Se puede repetir para actualizar los puentes: el bloque de `~/.zshrc` se reemplaza, no se duplica.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/install-mac.sh | bash
