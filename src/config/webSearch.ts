@@ -43,7 +43,8 @@ export function isWebSearchAlwaysOn(provider?: string): boolean {
 }
 
 export function supportsWebSearch(modelId: string, provider?: string): boolean {
-  if (!modelId || provider === 'routellm') return false
+  if (!modelId || provider === 'routellm' || provider === 'ollamacloud')
+    return false
   if (provider === 'opengo') return GO_WEB_SEARCH_MODELS.has(modelId)
   // Claude (suscripción, bridge local a `claude -p`): WebSearch/WebFetch
   // siempre disponibles (T7). El globo se muestra como capacidad en el

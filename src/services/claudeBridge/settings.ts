@@ -2,6 +2,11 @@
 // bridge local + password). Separado de client.ts para mantenerlo puro (ver
 // odd/tasks/claude-subscription-bridge.md): este módulo sí toca localStorage.
 
+import {
+  LOCAL_SERVER_PROXIES,
+  resolveLocalServerUrl,
+} from '../../config/localServers'
+
 export const DEFAULT_CLAUDE_CODE_URL = 'http://127.0.0.1:4098'
 export const CLAUDE_CODE_API_KEY_STORAGE_KEY = 'claudecodeApiKey'
 export const CLAUDE_CODE_SERVER_URL_STORAGE_KEY = 'claudecodeServerUrl'
@@ -11,7 +16,10 @@ export function getClaudeCodeServerUrl(): string {
     const stored = localStorage
       .getItem(CLAUDE_CODE_SERVER_URL_STORAGE_KEY)
       ?.trim()
-    return stored || DEFAULT_CLAUDE_CODE_URL
+    return resolveLocalServerUrl(
+      stored || DEFAULT_CLAUDE_CODE_URL,
+      LOCAL_SERVER_PROXIES.claudecode.path,
+    )
   } catch {
     return DEFAULT_CLAUDE_CODE_URL
   }

@@ -64,6 +64,7 @@ const Header: React.FC<HeaderProps> = ({
         'opengo',
         'opencodezen',
         'opencodefree',
+        'ollamacloud',
         'gemini',
       ]
       for (const provider of providers) {

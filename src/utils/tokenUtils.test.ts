@@ -30,7 +30,7 @@ describe('getModelTokenLimit', () => {
 
   test('Claude (suscripción) resuelve el alias si no llegó el id real', async () => {
     const { getModelTokenLimit } = await import('./tokenUtils')
-    expect(getModelTokenLimit('haiku', 'claudecode')).toBe(200000)
+    expect(getModelTokenLimit('haiku', 'claudecode')).toBe(1000000)
     expect(getModelTokenLimit('sonnet', 'claudecode')).toBe(1000000)
   })
 

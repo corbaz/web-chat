@@ -3,6 +3,11 @@
 // (ver T2 en odd/tasks/opencode-free-local.md): este módulo sí toca
 // localStorage.
 
+import {
+  LOCAL_SERVER_PROXIES,
+  resolveLocalServerUrl,
+} from '../../config/localServers'
+
 export const DEFAULT_OPENCODE_FREE_URL = 'http://127.0.0.1:4096'
 export const OPENCODE_FREE_API_KEY_STORAGE_KEY = 'opencodefreeApiKey'
 export const OPENCODE_FREE_SERVER_URL_STORAGE_KEY = 'opencodefreeServerUrl'
@@ -12,7 +17,10 @@ export function getOpenCodeFreeServerUrl(): string {
     const stored = localStorage
       .getItem(OPENCODE_FREE_SERVER_URL_STORAGE_KEY)
       ?.trim()
-    return stored || DEFAULT_OPENCODE_FREE_URL
+    return resolveLocalServerUrl(
+      stored || DEFAULT_OPENCODE_FREE_URL,
+      LOCAL_SERVER_PROXIES.opencodefree.path,
+    )
   } catch {
     return DEFAULT_OPENCODE_FREE_URL
   }

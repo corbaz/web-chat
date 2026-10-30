@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { capProbePayload, classifyProbeResponse } from './modelCheck'
+import { isQuotaExhaustedMessage } from './unavailableModels'
 
 describe('classifyProbeResponse', () => {
   test('2xx es ok', () => {
@@ -23,6 +24,23 @@ describe('classifyProbeResponse', () => {
       'quota',
     )
     expect(classifyProbeResponse(400, 'Insufficient balance')).toBe('quota')
+  })
+
+  test('Ollama Cloud: modelo fuera del plan gratis es quota también por el mensaje', () => {
+    expect(
+      isQuotaExhaustedMessage(
+        'this model is not included in your free usage, add usage credits to pay as you go: https://ollama.com/settings',
+      ),
+    ).toBe(true)
+  })
+
+  test('Ollama Cloud: modelo retirado (410) es unavailable', () => {
+    expect(
+      classifyProbeResponse(
+        410,
+        'minimax-m2.5 was retired on July 31, 2026. Try gemma4:31b-cloud, which is in the Free plan.',
+      ),
+    ).toBe('unavailable')
   })
 
   test('404 o modelo no usable es unavailable', () => {

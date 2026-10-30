@@ -59,8 +59,8 @@ import { getAllModels } from '../services/modelCatalog/store'
 // antes de tener modelUsage): apunta al id más nuevo de cada familia que ya
 // figura en modelLimits.generated.ts.
 const CLAUDE_CODE_ALIAS_TO_ANTHROPIC_ID: Record<string, string> = {
-  haiku: 'claude-haiku-4-5-20251001',
-  sonnet: 'claude-sonnet-5',
+  haiku: 'claude-haiku-5-5',
+  sonnet: 'claude-sonnet-5-5',
   opus: 'claude-opus-5-5',
   fable: 'claude-fable-5-1',
 }

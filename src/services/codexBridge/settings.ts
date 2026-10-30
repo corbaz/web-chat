@@ -2,6 +2,11 @@
 // bridge local + password). Espejo de services/claudeBridge/settings.ts (ver
 // odd/tasks/openai-subscription-bridge.md).
 
+import {
+  LOCAL_SERVER_PROXIES,
+  resolveLocalServerUrl,
+} from '../../config/localServers'
+
 export const DEFAULT_CODEX_URL = 'http://127.0.0.1:4094'
 export const CODEX_API_KEY_STORAGE_KEY = 'codexsubApiKey'
 export const CODEX_SERVER_URL_STORAGE_KEY = 'codexsubServerUrl'
@@ -18,7 +23,10 @@ export function getCodexServerUrl(): string {
       localStorage.setItem(CODEX_SERVER_URL_STORAGE_KEY, DEFAULT_CODEX_URL)
       return DEFAULT_CODEX_URL
     }
-    return stored || DEFAULT_CODEX_URL
+    return resolveLocalServerUrl(
+      stored || DEFAULT_CODEX_URL,
+      LOCAL_SERVER_PROXIES.codexsub.path,
+    )
   } catch {
     return DEFAULT_CODEX_URL
   }

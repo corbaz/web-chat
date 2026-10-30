@@ -210,15 +210,17 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
               ? 'OpenCode Zen'
               : id === 'opencodefree'
                 ? 'OpenCode Free'
-                : id === 'claudecode'
-                  ? 'Claude (suscripción)'
-                  : id === 'codexsub'
-                    ? 'OpenAI (suscripción)'
-                    : id === 'geminisub'
-                      ? 'Gemini (suscripción)'
-                      : id === 'gemini'
-                        ? 'Gemini'
-                        : 'Anthropic'
+                : id === 'ollamacloud'
+                  ? 'Ollama Cloud (local)'
+                  : id === 'claudecode'
+                    ? 'Claude (suscripción)'
+                    : id === 'codexsub'
+                      ? 'OpenAI (suscripción)'
+                      : id === 'geminisub'
+                        ? 'Gemini (suscripción)'
+                        : id === 'gemini'
+                          ? 'Gemini'
+                          : 'Anthropic'
 
   const providerLink = (id: string) =>
     id === 'groq'
@@ -233,15 +235,17 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
               ? 'https://opencode.ai/docs/zen/'
               : id === 'opencodefree'
                 ? 'https://opencode.ai'
-                : id === 'claudecode'
-                  ? 'https://claude.com/claude-code'
-                  : id === 'codexsub'
-                    ? 'https://developers.openai.com/codex/cli'
-                    : id === 'geminisub'
-                      ? 'https://antigravity.google/'
-                      : id === 'gemini'
-                        ? 'https://aistudio.google.com/app/apikey'
-                        : 'https://console.anthropic.com/settings/keys'
+                : id === 'ollamacloud'
+                  ? 'https://ollama.com'
+                  : id === 'claudecode'
+                    ? 'https://claude.com/claude-code'
+                    : id === 'codexsub'
+                      ? 'https://developers.openai.com/codex/cli'
+                      : id === 'geminisub'
+                        ? 'https://antigravity.google/'
+                        : id === 'gemini'
+                          ? 'https://aistudio.google.com/app/apikey'
+                          : 'https://console.anthropic.com/settings/keys'
 
   return (
     <div className="mb-6">
@@ -294,6 +298,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
             <option value="opengo">OpenCode Go</option>
             <option value="opencodezen">OpenCode Zen</option>
             <option value="opencodefree">OpenCode Free</option>
+            <option value="ollamacloud">Ollama Cloud (local)</option>
             <option value="claudecode">Claude (suscripción)</option>
             <option value="codexsub">OpenAI (suscripción)</option>
             <option value="geminisub">Gemini (suscripción)</option>
@@ -424,19 +429,26 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
           <input
             id="stored-api-key"
             name="apiKey"
-            type={state.isVisible ? 'text' : 'password'}
+            // Ollama Cloud guarda la URL del servidor, no un secreto.
+            type={
+              state.isVisible || provider === 'ollamacloud'
+                ? 'text'
+                : 'password'
+            }
             value={state.apiKey}
             readOnly
             placeholder={
               state.apiKey
                 ? ''
-                : provider === 'opencodefree'
-                  ? 'Sin contraseña del servidor local'
-                  : provider === 'claudecode' ||
-                      provider === 'codexsub' ||
-                      provider === 'geminisub'
-                    ? 'Sin contraseña del bridge local'
-                    : `Sin API Key de ${providerName(provider)}`
+                : provider === 'ollamacloud'
+                  ? 'Sin URL del servidor Ollama'
+                  : provider === 'opencodefree'
+                    ? 'Sin contraseña del servidor local'
+                    : provider === 'claudecode' ||
+                        provider === 'codexsub' ||
+                        provider === 'geminisub'
+                      ? 'Sin contraseña del bridge local'
+                      : `Sin API Key de ${providerName(provider)}`
             }
             className="w-full px-3 py-2.5 pr-10 text-sm cursor-default"
             style={{

@@ -320,6 +320,103 @@ function isAllowedOrigin(origin, allowlist) {
 var MAX_BODY_BYTES = 200 * 1024;
 var MAX_BODY_BYTES_WITH_IMAGES = 16 * 1024 * 1024;
 
+// scripts/claude-bridge/models.ts
+var MODELS_DEV_URL = "https://models.dev/api.json";
+function isDatedId(id) {
+  return /-\d{8}$/.test(id);
+}
+function undatedIdFor(id) {
+  return id.replace(/-\d{8}$/, "");
+}
+var CLAUDE_FAMILY_ORDER = ["sonnet", "opus", "haiku", "fable", "mythos"];
+function parseClaudeFamily(id) {
+  const match = undatedIdFor(id).replace(/^claude-/, "").match(/^([a-z]+)-(.+)$/);
+  if (!match)
+    return { family: id, version: [] };
+  const [, family, rest] = match;
+  const version = rest.split("-").map((part) => {
+    const n = Number.parseFloat(part);
+    return Number.isFinite(n) ? n : 0;
+  });
+  return { family, version };
+}
+function claudeFamilyRank(family) {
+  const idx = CLAUDE_FAMILY_ORDER.indexOf(family);
+  return idx === -1 ? CLAUDE_FAMILY_ORDER.length : idx;
+}
+function compareVersionsDesc(a, b) {
+  const len = Math.max(a.length, b.length);
+  for (let i = 0;i < len; i++) {
+    const diff = (b[i] ?? 0) - (a[i] ?? 0);
+    if (diff !== 0)
+      return diff;
+  }
+  return 0;
+}
+function selectClaudeModels(anthropicModels) {
+  const idSet = new Set(Object.keys(anthropicModels));
+  const deduped = Object.keys(anthropicModels).filter((id) => !isDatedId(id) || !idSet.has(undatedIdFor(id)));
+  const sorted = [...deduped].sort((idA, idB) => {
+    const a = parseClaudeFamily(idA);
+    const b = parseClaudeFamily(idB);
+    const familyDiff = claudeFamilyRank(a.family) - claudeFamilyRank(b.family);
+    return familyDiff !== 0 ? familyDiff : compareVersionsDesc(a.version, b.version);
+  });
+  const seenFamilies = new Set;
+  const latest = sorted.filter((id) => {
+    const { family } = parseClaudeFamily(id);
+    if (seenFamilies.has(family))
+      return false;
+    seenFamilies.add(family);
+    return true;
+  });
+  return latest.map((id) => ({
+    id,
+    name: (anthropicModels[id].name ?? id).replace(/\s*\(latest\)\s*$/i, "")
+  }));
+}
+var DEFAULT_TTL_MS = 60 * 60 * 1000;
+async function fetchModelsDev() {
+  const response = await fetch(MODELS_DEV_URL, {
+    signal: AbortSignal.timeout(1e4)
+  });
+  if (!response.ok)
+    throw new Error(`models.dev respondi\xF3 ${response.status}`);
+  return response.json();
+}
+function createModelsLoader({
+  fetchJson = fetchModelsDev,
+  ttlMs = DEFAULT_TTL_MS,
+  now = Date.now
+} = {}) {
+  let cache = null;
+  let inFlight = null;
+  return async () => {
+    if (cache && now() - cache.fetchedAt < ttlMs)
+      return cache.models;
+    if (!inFlight) {
+      inFlight = (async () => {
+        try {
+          const data = await fetchJson();
+          const models = selectClaudeModels(data?.anthropic?.models ?? {});
+          if (models.length === 0) {
+            throw new Error("models.dev no devolvi\xF3 modelos de Anthropic");
+          }
+          cache = { models, fetchedAt: now() };
+          return models;
+        } catch (error) {
+          if (cache)
+            return cache.models;
+          throw error;
+        } finally {
+          inFlight = null;
+        }
+      })();
+    }
+    return inFlight;
+  };
+}
+
 // scripts/claude-bridge/server.ts
 var HOSTNAME = "127.0.0.1";
 var PORT = Number(process.env.CLAUDE_BRIDGE_PORT) || 4098;
@@ -329,12 +426,7 @@ var CORS_ORIGINS = [
   "https://prompting-chat.vercel.app"
 ];
 var CHAT_TIMEOUT_MS = 180000;
-var MODELS_RESPONSE = [
-  { id: "haiku", name: "Claude Haiku" },
-  { id: "sonnet", name: "Claude Sonnet" },
-  { id: "opus", name: "Claude Opus" },
-  { id: "fable", name: "Claude Fable" }
-];
+var loadModels = createModelsLoader();
 function bridgeDataDir() {
   if (process.platform === "win32") {
     const base = process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local");
@@ -688,7 +780,13 @@ async function main() {
         return jsonResponse({ healthy: version !== null, claudeVersion: version }, {}, origin);
       }
       if (url.pathname === "/models" && req.method === "GET") {
-        return jsonResponse(MODELS_RESPONSE, {}, origin);
+        try {
+          return jsonResponse(await loadModels(), {}, origin);
+        } catch (error) {
+          return jsonResponse({
+            error: `No se pudo obtener la lista de modelos: ${error instanceof Error ? error.message : String(error)}`
+          }, { status: 502 }, origin);
+        }
       }
       if (url.pathname === "/permission" && req.method === "GET") {
         return jsonResponse(listPendingPermissions(), {}, origin);

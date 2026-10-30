@@ -6,6 +6,7 @@
 export type ProviderId =
   | 'groq'
   | 'routellm'
+  | 'ollamacloud'
   | 'openai'
   | 'anthropic'
   | 'opengo'
@@ -32,3 +33,7 @@ export interface CatalogModel {
    * deshabilitado en el selector (ver unavailableModels.ts). */
   disabledReason?: 'unavailable' | 'quota'
 }
+
+// Lo que devuelve un fetcher: el id solo, o el id con el nombre real cuando
+// la fuente lo trae (se usa para modelos que el catálogo estático no conoce).
+export type FetchedModel = string | { id: string; name?: string }

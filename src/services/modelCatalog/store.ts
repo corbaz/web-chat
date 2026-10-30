@@ -11,6 +11,7 @@ import { codexSubModels } from '../../components/HEADER/models/codexSubModels'
 import { geminiModels } from '../../components/HEADER/models/geminiModels'
 import { geminiSubModels } from '../../components/HEADER/models/geminiSubModels'
 import { groqModels } from '../../components/HEADER/models/groqModels'
+import { ollamaCloudModels } from '../../components/HEADER/models/ollamaCloudModels'
 import { openaiModels } from '../../components/HEADER/models/openaiModels'
 import { opencodeFreeModels } from '../../components/HEADER/models/opencodeFreeModels'
 import { opencodeZenModels } from '../../components/HEADER/models/opencodeZenModels'
@@ -32,6 +33,7 @@ import {
 export const PROVIDER_IDS: ProviderId[] = [
   'groq',
   'routellm',
+  'ollamacloud',
   'openai',
   'anthropic',
   'opengo',
@@ -46,6 +48,7 @@ export const PROVIDER_IDS: ProviderId[] = [
 const STATIC_MODELS: Record<ProviderId, readonly CatalogModel[]> = {
   groq: groqModels,
   routellm: routellmModels,
+  ollamacloud: ollamaCloudModels,
   openai: openaiModels,
   anthropic: anthropicModels,
   opengo: opengoModels,

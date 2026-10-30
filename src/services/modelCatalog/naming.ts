@@ -6,11 +6,20 @@ function capitalizeSegment(segment: string): string {
   return segment.charAt(0).toUpperCase() + segment.slice(1)
 }
 
+// Ids de Anthropic: claude-<familia>-<mayor>[-<menor>][-<fecha>].
+const CLAUDE_ID = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?$/
+
 /**
  * Deriva un nombre legible a partir de un ID de modelo.
- * Ej: "deepseek-v4-flash-free" -> "Deepseek V4 Flash Free"
+ * Ej: "deepseek-v4-flash-free" -> "Deepseek V4 Flash Free",
+ * "claude-opus-5-5" -> "Claude Opus 5.5"
  */
 export function deriveNameFromId(id: string): string {
+  const claude = id.match(CLAUDE_ID)
+  if (claude) {
+    const [, family, major, minor] = claude
+    return `Claude ${capitalizeSegment(family)} ${minor ? `${major}.${minor}` : major}`
+  }
   return id.split(/[-_]/).filter(Boolean).map(capitalizeSegment).join(' ')
 }
 

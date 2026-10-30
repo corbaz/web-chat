@@ -1,4 +1,5 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, type Plugin, type ProxyOptions } from 'vite';
+import { LOCAL_SERVER_PROXIES } from './src/config/localServerProxies';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
@@ -55,6 +56,32 @@ const pricesDevEndpoint = (): Plugin => ({
     },
 });
 
+// Servidores locales (127.0.0.1) para la app abierta desde otra máquina de
+// la red: https://<ip>:5173/local/<servidor>/... -> http://127.0.0.1:<puerto>/...
+// (ver src/config/localServers.ts). Sin el Origin de la otra máquina, que
+// los servidores no tienen permitido (Ollama responde 403); el pedido llega
+// como si fuera local. Timeout largo: Claude y Gemini tardan minutos.
+function localServerProxies(): Record<string, ProxyOptions> {
+    return Object.fromEntries(
+        Object.values(LOCAL_SERVER_PROXIES).map(({ path, target }) => [
+            path,
+            {
+                target,
+                changeOrigin: true,
+                timeout: 15 * 60 * 1000,
+                proxyTimeout: 15 * 60 * 1000,
+                rewrite: (url: string) => url.slice(path.length) || '/',
+                configure: (proxy) => {
+                    proxy.on('proxyReq', (proxyReq) => {
+                        proxyReq.removeHeader('origin')
+                        proxyReq.removeHeader('referer')
+                    })
+                },
+            } satisfies ProxyOptions,
+        ]),
+    )
+}
+
 // https://vite.dev/config/
 export default defineConfig({
     // Configura base como './' para generar rutas relativas en lugar de absolutas
@@ -76,7 +103,8 @@ export default defineConfig({
                 target: 'https://opencode.ai',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/opencode-go-api/, ''),
-            }
+            },
+            ...localServerProxies(),
         }
     },
     build: {

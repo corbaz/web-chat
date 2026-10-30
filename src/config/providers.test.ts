@@ -45,6 +45,22 @@ describe('providers: payloadBuilder sin imágenes queda byte-idéntico', () => {
     })
   })
 
+  test('Ollama Cloud (chat completions al servidor local, sin auth)', () => {
+    const ollama = getProviderConfig('ollamacloud')
+    const payload = ollama?.payloadBuilder('gemma4:31b-cloud', textOnly, 2048)
+    expect(payload).toEqual({
+      model: 'gemma4:31b-cloud',
+      messages: textOnly,
+      max_tokens: 2048,
+      stream: false,
+    })
+    expect(ollama?.headerAuth('http://127.0.0.1:11434')).toEqual({})
+    // Sin localStorage (bun test) usa la URL por defecto.
+    expect(ollama?.endpoint('gemma4:31b-cloud')).toBe(
+      'http://127.0.0.1:11434/v1/chat/completions',
+    )
+  })
+
   test('Anthropic (messages)', () => {
     const anthropic = getProviderConfig('anthropic')
     const payload = anthropic?.payloadBuilder('claude-sonnet-5', textOnly, 2048)

@@ -2,6 +2,11 @@
 // bridge local + password). Espejo de services/codexBridge/settings.ts (ver
 // odd/tasks/gemini-subscription-bridge.md).
 
+import {
+  LOCAL_SERVER_PROXIES,
+  resolveLocalServerUrl,
+} from '../../config/localServers'
+
 export const DEFAULT_GEMINI_SUB_URL = 'http://127.0.0.1:4092'
 export const GEMINI_SUB_API_KEY_STORAGE_KEY = 'geminisubApiKey'
 export const GEMINI_SUB_SERVER_URL_STORAGE_KEY = 'geminisubServerUrl'
@@ -11,7 +16,10 @@ export function getGeminiSubServerUrl(): string {
     const stored = localStorage
       .getItem(GEMINI_SUB_SERVER_URL_STORAGE_KEY)
       ?.trim()
-    return stored || DEFAULT_GEMINI_SUB_URL
+    return resolveLocalServerUrl(
+      stored || DEFAULT_GEMINI_SUB_URL,
+      LOCAL_SERVER_PROXIES.geminisub.path,
+    )
   } catch {
     return DEFAULT_GEMINI_SUB_URL
   }

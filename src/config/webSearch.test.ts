@@ -2,6 +2,10 @@ import { describe, expect, test } from 'bun:test'
 import { supportsWebSearch } from './webSearch'
 
 describe('supportsWebSearch', () => {
+  test('Ollama Cloud (local): sin búsqueda web, aunque el id coincida', () => {
+    expect(supportsWebSearch('gpt-oss:120b-cloud', 'ollamacloud')).toBe(false)
+  })
+
   test('Claude por API key: todos los modelos de chat, incluidos los nuevos', () => {
     expect(supportsWebSearch('claude-opus-5-5', 'anthropic')).toBe(true)
     expect(supportsWebSearch('claude-sonnet-5', 'anthropic')).toBe(true)

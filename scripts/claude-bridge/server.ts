@@ -19,7 +19,6 @@ import {
   type ChatDocumentInput,
   type ChatImageInput,
   checkBasicAuth,
-  type ClaudeCodeModel,
   formatPermissionLog,
   isAllowedOrigin,
   isValidDocuments,
@@ -33,6 +32,7 @@ import {
   parseStreamLine,
   policyForTool,
 } from './args'
+import { createModelsLoader } from './models'
 
 const HOSTNAME = '127.0.0.1'
 const PORT = Number(process.env.CLAUDE_BRIDGE_PORT) || 4098
@@ -43,12 +43,9 @@ const CORS_ORIGINS = [
 ]
 const CHAT_TIMEOUT_MS = 180_000
 
-const MODELS_RESPONSE: Array<{ id: ClaudeCodeModel; name: string }> = [
-  { id: 'haiku', name: 'Claude Haiku' },
-  { id: 'sonnet', name: 'Claude Sonnet' },
-  { id: 'opus', name: 'Claude Opus' },
-  { id: 'fable', name: 'Claude Fable' },
-]
+// Catálogo en vivo desde models.dev (caché de 1 h): la app ve los modelos
+// nuevos de Anthropic sin regenerar nada.
+const loadModels = createModelsLoader()
 
 function bridgeDataDir(): string {
   if (process.platform === 'win32') {
@@ -673,7 +670,17 @@ async function main(): Promise<void> {
       }
 
       if (url.pathname === '/models' && req.method === 'GET') {
-        return jsonResponse(MODELS_RESPONSE, {}, origin)
+        try {
+          return jsonResponse(await loadModels(), {}, origin)
+        } catch (error) {
+          return jsonResponse(
+            {
+              error: `No se pudo obtener la lista de modelos: ${error instanceof Error ? error.message : String(error)}`,
+            },
+            { status: 502 },
+            origin,
+          )
+        }
       }
 
       // T7: permisos pendientes (Bash preguntándole al usuario). La app

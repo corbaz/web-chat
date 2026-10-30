@@ -7,6 +7,7 @@ import type {
   ToolConfig,
 } from '../interfaces/chat/chatTypes'
 import { goRouteFor, zenRouteFor } from '../services/modelCatalog/zenRoute'
+import { getOllamaCloudServerUrl } from '../services/ollamaCloud/settings'
 import {
   gptOssToolPayload,
   isToolCapableModel,
@@ -16,6 +17,7 @@ import {
 type ProviderType =
   | 'groq'
   | 'routellm'
+  | 'ollamacloud'
   | 'openai'
   | 'anthropic'
   | 'opengo'
@@ -199,7 +201,12 @@ const toGeminiParts = (message: Message): GeminiPart[] => {
 const usesOpenCodeGoAnthropic = (model: string): boolean =>
   goRouteFor(model) === 'messages'
 
-const isLocalhost = (): boolean =>
+// El proxy de Vite (/opencode-go-api, ver vite.config.ts) existe en el
+// servidor de desarrollo sin importar desde dónde se abra la app: también
+// desde otra máquina de la red (https://<ip>:5173). En localhost cubre
+// además `vite preview`.
+const hasViteProxy = (): boolean =>
+  Boolean(import.meta.env?.DEV) ||
   window.location.hostname === 'localhost' ||
   window.location.hostname === '127.0.0.1'
 
@@ -212,13 +219,13 @@ const hasSafeProductionProxy =
   configuredOpenCodeProxy.startsWith('https://')
 
 export const isOpenCodeAvailable = (): boolean =>
-  isLocalhost() || hasSafeProductionProxy
+  hasViteProxy() || hasSafeProductionProxy
 
 export const OPENCODE_UNAVAILABLE_MESSAGE =
   'OpenCode no está disponible en esta instalación. Configura VITE_OPENCODE_PROXY_URL con la URL HTTPS de un proxy propio y vuelve a compilar la aplicación.'
 
 const getOpenCodeBase = (): string =>
-  isLocalhost() ? '/opencode-go-api' : configuredOpenCodeProxy
+  hasViteProxy() ? '/opencode-go-api' : configuredOpenCodeProxy
 
 /**
  * URL de la lista de modelos de OpenCode Go, por el mismo proxy que usa el
@@ -775,6 +782,27 @@ const PROVIDERS: Record<ProviderType, ProviderConfig> = {
       max_tokens: maxTokens,
       stream: false,
     }),
+  },
+  // Ollama Cloud (local): Chat Completions compatible con OpenAI contra el
+  // `ollama serve` del usuario; sin auth (los modelos :cloud los autentica
+  // la sesión de `ollama signin`). En `ollamacloudApiKey` va la URL del
+  // servidor (ver src/services/ollamaCloud/settings.ts).
+  ollamacloud: {
+    name: 'Ollama Cloud (local)',
+    endpoint: () => `${getOllamaCloudServerUrl()}/v1/chat/completions`,
+    headerAuth: () => ({}),
+    payloadBuilder: (
+      model: string,
+      messages: Message[],
+      maxTokens: number,
+    ) => ({
+      model,
+      messages: toChatCompletionsMessages(messages),
+      max_tokens: maxTokens,
+      stream: false,
+    }),
+    warning:
+      'No se pudo conectar con Ollama. Verificá que esté corriendo ("ollama-server", o `ollama serve` con OLLAMA_ORIGINS que incluya este origen) y que hayas hecho `ollama signin`.',
   },
   openai: {
     name: 'OpenAI',

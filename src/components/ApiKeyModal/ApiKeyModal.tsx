@@ -4,12 +4,21 @@ import { isOpenCodeAvailable } from '../../config/providers'
 import { APP_VERSION } from '../../constants/appVersion'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { checkServer as checkClaudeBridgeServer } from '../../services/claudeBridge/client'
+import { getClaudeCodeServerUrl } from '../../services/claudeBridge/settings'
 import { checkServer as checkCodexBridgeServer } from '../../services/codexBridge/client'
+import { getCodexServerUrl } from '../../services/codexBridge/settings'
 import { checkServer as checkGeminiSubBridgeServer } from '../../services/geminiBridge/client'
+import { getGeminiSubServerUrl } from '../../services/geminiBridge/settings'
+import { checkOllamaServer } from '../../services/ollamaCloud/client'
+import {
+  DEFAULT_OLLAMA_CLOUD_URL,
+  normalizeOllamaUrl,
+} from '../../services/ollamaCloud/settings'
 import {
   checkServer,
   type ServerCheck,
 } from '../../services/opencodeLocal/client'
+import { getOpenCodeFreeServerUrl } from '../../services/opencodeLocal/settings'
 
 // Último diagnóstico del servidor local de OpenCode Free, para elegir el
 // mensaje de error (contraseña incorrecta vs. servidor inalcanzable).
@@ -60,6 +69,11 @@ const PROVIDERS = [
     id: 'opencodefree',
     name: 'OpenCode Free',
     link: 'https://opencode.ai',
+  },
+  {
+    id: 'ollamacloud',
+    name: 'Ollama Cloud (local)',
+    link: 'https://ollama.com',
   },
   {
     id: 'claudecode',
@@ -212,17 +226,13 @@ const validateApiKey = async (
       // GET /global/health exige Basic auth (verificado en vivo
       // 2026-09-26: sin credenciales devuelve 401), así que se valida la
       // password real contra el servidor local configurado.
-      const baseUrl =
-        localStorage.getItem('opencodefreeServerUrl')?.trim() ||
-        'http://127.0.0.1:4096'
+      const baseUrl = getOpenCodeFreeServerUrl()
       lastOpenCodeFreeCheck = await checkServer(baseUrl, apiKey.trim())
       return lastOpenCodeFreeCheck === 'ok'
     } else if (provider === 'claudecode') {
       // Mismo contrato que OpenCode Free: GET /health exige Basic auth, así
       // que se valida la password real contra el bridge local configurado.
-      const baseUrl =
-        localStorage.getItem('claudecodeServerUrl')?.trim() ||
-        'http://127.0.0.1:4098'
+      const baseUrl = getClaudeCodeServerUrl()
       lastClaudeCodeCheck = await checkClaudeBridgeServer(
         baseUrl,
         apiKey.trim(),
@@ -232,21 +242,22 @@ const validateApiKey = async (
       // Mismo contrato que Claude (suscripción): GET /health exige Basic
       // auth, así que se valida la password real contra el bridge local
       // configurado.
-      const baseUrl =
-        localStorage.getItem('codexsubServerUrl')?.trim() ||
-        'http://127.0.0.1:4094'
+      const baseUrl = getCodexServerUrl()
       lastCodexCheck = await checkCodexBridgeServer(baseUrl, apiKey.trim())
       return lastCodexCheck === 'ok'
     } else if (provider === 'geminisub') {
       // Mismo contrato que Codex (suscripción): GET /health exige Basic auth.
-      const baseUrl =
-        localStorage.getItem('geminisubServerUrl')?.trim() ||
-        'http://127.0.0.1:4092'
+      const baseUrl = getGeminiSubServerUrl()
       lastGeminiSubCheck = await checkGeminiSubBridgeServer(
         baseUrl,
         apiKey.trim(),
       )
       return lastGeminiSubCheck === 'ok'
+    } else if (provider === 'ollamacloud') {
+      // Sin contraseña: en el campo va la URL del servidor `ollama serve`.
+      // GET /api/version confirma que responde y que acepta este origen
+      // (OLLAMA_ORIGINS).
+      return await checkOllamaServer(apiKey)
     } else if (provider === 'gemini') {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -278,10 +289,19 @@ const usesLocalPassword = (provider: string): boolean =>
   provider === 'codexsub' ||
   provider === 'geminisub'
 
+// Ollama Cloud (local): en el campo va la URL del servidor, no una key.
+const usesServerUrl = (provider: string): boolean => provider === 'ollamacloud'
+
 const confirmLabelFor = (provider: string): string =>
-  usesLocalPassword(provider) ? 'Guardar contraseña' : 'Guardar API Key'
+  usesServerUrl(provider)
+    ? 'Guardar URL'
+    : usesLocalPassword(provider)
+      ? 'Guardar contraseña'
+      : 'Guardar API Key'
 
 const passwordPlaceholderFor = (provider: string): string | null => {
+  if (usesServerUrl(provider))
+    return `URL del servidor Ollama (vacío = ${DEFAULT_OLLAMA_CLOUD_URL})`
   if (provider === 'opencodefree') return 'Contraseña del servidor local'
   if (
     provider === 'claudecode' ||
@@ -510,6 +530,15 @@ const ApiKeyModal = ({
                           .swal2-actions {
                             margin: 2em auto 0.8em !important;
                           }
+                          /* El menú de proveedores vive dentro del
+                             contenedor del formulario: tiene que quedar por
+                             encima del botón Guardar (mismo z-index en
+                             SweetAlert2, y el botón va después en el DOM). */
+                          .swal2-html-container {
+                            position: relative !important;
+                            z-index: 2 !important;
+                            overflow: visible !important;
+                          }
                           .swal2-confirm {
                             background: ${theme.background} !important;
                             color: ${theme.text} !important;
@@ -647,6 +676,7 @@ const ApiKeyModal = ({
               input.placeholder =
                 passwordPlaceholderFor(providerMeta.id) ||
                 `Ingresa tu API Key de ${providerMeta.name}`
+              input.type = usesServerUrl(providerMeta.id) ? 'text' : 'password'
               setConfirmLabel(providerMeta.id)
               const savedKey = localStorage.getItem(`${initialProvider}ApiKey`)
               if (savedKey) {
@@ -711,6 +741,7 @@ const ApiKeyModal = ({
                   input.placeholder =
                     passwordPlaceholderFor(p.id) ||
                     `Ingresa tu API Key de ${p.name}`
+                  input.type = usesServerUrl(p.id) ? 'text' : 'password'
                   setConfirmLabel(p.id)
                   const existing = localStorage.getItem(`${p.id}ApiKey`)
                   input.value = existing || ''
@@ -884,8 +915,11 @@ const ApiKeyModal = ({
             const select = document.getElementById(
               'swal-select-provider',
             ) as HTMLSelectElement | null
-            const apiKey = apiKeyInput?.value
             const provider = select?.value || PROVIDERS[0].id
+            // Ollama: campo vacío = servidor local por defecto.
+            const apiKey = usesServerUrl(provider)
+              ? normalizeOllamaUrl(apiKeyInput?.value ?? '')
+              : apiKeyInput?.value
 
             // Validar que no esté vacío
             if (!apiKey || apiKey.trim() === '') {
@@ -901,7 +935,11 @@ const ApiKeyModal = ({
 
             // Validar longitud mínima (no aplica a la contraseña del
             // servidor/bridge local: la valida el propio servidor/bridge).
-            if (!usesLocalPassword(provider) && apiKey.trim().length < 20) {
+            if (
+              !usesLocalPassword(provider) &&
+              !usesServerUrl(provider) &&
+              apiKey.trim().length < 20
+            ) {
               Swal.showValidationMessage(
                 `La API Key parece demasiado corta. Verifica que sea correcta`,
               )
@@ -937,7 +975,9 @@ const ApiKeyModal = ({
                           ? lastGeminiSubCheck === 'unauthorized'
                             ? `Contraseña incorrecta: tiene que ser exactamente la misma que imprimió la consola al correr "bun run gemini:bridge".`
                             : `No se pudo conectar con el bridge local. Verificá que esté corriendo ("bun run gemini:bridge", ver README) y que abras la app desde https://localhost:5173 o https://prompting-chat.vercel.app (ahora estás en ${window.location.origin}).`
-                          : `API Key inválida. Por favor, verifica e intenta de nuevo.`
+                          : provider === 'ollamacloud'
+                            ? `No se pudo conectar con Ollama en ${apiKey.trim()}. Verificá que esté corriendo ("ollama-server" en PowerShell, o \`ollama serve\` con OLLAMA_ORIGINS que incluya ${window.location.origin}).`
+                            : `API Key inválida. Por favor, verifica e intenta de nuevo.`
               Swal.showValidationMessage(errorMsg)
               applyErrorStyles()
               if (apiKeyInput) apiKeyInput.value = ''
@@ -976,10 +1016,12 @@ const ApiKeyModal = ({
                     ? 'La contraseña del bridge local de Codex ha sido guardada.'
                     : provider === 'geminisub'
                       ? 'La contraseña del bridge local de Gemini ha sido guardada.'
-                      : `Tu API Key de ${
-                          PROVIDERS.find((p) => p.id === provider)?.name ||
-                          provider
-                        } ha sido guardada.`,
+                      : provider === 'ollamacloud'
+                        ? 'La URL del servidor de Ollama ha sido guardada.'
+                        : `Tu API Key de ${
+                            PROVIDERS.find((p) => p.id === provider)?.name ||
+                            provider
+                          } ha sido guardada.`,
             icon: 'success',
             background: theme.background,
             color: theme.text,

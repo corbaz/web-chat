@@ -5,9 +5,16 @@
 // - src/config/modelLimits.generated.ts (contexto y salida máxima)
 // - src/config/modelEffort.generated.ts (niveles de esfuerzo por reasoning_options)
 // - src/config/claudeModels.generated.ts (catálogo de Claude (suscripción), T4)
+// - src/config/ollamaCloudModels.generated.ts (modelos cloud GRATIS de Ollama:
+//   lista de https://ollama.com/api/tags, probada contra el `ollama serve`
+//   local con `ollama signin`; si falla, se conserva el archivo anterior)
 // Uso: bun run update:models (alias: bun run update:vision)
 
-const SOURCE_URL = 'https://models.dev/api.json'
+import { selectFreeModels } from '../src/services/ollamaCloud/freePlan'
+import { toCloudModelId } from '../src/services/ollamaCloud/modelId'
+import { MODELS_DEV_URL, selectClaudeModels } from './claude-bridge/models'
+
+const SOURCE_URL = MODELS_DEV_URL
 const OUTPUT = new URL('../src/config/visionModels.generated.ts', import.meta.url)
 const PDF_OUTPUT = new URL('../src/config/pdfModels.generated.ts', import.meta.url)
 const LIMITS_OUTPUT = new URL(
@@ -20,6 +27,12 @@ const EFFORT_OUTPUT = new URL(
 )
 const CLAUDE_MODELS_OUTPUT = new URL(
   '../src/config/claudeModels.generated.ts',
+  import.meta.url,
+)
+const OLLAMA_CLOUD_URL = 'https://ollama.com/api/tags'
+const OLLAMA_LOCAL_URL = 'http://127.0.0.1:11434'
+const OLLAMA_CLOUD_OUTPUT = new URL(
+  '../src/config/ollamaCloudModels.generated.ts',
   import.meta.url,
 )
 
@@ -181,61 +194,12 @@ const effortLines = [
 await Bun.write(EFFORT_OUTPUT, effortLines.join('\n'))
 
 // Catálogo de Claude (suscripción, T4, ver
-// odd/tasks/claude-subscription-bridge.md): todos los modelos de chat de
-// Anthropic, ids sin fecha preferidos (se descarta el id con fecha cuando
-// existe el equivalente sin fecha para el mismo modelo), ordenados por
-// familia (sonnet primero: es el modelo por defecto) y, dentro de cada
-// familia, del más nuevo al más viejo.
-function isDatedId(id: string): boolean {
-  return /-\d{8}$/.test(id)
-}
-function undatedIdFor(id: string): string {
-  return id.replace(/-\d{8}$/, '')
-}
-
-const CLAUDE_FAMILY_ORDER = ['sonnet', 'opus', 'haiku', 'fable', 'mythos']
-
-function parseClaudeFamily(id: string): { family: string; version: number[] } {
-  const match = id.replace(/^claude-/, '').match(/^([a-z]+)-(.+)$/)
-  if (!match) return { family: id, version: [] }
-  const [, family, rest] = match
-  const version = rest.split('-').map((part) => {
-    const n = Number.parseFloat(part)
-    return Number.isFinite(n) ? n : 0
-  })
-  return { family, version }
-}
-
-function claudeFamilyRank(family: string): number {
-  const idx = CLAUDE_FAMILY_ORDER.indexOf(family)
-  return idx === -1 ? CLAUDE_FAMILY_ORDER.length : idx
-}
-
-function compareVersionsDesc(a: number[], b: number[]): number {
-  const len = Math.max(a.length, b.length)
-  for (let i = 0; i < len; i++) {
-    const diff = (b[i] ?? 0) - (a[i] ?? 0)
-    if (diff !== 0) return diff
-  }
-  return 0
-}
-
-const anthropicModels = data[PROVIDER_MAP.anthropic]?.models ?? {}
-const anthropicIdSet = new Set(Object.keys(anthropicModels))
-const dedupedClaudeIds = Object.keys(anthropicModels).filter(
-  (id) => !isDatedId(id) || !anthropicIdSet.has(undatedIdFor(id)),
+// odd/tasks/claude-subscription-bridge.md): misma selección que usa el bridge
+// en vivo (scripts/claude-bridge/models.ts); este archivo queda como respaldo
+// hasta que el bridge responde.
+const claudeModelsList = selectClaudeModels(
+  data[PROVIDER_MAP.anthropic]?.models ?? {},
 )
-const sortedClaudeIds = [...dedupedClaudeIds].sort((idA, idB) => {
-  const a = parseClaudeFamily(idA)
-  const b = parseClaudeFamily(idB)
-  const familyDiff = claudeFamilyRank(a.family) - claudeFamilyRank(b.family)
-  return familyDiff !== 0 ? familyDiff : compareVersionsDesc(a.version, b.version)
-})
-
-const claudeModelsList = sortedClaudeIds.map((id) => ({
-  id,
-  name: (anthropicModels[id].name ?? id).replace(/\s*\(latest\)\s*$/i, ''),
-}))
 
 const claudeModelsLines = [
   '// Archivo generado por scripts/update-vision-models.ts desde models.dev.',
@@ -253,3 +217,64 @@ for (const p of Object.keys(PROVIDER_MAP)) {
   )
 }
 console.log(`claudecode: ${claudeModelsList.length} modelos de Anthropic`)
+
+// Catálogo de Ollama Cloud (local): el navegador no puede leer
+// ollama.com/api/tags (sin CORS), así que se genera acá, y solo con los
+// modelos que el plan gratis responde (ver src/services/ollamaCloud/freePlan.ts).
+// Ids en la forma que acepta el servidor local (ver modelId.ts).
+try {
+  const ollamaResponse = await fetch(OLLAMA_CLOUD_URL)
+  if (!ollamaResponse.ok) {
+    throw new Error(`ollama.com respondió ${ollamaResponse.status}`)
+  }
+  const ollamaData = (await ollamaResponse.json()) as {
+    models?: Array<{ name?: string }>
+  }
+  const cloudModels = (ollamaData.models ?? [])
+    .map((model) => model.name)
+    .filter((name): name is string => Boolean(name))
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({ id: toCloudModelId(name), name }))
+  if (cloudModels.length === 0) throw new Error('lista vacía')
+  console.log(
+    `ollamacloud: probando ${cloudModels.length} modelos cloud contra ${OLLAMA_LOCAL_URL}...`,
+  )
+  const { free: ollamaModels, excluded } = await selectFreeModels(
+    cloudModels,
+    async (id) => {
+      const res = await fetch(`${OLLAMA_LOCAL_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: id,
+          messages: [{ role: 'user', content: 'ok' }],
+          max_tokens: 1,
+        }),
+        signal: AbortSignal.timeout(90_000),
+      })
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: { message?: string }
+      }
+      return { status: res.status, message: body.error?.message ?? '' }
+    },
+  )
+  for (const { id, result } of excluded) {
+    console.log(`  fuera: ${id} (${result})`)
+  }
+  const ollamaLines = [
+    '// Archivo generado por scripts/update-vision-models.ts desde ollama.com.',
+    '// No editar a mano: correr `bun run update:models`.',
+    `// Generado: ${new Date().toISOString().slice(0, 10)}`,
+    '',
+    `export const OLLAMA_CLOUD_MODELS: Array<{ id: string; name: string }> = ${JSON.stringify(ollamaModels, null, 2)}`,
+    '',
+  ]
+  await Bun.write(OLLAMA_CLOUD_OUTPUT, ollamaLines.join('\n'))
+  console.log(
+    `ollamacloud: ${ollamaModels.length} modelos gratis de ${cloudModels.length}`,
+  )
+} catch (error) {
+  console.warn(
+    `ollamacloud: no se pudo actualizar (${error instanceof Error ? error.message : String(error)}), se conserva la lista anterior`,
+  )
+}

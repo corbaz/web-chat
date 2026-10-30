@@ -8,7 +8,7 @@
 import type { ProviderId } from './types'
 
 const UNAVAILABLE_PATTERN =
-  /blocked at the project level|decommissioned|model_not_found|does not exist or you do not have access|do not have access to (the )?model|model is unavailable|free tier can only be used from within opencode|cannot find any route matching/i
+  /blocked at the project level|decommissioned|model_not_found|does not exist or you do not have access|do not have access to (the )?model|model is unavailable|free tier can only be used from within opencode|cannot find any route matching|was retired on/i
 
 /** Motivo por el que un modelo no se puede usar (texto del selector). */
 export type UnavailableReason = 'unavailable' | 'quota'
@@ -24,9 +24,10 @@ export function isModelUnavailableMessage(message: string): boolean {
 }
 
 // Cuota agotada o sin crédito para ese modelo (Gemini Pro en el plan gratis
-// responde 429 "... limit: 0"). Un límite por minuto pasajero NO entra.
+// responde 429 "... limit: 0"; Ollama Cloud, 402 "this model is not
+// included in your free usage"). Un límite por minuto pasajero NO entra.
 const QUOTA_PATTERN =
-  /limit: 0\b|insufficient_quota|credit balance is too low|exceeded your current quota|billing (is )?(not )?(enabled|required)|requires billing|insufficient (account )?(funds|balance)/i
+  /limit: 0\b|not included in your free usage|insufficient_quota|credit balance is too low|exceeded your current quota|billing (is )?(not )?(enabled|required)|requires billing|insufficient (account )?(funds|balance)/i
 
 /** Indica si el error significa "sin cuota o sin crédito para este modelo". */
 export function isQuotaExhaustedMessage(message: string): boolean {

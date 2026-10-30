@@ -20,6 +20,7 @@ export const PROVIDER_OPTIONS: ProviderOption[] = [
   { value: 'opengo', label: 'OpenCode Go' },
   { value: 'opencodezen', label: 'OpenCode Zen' },
   { value: 'opencodefree', label: 'OpenCode Free' },
+  { value: 'ollamacloud', label: 'Ollama Cloud (local)' },
   { value: 'gemini', label: 'Gemini' },
 ]
 

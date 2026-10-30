@@ -55,6 +55,23 @@ describe('mergeWithStatic', () => {
     expect(result[1]).toEqual(staticModels[1])
   })
 
+  test('un modelo desconocido que llega con nombre usa ese nombre', () => {
+    const result = mergeWithStatic(
+      [{ id: 'claude-sonnet-6-5', name: 'Claude Sonnet 6.5' }, 'big-pickle'],
+      staticModels,
+      'claudecode',
+    )
+    expect(result).toEqual([
+      {
+        id: 'claude-sonnet-6-5',
+        name: 'Claude Sonnet 6.5',
+        developer: 'Anthropic',
+        provider: 'claudecode',
+      },
+      staticModels[1],
+    ])
+  })
+
   test('lista vacía de ids produce lista vacía', () => {
     expect(mergeWithStatic([], staticModels, 'opencodezen')).toEqual([])
   })

@@ -24,6 +24,9 @@ export const DEFAULT_MODEL_BY_PROVIDER: Readonly<Record<string, string>> = {
   // El nivel medio de la familia Flash 3.6 es el equilibrio entre calidad y
   // los ~25-45 s por respuesta (ver odd/tasks/gemini-subscription-bridge.md).
   geminisub: 'gemini-3.6-flash-medium',
+  // Ollama Cloud (local): Ollama lo sugiere como modelo "in the Free plan" en
+  // sus propios errores 402 (verificado en vivo 2026-10-29).
+  ollamacloud: 'gemma4:31b-cloud',
 }
 
 // GLM (opengo/opencodezen) solo tiene low/high/max, sin "medium": se eligió
