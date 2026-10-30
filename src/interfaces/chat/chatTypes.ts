@@ -79,6 +79,13 @@ export const STORAGE_KEY = 'prompting_chat_messages:v1'
 // Clave versionada para almacenar historial de chats en localStorage
 export const CHAT_HISTORY_KEY = 'prompting_chat_history:v1'
 
+/** Envía un mensaje con otro proveedor/modelo que el del chat (el traductor
+ * usa Groq por su rapidez). La respuesta queda en la misma conversación. */
+export interface SendOverride {
+  provider: string
+  model: string
+}
+
 // === Herramientas integradas de Groq (Fase 1: infraestructura) ===
 
 // Familias de modelos de Groq con herramientas integradas soportadas

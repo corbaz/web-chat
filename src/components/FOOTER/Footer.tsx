@@ -17,6 +17,7 @@ import {
   CHAT_HISTORY_KEY,
   type FileAttachment,
   type ImageAttachment,
+  type SendOverride,
 } from '../../interfaces/chat/chatTypes'
 import type { ColorPalette } from '../../interfaces/temas/temas'
 import { sendMessage as sendClaudeCodeMessage } from '../../services/claudeBridge/client'
@@ -41,14 +42,21 @@ import { isMobile } from '../../utils/mobileUtils'
 import { extractPdfText } from '../../utils/pdfText'
 import FilePreviewModal, { type FilePreview } from '../chat/FilePreviewModal'
 import ImageLightbox from '../chat/ImageLightbox'
+import LanguageMenu from './LanguageMenu'
+import {
+  buildImprovePrompt,
+  buildTranslateRequest,
+  type TranslateLanguageId,
+} from './translate'
 
-// Modelo de Groq para la varita cuando el proveedor elegido es OpenCode Free:
-// rápido y sin herramientas.
-const MAGIC_FALLBACK_GROQ_MODEL = 'openai/gpt-oss-20b'
-
-// Modelo de Codex (suscripción) para la varita: el más chico/rápido de los
-// vistos en vivo (ver Verified facts en odd/tasks/openai-subscription-bridge.md).
-const MAGIC_FALLBACK_CODEX_MODEL = 'gpt-5.6-luna'
+// Varita mágica y traductor usan este modelo de Groq por su rapidez, sin
+// importar el modelo del chat (pedido del usuario 2026-10-30). Sin API key de
+// Groq usan el modelo del chat.
+const FAST_GROQ_MODEL = 'openai/gpt-oss-120b'
+const FAST_GROQ_OVERRIDE: SendOverride = {
+  provider: 'groq',
+  model: FAST_GROQ_MODEL,
+}
 
 // Constantes de adjuntos de imagen (T3, ver odd/tasks/image-input.md).
 const MAX_IMAGES = 4
@@ -160,6 +168,7 @@ interface FooterProps {
     message: string,
     images?: ImageAttachment[],
     files?: FileAttachment[],
+    override?: SendOverride,
   ) => void
   toggleTheme: () => void
   clearContext?: () => void
@@ -472,15 +481,21 @@ const Footer: React.FC<FooterProps> = ({
     }
   }
 
-  const handleSendMessage = () => {
+  // `text` reemplaza al texto del input y `override` al proveedor/modelo del
+  // chat (los usa el traductor: pedido de traducción por Groq).
+  const handleSendMessage = (
+    text: string = message,
+    override?: SendOverride,
+  ) => {
     if (
-      (message.trim() || pendingImages.length > 0 || pendingFiles.length > 0) &&
+      (text.trim() || pendingImages.length > 0 || pendingFiles.length > 0) &&
       !isLoading
     ) {
       onSendMessage(
-        message,
+        text,
         pendingImages.length > 0 ? pendingImages : undefined,
         pendingFiles.length > 0 ? pendingFiles : undefined,
+        override,
       )
       setMessage('')
       setPendingImages([])
@@ -512,196 +527,143 @@ const Footer: React.FC<FooterProps> = ({
     void addImageFiles(imageFiles)
   }
 
-  // OpenCode Free no sirve para la varita (sesiones con ~25k tokens de
-  // contexto y pedidos de permisos): en ese caso se usa Groq, si hay key.
-  // Gemini (suscripción) tampoco: cada respuesta de agy tarda 25-45 s y
-  // arrastra ~29k tokens de contexto del agente.
-  const magicUsesGroqFallback =
-    selectedProvider === 'opencodefree' || selectedProvider === 'geminisub'
   const hasGroqKey = Boolean(localStorage.getItem('groqApiKey')?.trim())
+  const chatProvider =
+    selectedProvider || localStorage.getItem('selectedProvider') || 'groq'
+  // Sin Groq, la varita usa el modelo del chat; OpenCode Free y Gemini
+  // (suscripción) no sirven para eso (sesiones con ~25-29k tokens de
+  // contexto, y agy tarda 25-45 s por respuesta).
+  const magicNeedsGroq =
+    chatProvider === 'opencodefree' || chatProvider === 'geminisub'
 
-  const handleMagicButton = async () => {
-    if (
-      message.trim() &&
-      !isLoading &&
-      !isMagicLoading &&
-      (!magicUsesGroqFallback || hasGroqKey)
-    ) {
-      try {
-        setIsMagicLoading(true)
+  const canRewrite =
+    Boolean(message.trim()) &&
+    !isLoading &&
+    !isMagicLoading &&
+    (hasGroqKey || !magicNeedsGroq)
 
-        // Claude (suscripción, bridge local): la varita usa el bridge
-        // directamente con una sesión nueva (sin --resume) y el modelo
-        // haiku, sin importar el modelo elegido para el chat (ver Scope en
-        // odd/tasks/claude-subscription-bridge.md).
-        if (selectedProvider === 'claudecode') {
-          const baseUrl = getClaudeCodeServerUrl()
-          const password = getClaudeCodePassword()
-          if (!password.trim()) {
-            setIsMagicLoading(false)
-            alert('Falta la contraseña del bridge de Claude')
-            return
-          }
+  // Manda `prompt` y reemplaza el texto del input con la respuesta: por Groq
+  // (FAST_GROQ_MODEL) si hay key; si no, con el proveedor y modelo del chat.
+  const rewriteMessage = async (prompt: string, label: string) => {
+    if (!canRewrite) return
+    const applyRewrite = (text: string) => {
+      setMessage(text.replace(/<think>[\s\S]*?<\/think>/g, '').trim())
+      setShowMagicResponse(true)
+      setTimeout(adjustTextareaHeight, 0)
+      textareaRef.current?.focus()
+    }
 
-          const claudePrompt = `Corrige y mejora la expresión en español del siguiente texto,
-asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
+    try {
+      setIsMagicLoading(true)
+      const provider = hasGroqKey ? 'groq' : chatProvider
+      const model = hasGroqKey
+        ? FAST_GROQ_MODEL
+        : selectedModel || 'openai/gpt-oss-120b'
 
-Texto a mejorar:
-${message}`
-
-          const result = await sendClaudeCodeMessage(
-            baseUrl,
-            password,
-            'haiku',
-            claudePrompt,
-          )
-
-          if (result.isError || !result.text.trim()) {
-            throw new Error(
-              result.error || 'Respuesta vacía del bridge de Claude',
-            )
-          }
-
-          const improved = result.text
-            .replace(/<think>[\s\S]*?<\/think>/g, '')
-            .trim()
-          setMessage(improved)
-          setShowMagicResponse(true)
-          setTimeout(adjustTextareaHeight, 0)
-          textareaRef.current?.focus()
+      // Claude (suscripción, bridge local): sesión nueva (sin --resume).
+      if (provider === 'claudecode') {
+        const password = getClaudeCodePassword()
+        if (!password.trim()) {
+          alert('Falta la contraseña del bridge de Claude')
           return
         }
-
-        // Codex (suscripción, bridge local): mismo criterio que Claude
-        // (suscripción) arriba — sesión nueva (sin threadId) y un modelo
-        // chico/rápido fijo, sin importar el modelo elegido para el chat
-        // (ver Scope en odd/tasks/openai-subscription-bridge.md).
-        if (selectedProvider === 'codexsub') {
-          const baseUrl = getCodexServerUrl()
-          const password = getCodexPassword()
-          if (!password.trim()) {
-            setIsMagicLoading(false)
-            alert('Falta la contraseña del bridge de Codex')
-            return
-          }
-
-          const codexPrompt = `Corrige y mejora la expresión en español del siguiente texto,
-asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
-
-Texto a mejorar:
-${message}`
-
-          const result = await sendCodexMessage(
-            baseUrl,
-            password,
-            MAGIC_FALLBACK_CODEX_MODEL,
-            codexPrompt,
-            undefined,
-            'low',
-          )
-
-          if (result.isError || !result.text.trim()) {
-            throw new Error(
-              result.error || 'Respuesta vacía del bridge de Codex',
-            )
-          }
-
-          const improved = result.text
-            .replace(/<think>[\s\S]*?<\/think>/g, '')
-            .trim()
-          setMessage(improved)
-          setShowMagicResponse(true)
-          setTimeout(adjustTextareaHeight, 0)
-          textareaRef.current?.focus()
-          return
-        }
-
-        let modelToUse: string = magicUsesGroqFallback
-          ? MAGIC_FALLBACK_GROQ_MODEL
-          : selectedModel || 'openai/gpt-oss-120b'
-
-        if (!magicUsesGroqFallback && !selectedModel && currentChatId) {
-          try {
-            const raw = localStorage.getItem(CHAT_HISTORY_KEY)
-            if (raw) {
-              const arr = JSON.parse(raw)
-              const chat = arr.find(
-                (c: { id: string }) => c.id === currentChatId,
-              )
-              if (chat?.model) modelToUse = chat.model
-            }
-          } catch (e) {
-            console.error('Error al obtener modelo del chat:', e)
-          }
-        }
-
-        const promptToSend = `Corrige y mejora la expresión en español del siguiente texto,
-asegurándote de que la gramática y la sintaxis sean impecables.El texto debe ser formal, profesional, técnico, siempre amigable, sencillo y preciso. El prompt que se recupera debe ser redactado como si lo escribiera el usuario y no el asistente. Dame solo el texto corregido sin explicaciones. En formato markdown enriquecido.
-
-Texto a mejorar:
-${message}`
-
-        const provider = magicUsesGroqFallback
-          ? 'groq'
-          : selectedProvider ||
-            localStorage.getItem('selectedProvider') ||
-            'groq'
-        const providerConfig = getProviderConfig(provider)
-        if (!providerConfig) {
-          setIsMagicLoading(false)
-          alert(`Proveedor no configurado: ${provider}`)
-          return
-        }
-
-        const apiKey = localStorage.getItem(getApiKeyStorageKey(provider)) || ''
-        if (!apiKey?.trim()) {
-          setIsMagicLoading(false)
-          alert(`Falta API key para ${providerConfig.name}`)
-          return
-        }
-
-        // Varita mágica: sin herramientas integradas (Fase 1: undefined).
-        const payload = providerConfig.payloadBuilder(
-          modelToUse,
-          [{ role: 'user', content: promptToSend }],
-          2048,
-          undefined,
+        const result = await sendClaudeCodeMessage(
+          getClaudeCodeServerUrl(),
+          password,
+          model,
+          prompt,
         )
-        const response = await axios.post(
-          providerConfig.endpoint(modelToUse),
-          payload,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              ...providerConfig.headerAuth(apiKey, modelToUse),
-              ...openCodeSessionHeaders(
-                provider,
-                currentChatId ?? `magic_${Date.now()}`,
-              ),
-            },
-          },
-        )
-
-        let improved = providerConfig.parseResponse
-          ? providerConfig
-              .parseResponse(
-                response.data as Record<string, unknown>,
-                modelToUse,
-              )
-              .trim()
-          : response.data.choices[0].message.content.trim()
-        improved = improved.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-        setMessage(improved)
-        setShowMagicResponse(true)
-        setTimeout(adjustTextareaHeight, 0)
-        textareaRef.current?.focus()
-      } catch (error) {
-        console.error('Error en varita mágica:', error)
-      } finally {
-        setIsMagicLoading(false)
+        if (result.isError || !result.text.trim()) {
+          throw new Error(
+            result.error || 'Respuesta vacía del bridge de Claude',
+          )
+        }
+        applyRewrite(result.text)
+        return
       }
+
+      // Codex (suscripción, bridge local): sesión nueva (sin threadId).
+      if (provider === 'codexsub') {
+        const password = getCodexPassword()
+        if (!password.trim()) {
+          alert('Falta la contraseña del bridge de Codex')
+          return
+        }
+        const result = await sendCodexMessage(
+          getCodexServerUrl(),
+          password,
+          model,
+          prompt,
+          undefined,
+          'low',
+        )
+        if (result.isError || !result.text.trim()) {
+          throw new Error(result.error || 'Respuesta vacía del bridge de Codex')
+        }
+        applyRewrite(result.text)
+        return
+      }
+
+      const providerConfig = getProviderConfig(provider)
+      if (!providerConfig) {
+        alert(`Proveedor no configurado: ${provider}`)
+        return
+      }
+      const apiKey = localStorage.getItem(getApiKeyStorageKey(provider)) || ''
+      if (!apiKey.trim()) {
+        alert(`Falta API key para ${providerConfig.name}`)
+        return
+      }
+
+      // Sin herramientas integradas (Fase 1: undefined).
+      const payload = providerConfig.payloadBuilder(
+        model,
+        [{ role: 'user', content: prompt }],
+        2048,
+        undefined,
+      )
+      const response = await axios.post(
+        providerConfig.endpoint(model),
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...providerConfig.headerAuth(apiKey, model),
+            ...openCodeSessionHeaders(
+              provider,
+              currentChatId ?? `magic_${Date.now()}`,
+            ),
+          },
+        },
+      )
+      applyRewrite(
+        providerConfig.parseResponse
+          ? providerConfig.parseResponse(
+              response.data as Record<string, unknown>,
+              model,
+            )
+          : response.data.choices[0].message.content,
+      )
+    } catch (error) {
+      console.error(`Error en ${label}:`, error)
+    } finally {
+      setIsMagicLoading(false)
     }
   }
+
+  // Varita: corrige, formatea y redacta en el idioma elegido; queda en el
+  // input.
+  const handleImprove = (languageId: TranslateLanguageId) =>
+    rewriteMessage(buildImprovePrompt(message, languageId), 'varita mágica')
+
+  // Traductor: envía al chat el pedido de traducción; la traducción llega
+  // como respuesta del modelo.
+  const canTranslate = Boolean(message.trim()) && !isLoading && !isMagicLoading
+  const handleTranslate = (languageId: TranslateLanguageId) =>
+    handleSendMessage(
+      buildTranslateRequest(message, languageId),
+      hasGroqKey ? FAST_GROQ_OVERRIDE : undefined,
+    )
 
   const handleClearText = () => {
     setMessage('')
@@ -851,11 +813,7 @@ ${message}`
   const canSend =
     (message.trim() || pendingImages.length > 0 || pendingFiles.length > 0) &&
     !isLoading
-  const canMagic =
-    message.trim() &&
-    !isLoading &&
-    !isMagicLoading &&
-    (!magicUsesGroqFallback || hasGroqKey)
+  const canMagic = canRewrite
 
   return (
     <>
@@ -1158,47 +1116,84 @@ ${message}`
                 </svg>
               </button>
 
-              {/* Magic wand button */}
-              <button
-                type="button"
-                onClick={handleMagicButton}
-                title={
-                  magicUsesGroqFallback
-                    ? hasGroqKey
-                      ? 'Mejorar Prompt (con Groq)'
-                      : 'Mejorar Prompt con este proveedor necesita una API key de Groq'
-                    : 'Mejorar Prompt'
-                }
-                aria-label="Mejorar Prompt"
-                className="nm-press"
-                style={canMagic ? nmBtnBase : nmBtnDisabled}
+              {/* Varita mágica: corrige y redacta en el idioma elegido */}
+              <LanguageMenu
+                theme={theme}
                 disabled={!canMagic}
-              >
-                {isMagicLoading ? (
+                title={
+                  hasGroqKey
+                    ? 'Mejorar Prompt (con Groq)'
+                    : magicNeedsGroq
+                      ? 'Mejorar Prompt con este proveedor necesita una API key de Groq'
+                      : 'Mejorar Prompt (con el modelo del chat: sin API key de Groq)'
+                }
+                ariaLabel="Mejorar Prompt"
+                menuTitle="Mejorar en"
+                buttonStyle={canMagic ? nmBtnBase : nmBtnDisabled}
+                onSelect={(languageId) => void handleImprove(languageId)}
+                icon={
+                  isMagicLoading ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                      className="size-5 animate-spin"
+                      style={{ color: theme.accent }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 4.5v15m7.5-7.5h-15"
+                      />
+                    </svg>
+                  ) : (
+                    <img
+                      src={VaritaIcon}
+                      alt="Mejorar Prompt"
+                      className="size-5"
+                      style={{ filter: iconFilter }}
+                    />
+                  )
+                }
+              />
+
+              {/* Traductor: envía al chat el pedido de traducción */}
+              <LanguageMenu
+                theme={theme}
+                disabled={!canTranslate}
+                title={
+                  hasGroqKey
+                    ? 'Traducir Prompt (con Groq; la traducción llega como respuesta)'
+                    : 'Traducir Prompt (con el modelo del chat; la traducción llega como respuesta)'
+                }
+                ariaLabel="Traducir Prompt"
+                menuTitle="Traducir a"
+                buttonStyle={canTranslate ? nmBtnBase : nmBtnDisabled}
+                onSelect={handleTranslate}
+                icon={
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
                     viewBox="0 0 24 24"
-                    strokeWidth="1.5"
+                    fill="none"
                     stroke="currentColor"
-                    className="size-5 animate-spin"
-                    style={{ color: theme.accent }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 4.5v15m7.5-7.5h-15"
-                    />
-                  </svg>
-                ) : (
-                  <img
-                    src={VaritaIcon}
-                    alt="Mejorar Prompt"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     className="size-5"
-                    style={{ filter: iconFilter }}
-                  />
-                )}
-              </button>
+                    style={{ color: theme.textMuted }}
+                    aria-hidden="true"
+                  >
+                    <path d="m5 8 6 6" />
+                    <path d="m4 14 6-6 2-3" />
+                    <path d="M2 5h12" />
+                    <path d="M7 2h1" />
+                    <path d="m22 22-5-10-5 10" />
+                    <path d="M14 18h6" />
+                  </svg>
+                }
+              />
 
               {/* Toggle de búsqueda web */}
               {selectedModel &&
@@ -1244,7 +1239,7 @@ ${message}`
               {/* Send button — accent gradient */}
               <button
                 type="button"
-                onClick={handleSendMessage}
+                onClick={() => handleSendMessage()}
                 title="Enviar Prompt"
                 aria-label="Enviar Prompt"
                 className="nm-press"

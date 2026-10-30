@@ -19,6 +19,7 @@ interface LeftMenuProps {
   currentChatId?: string
   onUpdateChatTitle?: (chatId: string, newTitle: string) => void
   onDeleteChat?: (chatId: string) => void
+  onDeleteAllChats?: () => void
 }
 
 const readStoredHistory = (): {
@@ -64,6 +65,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
   currentChatId,
   onUpdateChatTitle,
   onDeleteChat,
+  onDeleteAllChats,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
@@ -146,6 +148,27 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
         background: theme.background,
         color: theme.text,
       })
+    }
+  }
+
+  const showDeleteAllConfirmation = async () => {
+    const result = await Swal.fire({
+      title: '¿Eliminar todos los Chats?',
+      text: `Se eliminarán los ${chatHistory.length} chats del historial. Queda uno nuevo en la Sala 1.`,
+      icon: 'warning',
+      iconColor: theme.accent,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar todos',
+      confirmButtonColor: theme.accent,
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: isDarkTheme ? theme.surface : theme.secondary,
+      background: theme.background,
+      color: theme.text,
+    })
+    if (result.isConfirmed) {
+      writeStoredHistory([])
+      onDeleteAllChats?.()
+      onClose()
     }
   }
 
@@ -238,12 +261,36 @@ const LeftMenu: React.FC<LeftMenuProps> = ({
               }`,
             }}
           >
-            <h2
-              className="text-base font-semibold tracking-wide"
-              style={{ color: theme.title.color }}
-            >
-              Historial
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2
+                className="text-base font-semibold tracking-wide"
+                style={{ color: theme.title.color }}
+              >
+                Historial
+              </h2>
+              {onDeleteAllChats && chatHistory.length > 0 && (
+                <button
+                  type="button"
+                  className="nm-press"
+                  style={iconBtnStyle}
+                  onClick={showDeleteAllConfirmation}
+                  title="Eliminar todos los chats"
+                  aria-label="Eliminar todos los chats"
+                >
+                  <img
+                    src={TrashIcon}
+                    alt="Eliminar todos"
+                    style={{
+                      width: '13px',
+                      height: '13px',
+                      filter: isDarkTheme
+                        ? 'brightness(0) invert(1)'
+                        : 'brightness(0.4)',
+                    }}
+                  />
+                </button>
+              )}
+            </div>
             <button
               type="button"
               onClick={onClose}

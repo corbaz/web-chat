@@ -6,6 +6,7 @@ import ChatRoom, {
   isOpenCodeGatedProvider,
   pickInitialProvider,
 } from './components/rooms/ChatRoom'
+import { planChatDeletion } from './components/rooms/chatDeletion'
 import RoomTabs, { type RoomTabStatus } from './components/rooms/RoomTabs'
 import {
   type RoomEntry,
@@ -255,44 +256,87 @@ export const App = () => {
     [roomsState],
   )
 
-  // T5: si se borra un chat que está abierto en alguna sala (la que pidió
-  // borrarlo u otra), esa sala arranca un chat nuevo.
+  // T5: si se borra un chat que está abierto en alguna sala, esa sala pasa
+  // a otro chat del historial; si no queda ninguno, se reinicia con un chat
+  // nuevo en la sala 1 (ver chatDeletion.ts).
   const [newChatCommands, setNewChatCommands] = useState<
     Partial<Record<number, number>>
   >({})
-  const handleDeleteChat = useCallback(
-    (chatIdToDelete: string) => {
-      if (!chatIdToDelete) return
+
+  const deleteChats = useCallback(
+    (chatIds: string[]) => {
+      if (chatIds.length === 0) return
 
       try {
         const storedConversations = localStorage.getItem(STORAGE_KEY)
         if (storedConversations) {
           const conversations: Record<string, ChatMessageType[]> =
             JSON.parse(storedConversations)
-          delete conversations[chatIdToDelete]
+          for (const chatId of chatIds) delete conversations[chatId]
           localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
         }
       } catch (error) {
         console.error('Error al eliminar chat:', error)
       }
 
+      const plan = planChatDeletion(roomsState, chatHistory, chatIds)
       handleUpdateChatHistory((prev) =>
-        prev.filter((chat) => chat.id !== chatIdToDelete),
+        prev.filter((chat) => !chatIds.includes(chat.id)),
       )
 
-      const affectedRooms = roomsState.opened.filter(
-        (id) => roomsState.rooms[id]?.chatId === chatIdToDelete,
+      const nonce = Date.now()
+      if (plan.kind === 'reset') {
+        // Solo queda la sala 1; las demás se cierran sin chat guardado, así
+        // que al reabrirlas arrancan con uno propio desde cero.
+        setRoomsState((prev) => ({
+          active: 1,
+          opened: [1],
+          rooms: Object.fromEntries(
+            Object.entries(prev.rooms).map(([id, entry]) => [
+              id,
+              { ...entry, chatId: undefined },
+            ]),
+          ),
+        }))
+        setNewChatCommands((prev) => ({ ...prev, 1: nonce }))
+        return
+      }
+
+      const entries = Object.entries(plan.assignments)
+      const toNewChat = entries.filter(([, chatId]) => chatId === null)
+      const toExisting = entries.filter(
+        (entry): entry is [string, string] => entry[1] !== null,
       )
-      if (affectedRooms.length > 0) {
+      if (toNewChat.length > 0) {
         setNewChatCommands((prev) => {
           const next = { ...prev }
-          for (const id of affectedRooms) next[id] = Date.now() + id
+          for (const [id] of toNewChat) next[Number(id)] = nonce + Number(id)
+          return next
+        })
+      }
+      if (toExisting.length > 0) {
+        setSelectChatCommands((prev) => {
+          const next = { ...prev }
+          for (const [id, chatId] of toExisting) {
+            next[Number(id)] = { chatId, nonce: nonce + Number(id) }
+          }
           return next
         })
       }
     },
-    [roomsState, handleUpdateChatHistory],
+    [roomsState, chatHistory, handleUpdateChatHistory],
   )
+
+  const handleDeleteChat = useCallback(
+    (chatIdToDelete: string) => {
+      if (chatIdToDelete) deleteChats([chatIdToDelete])
+    },
+    [deleteChats],
+  )
+
+  const handleDeleteAllChats = useCallback(() => {
+    deleteChats(chatHistory.map((chat) => chat.id))
+  }, [deleteChats, chatHistory])
 
   // Reaccionar a cambios en API keys (guardar o borrar)
   // Catálogo dinámico de modelos: refresca todos los proveedores al abrir la
@@ -400,6 +444,7 @@ export const App = () => {
               setChatHistory={handleUpdateChatHistory}
               onUpdateChatTitle={handleUpdateChatTitle}
               onDeleteChat={handleDeleteChat}
+              onDeleteAllChats={handleDeleteAllChats}
               initialProvider={roomEntry?.provider || pickInitialProvider()}
               initialModel={roomEntry?.model || ''}
               initialChatId={roomEntry?.chatId}

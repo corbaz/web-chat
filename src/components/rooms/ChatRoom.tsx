@@ -54,6 +54,7 @@ export const API_KEY_PROVIDER_IDS = [
   'opengo',
   'opencodezen',
   'opencodefree',
+  'ollamacloud',
   'gemini',
 ] as const
 
@@ -142,6 +143,7 @@ interface ChatRoomProps {
   setChatHistory: React.Dispatch<React.SetStateAction<ChatHistoryEntry[]>>
   onUpdateChatTitle: (chatId: string, newTitle: string) => void
   onDeleteChat: (chatId: string) => void
+  onDeleteAllChats: () => void
   // Estado inicial persistido de esta sala (rooms:v1 vía App), resuelto una
   // sola vez antes del primer render; no cambia mientras la sala vive.
   initialProvider: string
@@ -196,6 +198,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   setChatHistory,
   onUpdateChatTitle,
   onDeleteChat,
+  onDeleteAllChats,
   initialProvider,
   initialModel,
   initialChatId,
@@ -631,6 +634,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
         onFocusInput={focusInput}
         onUpdateChatTitle={onUpdateChatTitle}
         onDeleteChat={onDeleteChat}
+        onDeleteAllChats={onDeleteAllChats}
         selectedProvider={selectedProvider}
         onRepeatMessage={(message) => {
           footerRef.current?.setMessage(message)
@@ -640,14 +644,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
       />
       <Footer
         ref={footerRef}
-        onSendMessage={(message, images, files) => {
+        onSendMessage={(message, images, files, override) => {
           if (
             message.trim() ||
             (images && images.length > 0) ||
             (files && files.length > 0)
           ) {
             const event = new CustomEvent('send-message', {
-              detail: { message, images, files, roomId },
+              detail: { message, images, files, roomId, override },
             })
             document.dispatchEvent(event)
             focusInput()

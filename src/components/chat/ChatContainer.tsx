@@ -22,6 +22,7 @@ import {
   type FileAttachment,
   type GroqMessageType,
   type ImageAttachment,
+  type SendOverride,
   STORAGE_KEY,
   type ToolConfig,
 } from '../../interfaces/chat/chatTypes'
@@ -137,6 +138,7 @@ interface ChatContainerProps {
   onFocusInput?: () => void
   onUpdateChatTitle?: (chatId: string, newTitle: string) => void // Para actualizar el título
   onDeleteChat?: (chatId: string) => void // Para eliminar un chat
+  onDeleteAllChats?: () => void // Para eliminar todo el historial
   selectedProvider?: string // Proveedor seleccionado en el header
   onRepeatMessage?: (message: string) => void // Callback para repetir mensaje en footer
   searchEnabled: boolean // Estado de la búsqueda web para el chat
@@ -206,6 +208,7 @@ const ChatContainer = ({
   onFocusInput,
   onUpdateChatTitle,
   onDeleteChat,
+  onDeleteAllChats,
   selectedProvider,
   onRepeatMessage,
   searchEnabled,
@@ -618,7 +621,10 @@ const ChatContainer = ({
       content: string,
       images?: ImageAttachment[],
       files?: FileAttachment[],
+      override?: SendOverride,
     ) => {
+      // Modelo de este envío: el del chat, o el del override (traductor).
+      const model = override?.model ?? selectedModel
       const hasImages = Boolean(images && images.length > 0)
       const hasFiles = Boolean(files && files.length > 0)
       if (!content.trim() && !hasImages && !hasFiles) return
@@ -724,7 +730,10 @@ const ChatContainer = ({
 
       // Obtener proveedor y configuración antes del try-catch
       const provider =
-        selectedProvider || localStorage.getItem('selectedProvider') || 'groq'
+        override?.provider ||
+        selectedProvider ||
+        localStorage.getItem('selectedProvider') ||
+        'groq'
 
       const providerConfig = getProviderConfig(provider)
 
@@ -779,7 +788,7 @@ const ChatContainer = ({
             baseUrl,
             password,
             sessionId,
-            selectedModel,
+            model,
             resolveApiContent(filteredContent, files, 0, 0),
             {
               onPermission: async (permission) => {
@@ -824,9 +833,9 @@ const ChatContainer = ({
             timestamp: Date.now(),
             responseTime: formattedTime,
             tokensUsed: result.tokens.input,
-            tokenLimit: getModelTokenLimit(selectedModel, provider),
-            modelName: selectedModel,
-            requestedModelId: selectedModel,
+            tokenLimit: getModelTokenLimit(model, provider),
+            modelName: model,
+            requestedModelId: model,
             promptTokens: result.tokens.input,
             completionTokens: result.tokens.output,
           }
@@ -857,10 +866,10 @@ const ChatContainer = ({
             // selector y la sala pasa sola a otro (efecto de fallback en
             // ChatRoom). Vuelve a probarse a las 24 h (expireUnavailableModels).
             if (isModelUnavailableMessage(error.message)) {
-              markModelUnavailable('opencodefree', selectedModel)
+              markModelUnavailable('opencodefree', model)
               errorMessage += `
 
-El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode no lo está sirviendo ahora. Se vuelve a probar más tarde; mientras tanto elegí otro modelo gratis.`
+El modelo ${model} quedó deshabilitado en el selector porque OpenCode no lo está sirviendo ahora. Se vuelve a probar más tarde; mientras tanto elegí otro modelo gratis.`
             }
           }
 
@@ -913,7 +922,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         try {
           const appChatId = currentChatId || requestId
           const sessionId = getClaudeCodeSessionId(appChatId)
-          const effort = resolveEffort(provider, selectedModel) || undefined
+          const effort = resolveEffort(provider, model) || undefined
           // Visión (T5): solo las imágenes del último mensaje (recién
           // compuesto, en memoria); el bridge las valida (mime + máx. 4).
           const claudeImages =
@@ -995,7 +1004,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
             result = await sendClaudeCodeMessage(
               baseUrl,
               password,
-              selectedModel,
+              model,
               claudeText,
               sessionId,
               effort,
@@ -1040,12 +1049,9 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
             timestamp: Date.now(),
             responseTime: formattedTime,
             tokensUsed: result.tokens.input,
-            tokenLimit: getModelTokenLimit(
-              result.model || selectedModel,
-              provider,
-            ),
-            modelName: selectedModel,
-            requestedModelId: selectedModel,
+            tokenLimit: getModelTokenLimit(result.model || model, provider),
+            modelName: model,
+            requestedModelId: model,
             promptTokens: result.tokens.input,
             completionTokens: result.tokens.output,
             // Costo exacto equivalente por API que informa `claude -p`
@@ -1129,7 +1135,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         try {
           const appChatId = currentChatId || requestId
           const sessionId = getCodexSessionId(appChatId)
-          const effort = resolveEffort(provider, selectedModel) || undefined
+          const effort = resolveEffort(provider, model) || undefined
           const codexImages =
             images && images.length > 0
               ? images.map(({ mimeType, data }) => ({ mimeType, data }))
@@ -1188,7 +1194,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
             result = await sendCodexMessage(
               baseUrl,
               password,
-              selectedModel,
+              model,
               codexText,
               sessionId,
               effort,
@@ -1232,12 +1238,9 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
             timestamp: Date.now(),
             responseTime: formattedTime,
             tokensUsed: result.tokens.input,
-            tokenLimit: getModelTokenLimit(
-              result.model || selectedModel,
-              provider,
-            ),
-            modelName: selectedModel,
-            requestedModelId: selectedModel,
+            tokenLimit: getModelTokenLimit(result.model || model, provider),
+            modelName: model,
+            requestedModelId: model,
             promptTokens: result.tokens.input,
             completionTokens: result.tokens.output,
           }
@@ -1315,7 +1318,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
           const result = await sendGeminiSubMessage(
             baseUrl,
             password,
-            selectedModel,
+            model,
             geminiText,
             sessionId,
           )
@@ -1352,12 +1355,9 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
             timestamp: Date.now(),
             responseTime: formattedTime,
             tokensUsed: result.tokens.input,
-            tokenLimit: getModelTokenLimit(
-              result.model || selectedModel,
-              provider,
-            ),
-            modelName: selectedModel,
-            requestedModelId: selectedModel,
+            tokenLimit: getModelTokenLimit(result.model || model, provider),
+            modelName: model,
+            requestedModelId: model,
             promptTokens: result.tokens.input,
             completionTokens: result.tokens.output,
           }
@@ -1425,16 +1425,13 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         }
 
         // Preparar mensajes para enviar como contexto
-        const apiMessages = prepareMessagesForApi(
-          updatedMessages,
-          selectedModel,
-        )
+        const apiMessages = prepareMessagesForApi(updatedMessages, model)
         const mustVerifyWebSearch =
           provider === 'gemini' &&
           searchEnabled &&
           requiresFreshWebEvidence(apiMessages)
         const totalTokensUsed = estimateMessagesTokens(apiMessages)
-        const modelTokenLimit = getModelTokenLimit(selectedModel, provider)
+        const modelTokenLimit = getModelTokenLimit(model, provider)
 
         const apiKeyStorageKey = getApiKeyStorageKey(provider)
         const apiKey = localStorage.getItem(apiKeyStorageKey) || ''
@@ -1459,8 +1456,9 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
 
         // Solo se piden herramientas de búsqueda si el modelo las soporta:
         // el toggle puede quedar activo al cambiar a un modelo sin soporte.
+        // Un envío con override (traductor) no usa herramientas.
         const effectiveSearch =
-          searchEnabled && supportsWebSearch(selectedModel, provider)
+          !override && searchEnabled && supportsWebSearch(model, provider)
         const toolsConfig: ToolConfig = {
           web_search: effectiveSearch,
           code_interpreter: false,
@@ -1473,14 +1471,14 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         // T17: esfuerzo de razonamiento para todo proveedor (antes solo
         // claudecode); '' cuando el modelo no tiene niveles, así el payload
         // queda byte-idéntico al de antes de esta funcionalidad.
-        const effort = resolveEffort(provider, selectedModel) || undefined
+        const effort = resolveEffort(provider, model) || undefined
 
         let payload: Record<string, unknown>
         let endpoint: string
 
         if (providerConfig.buildRequest) {
           const customRequest = providerConfig.buildRequest(
-            selectedModel,
+            model,
             apiMessages,
             MAX_RESPONSE_TOKENS,
             toolsConfig,
@@ -1491,27 +1489,27 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
             payload = customRequest.body
           } else {
             payload = providerConfig.payloadBuilder(
-              selectedModel,
+              model,
               apiMessages,
               MAX_RESPONSE_TOKENS,
               toolsConfig,
               effort,
             )
-            endpoint = providerConfig.endpoint(selectedModel)
+            endpoint = providerConfig.endpoint(model)
           }
         } else {
           payload = providerConfig.payloadBuilder(
-            selectedModel,
+            model,
             apiMessages,
             MAX_RESPONSE_TOKENS,
             toolsConfig,
             effort,
           )
-          endpoint = providerConfig.endpoint(selectedModel)
+          endpoint = providerConfig.endpoint(model)
         }
         const headers = {
           'Content-Type': 'application/json',
-          ...providerConfig.headerAuth(apiKey, selectedModel),
+          ...providerConfig.headerAuth(apiKey, model),
           ...openCodeSessionHeaders(provider, currentChatId ?? requestId),
         }
 
@@ -1519,7 +1517,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         console.log('🚀 Enviando petición al chat:', {
           proveedor: provider,
           proveedorNombre: providerConfig.name,
-          modeloSolicitado: selectedModel,
+          modeloSolicitado: model,
           endpoint: endpoint,
           headers: Object.keys(headers),
           payload: payload,
@@ -1534,7 +1532,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         // Log de la respuesta exitosa
         console.log('✅ Respuesta recibida:', {
           proveedor: provider,
-          modeloSolicitado: selectedModel,
+          modeloSolicitado: model,
           modeloDevuelto:
             typeof response.data.model === 'string'
               ? response.data.model
@@ -1553,7 +1551,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         let rawResponse = providerConfig.parseResponse
           ? providerConfig.parseResponse(
               response.data as Record<string, unknown>,
-              selectedModel,
+              model,
             )
           : (response.data.choices[0].message.content as string)
 
@@ -1567,7 +1565,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         }
 
         const continuationRequest = providerConfig.buildSearchContinuation?.(
-          selectedModel,
+          model,
           response.data as Record<string, unknown>,
           filteredResponse,
           toolsConfig,
@@ -1582,7 +1580,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
           rawResponse = providerConfig.parseResponse
             ? providerConfig.parseResponse(
                 response.data as Record<string, unknown>,
-                selectedModel,
+                model,
               )
             : (response.data.choices[0].message.content as string)
           filteredResponse = rawResponse
@@ -1595,7 +1593,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
 
           if (
             providerConfig.buildSearchContinuation?.(
-              selectedModel,
+              model,
               response.data as Record<string, unknown>,
               filteredResponse,
               toolsConfig,
@@ -1614,8 +1612,8 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         const actualModel = providerConfig.parseActualModel
           ? providerConfig.parseActualModel(
               response.data as Record<string, unknown>,
-            ) || selectedModel
-          : selectedModel
+            ) || model
+          : model
 
         const finalData = responseData[responseData.length - 1] as {
           usage?: Record<string, unknown>
@@ -1644,7 +1642,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         const executedTools = providerConfig.parseExecutedTools
           ? providerConfig.parseExecutedTools(
               response.data as Record<string, unknown>,
-              selectedModel,
+              model,
             )
           : undefined
 
@@ -1652,8 +1650,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         let parsedCitations: Citation[] = []
         if (providerConfig.parseCitations) {
           parsedCitations = responseData.flatMap(
-            (data) =>
-              providerConfig.parseCitations?.(data, selectedModel) ?? [],
+            (data) => providerConfig.parseCitations?.(data, model) ?? [],
           )
         } else if (executedTools) {
           for (const tool of executedTools) {
@@ -1682,7 +1679,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         const searchState = providerConfig.parseSearchState
           ? providerConfig.parseSearchState(
               response.data as Record<string, unknown>,
-              selectedModel,
+              model,
             )
           : undefined
 
@@ -1698,7 +1695,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
           tokensUsed: promptTokens,
           tokenLimit: modelTokenLimit,
           modelName: actualModel,
-          requestedModelId: selectedModel,
+          requestedModelId: model,
           promptTokens: promptTokens,
           completionTokens: completionTokens,
           executedTools:
@@ -1718,8 +1715,8 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         // Log detallado del error
         console.error('❌ Error al obtener respuesta:', {
           proveedor: provider,
-          modelo: selectedModel,
-          endpoint: providerConfig?.endpoint(selectedModel),
+          modelo: model,
+          endpoint: providerConfig?.endpoint(model),
           errorType: axios.isAxiosError(error) ? error.code : 'Unknown',
           errorMessage: axios.isAxiosError(error)
             ? error.message
@@ -1865,8 +1862,8 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
               ? 'unavailable'
               : null
           if (reason) {
-            markModelUnavailable(provider as ProviderId, selectedModel, reason)
-            errorMessage += `\n\nEl modelo ${selectedModel} quedó deshabilitado en el selector (${
+            markModelUnavailable(provider as ProviderId, model, reason)
+            errorMessage += `\n\nEl modelo ${model} quedó deshabilitado en el selector (${
               reason === 'quota'
                 ? 'sin cuota o sin crédito en tu cuenta'
                 : `${providerConfig?.name || 'el proveedor'} no permite usarlo con tu cuenta`
@@ -1920,12 +1917,14 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         images?: ImageAttachment[]
         files?: FileAttachment[]
         roomId: number
+        override?: SendOverride
       }>
       if (customEvent.detail.roomId !== roomId) return
       sendMessage(
         customEvent.detail.message,
         customEvent.detail.images,
         customEvent.detail.files,
+        customEvent.detail.override,
       )
     }
 
@@ -2040,6 +2039,7 @@ El modelo ${selectedModel} quedó deshabilitado en el selector porque OpenCode n
         currentChatId={currentChatId}
         onUpdateChatTitle={onUpdateChatTitle}
         onDeleteChat={onDeleteChat} // Pasar la función para eliminar chats
+        onDeleteAllChats={onDeleteAllChats}
       />
 
       <RightMenu
