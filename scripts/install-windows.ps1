@@ -1,4 +1,4 @@
-﻿# Instalador de Prompting para Windows: revisa los CLI (pregunta antes de
+# Instalador de Prompting para Windows: revisa los CLI (pregunta antes de
 # instalar lo que falte), prepara las carpetas de los 3 puentes locales y
 # agrega al perfil de PowerShell los comandos zen-server, claude-server,
 # codex-server, gemini-server y ollama-server (uno por terminal).
