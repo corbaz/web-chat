@@ -274,6 +274,12 @@ Usa los modelos cloud de [Ollama](https://ollama.com) a través del `ollama serv
 curl -fsSL https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/install-mac.sh | bash
 ```
 
+**Instalador para Windows (un solo comando, en PowerShell):** lo mismo que el de Mac. Revisa Bun, OpenCode, Claude Code y Codex CLI (pregunta antes de instalar), baja los puentes a `%LOCALAPPDATA%\prompting\` y agrega al perfil de PowerShell (5.1 y 7) los comandos `zen-server`, `claude-server`, `codex-server`, `gemini-server` y `ollama-server`. La contraseña queda en `%LOCALAPPDATA%\prompting\password.txt` (`prompting-password` la muestra), no en el perfil. Si la política de ejecución no deja cargar el perfil, pregunta si la cambia a `RemoteSigned` solo para tu usuario. Se puede repetir: el bloque del perfil se reemplaza, no se duplica.
+
+```powershell
+irm https://raw.githubusercontent.com/corbaz/web-chat/main/scripts/install-windows.ps1 | iex
+```
+
 OpenCode Free, Claude (suscripción), OpenAI (suscripción) y Gemini (suscripción) se arrancan a mano, cada uno en su terminal, y pueden correr los cuatro a la vez (puertos distintos: 4096, 4098, 4094, 4092). **La contraseña la elegís vos y va en el comando**; en la app, cada proveedor lleva la misma contraseña que usaste en su comando. Usá comillas simples en Mac y PowerShell, y `set "VAR=..."` en cmd, para que caracteres como `*` no se interpreten.
 
 | | Mac | Windows (cmd) |
