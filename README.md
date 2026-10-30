@@ -29,7 +29,8 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 - **Gemini por tu suscripción de Google AI Pro** (sin API key) a través de un bridge local sobre Antigravity CLI ("Gemini (suscripción)"; ~25-45 s por respuesta).
 - **Revisar modelos** (🔎 en el menú de configuración): actualiza la lista de cada proveedor habilitado, prueba cada modelo con un mensaje mínimo y tu propia clave (desde el navegador), deshabilita los que tu cuenta no puede usar (sin cuota, bloqueados o retirados, con el motivo al pasar el mouse) y muestra el informe completo por proveedor. Los bridges de suscripción no se prueban por modelo (solo se verifica que respondan) y no consume nada de la suscripción.
 - **Modelos que el proveedor rechaza** para tu cuenta (bloqueados, retirados, sin acceso) se ocultan solos del selector.
-- **Varita mágica** (botón "Mejorar Prompt"): mejora la redacción del prompt con el modelo y el proveedor elegidos (en OpenCode Free y Gemini (suscripción) usa Groq si hay una key; en Claude (suscripción) siempre usa Haiku).
+- **Varita mágica** (botón "Mejorar Prompt"): abre un menú de banderas (español, inglés de EE. UU., inglés británico, portugués de Brasil); corrige el prompt, lo formatea en Markdown y lo redacta en el idioma elegido, y lo deja en el input. Usa siempre Groq (`openai/gpt-oss-20b`), sin importar el proveedor del chat: necesita una API key de Groq.
+- **Traductor** (botón "Traducir Prompt"): mismo menú de banderas; envía al chat el pedido de traducción del texto del input y la traducción llega como respuesta del modelo del chat.
 - **10 salas de chat** (cajitas 1-10 al lado del selector de modelo): cada una es un chat independiente, con su propio proveedor, modelo, búsqueda web, YOLO y respuestas en curso; cambiar de sala nunca interrumpe una que está esperando respuesta. Las cajitas muestran si esa sala está pensando, tiene una respuesta sin leer o un permiso pendiente. Las cajitas de las salas con conversación se ven en verde; al abrir una sala vacía, un cartel pregunta con qué proveedor arranca (solo los habilitados) y la sala usa su modelo por defecto.
 - Tema claro y oscuro, historial de chats en el navegador.
 
@@ -49,6 +50,7 @@ Vercel es el único hosting. Surge (`deepchat.surge.sh`) y GitHub Pages se diero
 | OpenCode Free | No usa API key: contraseña del servidor local | No | No | Modelos gratis de Zen. Ver [OpenCode Free](#opencode-free-servidor-local) |
 | Claude (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre `claude -p` con tu suscripción de Claude Code. Ver [Claude (suscripción)](#claude-suscripción-bridge-local) |
 | OpenAI (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre `codex app-server` con tu suscripción de ChatGPT. Sin PDF nativo (fallback a texto). Ver [OpenAI (suscripción)](#openai-suscripción-bridge-local) |
+| Ollama Cloud (local) | No usa API key: URL de tu `ollama serve` (sesión de `ollama signin`) | No | No | Modelos cloud de Ollama; algunos entran en el plan gratis. Ver [Ollama Cloud](#ollama-cloud-servidor-local) |
 | Gemini (suscripción) | No usa API key: contraseña del bridge local | Todos | Todos | Corre Antigravity CLI (`agy`) con tu suscripción de Google AI Pro. **25-45 s por respuesta.** Sin imágenes ni PDF nativo. Ver [Gemini (suscripción)](#gemini-suscripción-bridge-local) |
 
 Detalle modelo por modelo, al 2026-09-26:
@@ -253,6 +255,17 @@ Código: `scripts/opencode-free/`, `src/services/opencodeLocal/`, `src/component
 
 ---
 
+## Ollama Cloud (servidor local)
+
+Usa los modelos cloud de [Ollama](https://ollama.com) a través del `ollama serve` de tu máquina, **sin API key**: la autenticación es la sesión de `ollama signin`. El chat va a `POST /v1/chat/completions` del servidor local (compatible con OpenAI).
+
+- **Preparación, una sola vez:** instalar Ollama (0.17.6 o más nuevo) y correr `ollama signin`.
+- **Arranque:** el servidor tiene que aceptar el origen de la app. En PowerShell: `$env:OLLAMA_ORIGINS='https://localhost:5173,https://prompting-chat.vercel.app'; ollama serve` (en Mac: `OLLAMA_ORIGINS='https://localhost:5173,https://prompting-chat.vercel.app' ollama serve`). `https://localhost:5173` ya lo acepta sin configurar nada; Vercel no. Si la app de Ollama ya corre en la bandeja, ocupa el puerto 11434 y no lee esa variable: cerrala o definí `OLLAMA_ORIGINS` como variable de entorno del usuario.
+- **En la app:** elegí "Ollama Cloud (local)" e ingresá la URL del servidor (vacío = `http://127.0.0.1:11434`). Ollama no tiene contraseña: dejalo escuchando solo en `127.0.0.1`, no en la red local.
+- **Modelos: solo los del plan gratis.** Ninguna API dice cuáles son gratis, así que `bun run update:models` toma la lista cloud de `https://ollama.com/api/tags` (el navegador no la puede leer por CORS) y prueba cada modelo contra tu `ollama serve` local (necesita `ollama signin`): guarda solo los que responden 200; los pagos (402), retirados (410) o no disponibles quedan afuera. Si Ollama no está corriendo, se conserva la lista anterior. Los ids llevan sufijo cloud: `gpt-oss:120b` → `gpt-oss:120b-cloud`, `kimi-k2.6` → `kimi-k2.6:cloud`. Por defecto `gemma4:31b-cloud`.
+- **Gratis al 2026-10-29 (7 de 23):** `beam`, `gemma4:31b`, `gpt-oss:120b`, `gpt-oss:20b`, `nemotron-3-nano:30b`, `nemotron-3-super`, `nemotron-3-ultra`. Si Ollama cambia el plan, volvé a correr `bun run update:models`; mientras tanto, un modelo que deje de ser gratis responde 402 y el chat (o "Revisar modelos") lo deshabilita.
+- **Sin búsqueda web, visión ni PDF** en esta primera versión.
+
 ## Arranque manual de los servidores locales (resumen)
 
 **Instalador para Mac (un solo comando):** revisa Bun, OpenCode, Claude Code y Codex CLI (si falta alguno pregunta antes de instalarlo; Antigravity `agy` solo se avisa, no se instala), crea la carpeta de OpenCode Free y baja `claude-bridge.js`, `codex-bridge.js` y `gemini-bridge.js`. Se puede repetir para actualizar los puentes.
@@ -269,6 +282,8 @@ OpenCode Free, Claude (suscripción), OpenAI (suscripción) y Gemini (suscripci�
 | **Claude (suscripción)** (puerto 4098) | `cd ~/Library/Application\ Support/prompting/claude-bridge && CLAUDE_BRIDGE_PASSWORD='TuClave' bun claude-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "CLAUDE_BRIDGE_PASSWORD=TuClave" && bun scripts/claude-bridge/server.ts` |
 | **OpenAI (suscripción)** (puerto 4094) | `cd ~/Library/Application\ Support/prompting/codex-bridge && CODEX_BRIDGE_PASSWORD='TuClave' bun codex-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "CODEX_BRIDGE_PASSWORD=TuClave" && bun scripts/codex-bridge/server.ts` |
 | **Gemini (suscripción)** (puerto 4092) | `cd ~/Library/Application\ Support/prompting/gemini-bridge && GEMINI_BRIDGE_PASSWORD='TuClave' bun gemini-bridge.js` | Con el repo: `cd /d C:\www\web-chat && set "GEMINI_BRIDGE_PASSWORD=TuClave" && bun scripts/gemini-bridge/server.ts` |
+
+**Desde otra máquina de la red** (por ejemplo una Mac que abre `https://192.168.1.50:5173`): los servidores siguen escuchando solo en `127.0.0.1` de la PC que corre `bun run dev`. La app, abierta desde otra máquina, les habla a rutas de su mismo origen (`/local/opencode-free`, `/local/claude`, `/local/codex`, `/local/gemini`, `/local/ollama`) y el proxy de Vite las reenvía al servidor de la PC (ver `src/config/localServers.ts`). Así no hay bloqueo por contenido mixto ni por CORS. Solo funciona con el servidor de desarrollo, no desde Vercel. Ojo: quien abra la app desde tu red usa tus suscripciones; los bridges piden contraseña, Ollama no.
 
 Preparación, una sola vez:
 
@@ -311,7 +326,7 @@ La consola imprime la URL (`http://127.0.0.1:4098` por defecto) y la contraseña
 
 Después, en la app: elegir **Claude (suscripción)**, pegar la contraseña y **Guardar contraseña**. Al lado del selector de proveedor, un punto indica si el bridge responde (🟢) o no (🔴).
 
-- **Todos los modelos de Anthropic:** el selector lista cada modelo de chat de Claude (ids completos, p. ej. `claude-sonnet-5`, `claude-opus-5-5`, `claude-haiku-4-5`), tomados de [models.dev](https://models.dev) y regenerados con `bun run update:models`. Se prefiere el id sin fecha cuando existe (se descarta el duplicado con fecha) y el modelo por defecto es un Sonnet. Los 4 alias históricos (`haiku`, `sonnet`, `opus`, `fable`) se siguen aceptando en el bridge por compatibilidad, pero ya no aparecen en el selector.
+- **Todos los modelos de Anthropic:** el selector lista cada modelo de chat de Claude (ids completos, p. ej. `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-5-5`), tomados en vivo de [models.dev](https://models.dev): al arrancar, la app consulta `GET /models` del bridge, que baja la lista de models.dev y la cachea 1 hora (si models.dev no responde, devuelve la última lista buena). Un modelo nuevo de Anthropic aparece solo, sin regenerar nada; `bun run update:models` solo actualiza la lista de respaldo (`src/config/claudeModels.generated.ts`) que se usa mientras el bridge no responde. Se prefiere el id sin fecha cuando existe (se descarta el duplicado con fecha) y el modelo por defecto es un Sonnet. Los 4 alias históricos (`haiku`, `sonnet`, `opus`, `fable`) se siguen aceptando en el bridge por compatibilidad, pero ya no aparecen en el selector.
   - **Claude Fable** necesita créditos de uso además de la suscripción: si tu cuenta no los tiene, el modelo queda en la lista pero la app muestra el mensaje de error de Claude Code tal cual (no se oculta como "no disponible").
 - **Nivel de esfuerzo (`--effort`):** slider entre el proveedor y el modelo, con los niveles que ese modelo soporta según models.dev (entre `Bajo`/`Medio`/`Alto`/`Muy alto`/`Máximo` según el modelo; el mismo slider ya no es exclusivo de Claude, ver [Nivel de esfuerzo por proveedor](#nivel-de-esfuerzo-por-proveedor)). Sin "Por defecto": todo modelo con niveles arranca en el esfuerzo por defecto del proveedor (Medio para Claude) si es válido para ese modelo, o si no en el más bajo, y se recuerda por modelo en el navegador (si la elección guardada ya no es válida para el modelo actual, se recalcula con el mismo criterio). La varita mágica no usa nivel de esfuerzo.
 - **Visión:** todos los modelos de Claude aceptan imágenes (📎, hasta 4 por mensaje, PNG/JPEG/WEBP/GIF). El bridge las manda en modo `--input-format stream-json` en vez del modo de texto normal; el límite de tamaño del cuerpo sube a ~16 MB solo para pedidos con imágenes.
@@ -324,7 +339,7 @@ Después, en la app: elegir **Claude (suscripción)**, pegar la contraseña y **
 - **Solo escucha en `127.0.0.1:4098`**, con Basic auth en todos los endpoints y CORS restringido a `https://localhost:5173` y `https://prompting-chat.vercel.app`.
 - **Historial por sesión:** cada chat de la app reutiliza un `sessionId` de Claude Code (`--resume`) para mantener el contexto entre mensajes.
 
-Límites: funciona solo en la PC donde corre el bridge. La varita mágica siempre usa Haiku con una sesión nueva (sin `--resume`), no manda imágenes y nunca pide permiso (si el modelo intentara usar Bash para "mejorar el texto", cosa que no debería pasar, el pedido se corta por timeout en vez de quedar esperando un modal que la varita no muestra).
+Límites: funciona solo en la PC donde corre el bridge. La varita mágica no usa este bridge: usa siempre Groq.
 
 Código: `scripts/claude-bridge/`, `src/services/claudeBridge/`, `src/services/permissionModal.ts`, `src/config/{effort,effortSettings,vision}.ts`, `src/components/HEADER/{ClaudeCodeStatus,EffortSelector,YoloToggle}.tsx`.
 
@@ -479,7 +494,7 @@ La consola imprime la URL (`http://127.0.0.1:4092` por defecto) y la contraseña
 - **Tokens y costo:** `agy` informa el uso acumulado de toda la conversación; el bridge lo convierte en el de cada turno (diferencia con la lectura anterior; tras reiniciar el bridge, el promedio por turno) y cuenta como entrada `input_tokens + cache_read_tokens`. El costo es el equivalente por API ("incluido en tu suscripción"), buscando el precio del modelo sin el sufijo `-low/-medium/-high`.
 - **Siempre usa la suscripción:** el bridge quita `GEMINI_API_KEY` y `GOOGLE_API_KEY` solo para el `agy` que lanza (y lo avisa al arrancar): con ellas, `agy` usaba esa clave en vez de tu login.
 - **Errores transitorios:** si `agy` informa un error de la API pero igual devuelve texto (p. ej. un 503 "No capacity" que reintenta y supera), la respuesta se entrega igual.
-- **Varita mágica:** no usa este bridge (tardaría ~40 s); usa Groq si hay una key guardada, como OpenCode Free.
+- **Varita mágica:** no usa este bridge; usa siempre Groq.
 
 **Límites de la v1:** sin imágenes ni PDF nativo (los PDF viajan como texto extraído), sin búsqueda web anunciada, sin slider de esfuerzo, sin YOLO ni modal de permisos: las herramientas del agente corren con los valores por defecto de `agy` en modo `--print` y el bridge arranca el proceso en su propia carpeta de datos (`%LOCALAPPDATA%\prompting\gemini-bridge` en Windows, `~/Library/Application Support/prompting/gemini-bridge` en Mac), no en tus proyectos.
 
@@ -518,6 +533,18 @@ odd/tasks/                  documentos de cada feature (tareas, decisiones y ver
 ```
 
 ---
+
+## Cambios recientes (octubre 2026)
+
+- Nuevo proveedor **Ollama Cloud (local)**: modelos cloud de Ollama por el `ollama serve` de tu PC, sin API key (sesión de `ollama signin`). Solo se listan los del plan gratis, probados con `bun run update:models`. Ver [Ollama Cloud](#ollama-cloud-servidor-local).
+- **Claude (suscripción)** lista solo el modelo más nuevo de cada familia (hoy Sonnet 5.5, Opus 5.5, Haiku 5.5 y Fable 5.1), en vivo desde models.dev a través del bridge (`GET /models`, caché de 1 hora). Hay que reiniciar el bridge para tomar el cambio.
+- Los modelos de Claude desconocidos se nombran con su versión ("Claude Opus 5.5", no "Claude Opus 5 5").
+- **Desde otra máquina de la red** (`https://<ip>:5173`): los servidores locales (OpenCode Free, bridges de Claude/Codex/Gemini, Ollama) funcionan a través del proxy de Vite, y OpenCode Go/Zen también. Los servidores siguen escuchando solo en `127.0.0.1`.
+- **Varita mágica** con menú de idiomas (español, inglés de EE. UU., inglés británico, portugués de Brasil): corrige, formatea en Markdown y redacta en el idioma elegido; el resultado queda en el input.
+- **Traductor** (botón nuevo): envía al chat el pedido de traducción del texto del input; la traducción llega como respuesta y queda en el contexto de la conversación.
+- Varita y traductor usan Groq `openai/gpt-oss-120b` por su rapidez, con cualquier modelo de chat; sin API key de Groq usan el modelo del chat.
+- **Historial:** borrar un chat ya no crea uno nuevo; la sala que lo tenía abierto pasa al chat más reciente libre. Solo al borrar el último queda un chat nuevo en la Sala 1. Tacho nuevo al lado de "Historial" para borrar todos.
+- Corregido: en el modal de bienvenida, el botón "Guardar" tapaba "OpenCode Free" en la lista de proveedores.
 
 ## Cambios recientes (septiembre 2026)
 
