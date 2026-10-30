@@ -3,7 +3,7 @@
   "private": true,
   "version": "v.8.0",
   "type": "module",
-  "packageManager": "bun@1.4.2",
+  "packageManager": "bun@1.4.4",
   "homepage": "https://prompting-chat.vercel.app",
   "repository": {
     "type": "git",
@@ -48,10 +48,10 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",
-    "axios": "1.20.0",
-    "pdfjs-dist": "6.3.289",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "axios": "1.21.0",
+    "pdfjs-dist": "6.4.299",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "react-markdown": "10.1.0",
     "react-select": "5.10.2",
     "remark-gfm": "4.0.1",
@@ -59,14 +59,14 @@
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@types/bun": "1.4.2",
+    "@biomejs/biome": "2.6.4",
+    "@types/bun": "1.4.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-basic-ssl": "2.3.0",
-    "@vitejs/plugin-react": "6.1.1",
+    "@vitejs/plugin-react": "6.1.2",
     "typescript": "7.0.2",
-    "vite": "8.3.1"
+    "vite": "8.3.5"
   },
   "trustedDependencies": [
     "@tailwindcss/oxide",
